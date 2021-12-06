@@ -39,6 +39,6 @@ with Flow(
     flow.add_edge(first, second)
     flow.add_edge(second, third)
 
-
+# Run only if this is the main file
 if __name__ == "__main__":
     flow.run()
