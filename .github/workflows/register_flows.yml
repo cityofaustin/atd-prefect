@@ -25,10 +25,10 @@ on:
         default: ""
 
 #
-#
+# Jobs
 #
 jobs:
-  build_editor:
+  register_flows:
     name: Register Flows
     runs-on: ubuntu-latest
     steps:
