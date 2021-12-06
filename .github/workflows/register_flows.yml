@@ -9,7 +9,7 @@ on:
       - main
       - production
     paths:
-      - "moped-api/**"
+      - "flows/**"
   pull_request:
     paths:
       - ".github/workflows/prefect_helper.sh"
