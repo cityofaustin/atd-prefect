@@ -48,6 +48,19 @@ function get_md5_from_cloud() {
   }
 }
 
+# Store md5 checksum on S3
+function save_md5_on_cloud() {
+  FILE_NAME=$1
+  {
+    MD5_FILE_NAME=$(get_md5_for_filename $FILE_NAME);
+    MD5_FILE_CHECKSUM=$(get_md5_from_file $FILE_NAME);
+    echo -n $MD5_FILE_CHECKSUM > "${MD5_FILE_NAME}.md5sum";
+    aws s3 cp "${MD5_FILE_NAME}.md5sum" "s3://${BUCKET_NAME}/deploys/${WORKING_STAGE}/${MD5_FILE_NAME}.md5sum" --quiet;
+  } || {
+    exit_with_error "Error: could not store md5 for '${FILE_NAME}'";
+  }
+}
+
 
 # Registers the tasks
 function register_tasks() {
