@@ -61,6 +61,10 @@ function save_md5_on_cloud() {
   }
 }
 
+# Returns true if flow needs redeploy
+function flow_needs_redeploy() {
+  [[ $(get_md5_from_file $1) != $(get_md5_from_cloud $1) ]] && echo "True" || echo "False";
+}
 
 # Registers the tasks
 function register_tasks() {
