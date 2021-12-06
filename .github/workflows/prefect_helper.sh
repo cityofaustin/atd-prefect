@@ -32,6 +32,11 @@ function get_md5_for_filename() {
   echo -n $1 | md5sum | cut -d " " -f 1;
 }
 
+# Generates md5 for the contents of a file
+function get_md5_from_file() {
+  md5sum $1 | cut -d " " -f 1;
+}
+
 
 # Registers the tasks
 function register_tasks() {
