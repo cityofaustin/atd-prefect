@@ -1,34 +1,42 @@
 #!/usr/bin/env python
 
+"""
+Name: Test Flow
+Description: This is a test flow that demonstrates how to run multiple tasks.
+Schedule: None
+"""
+
 import prefect
 from prefect import Flow, task
 from prefect.run_configs import LocalRun
-from prefect.engine.state import Failed
+from prefect.tasks.control_flow import merge
+
 
 @task(name="First")
-def hello_task():
+def first():
     logger = prefect.context.get("logger")
     logger.info("One!")
 
+
 @task(name="Second")
-def hello_task_two():
+def second():
     logger = prefect.context.get("logger")
     logger.info("Two!")
 
+
 @task(name="Third")
-def hello_task_three():
+def third():
     logger = prefect.context.get("logger")
     logger.info("Three!")
 
 
-flow = Flow(
-        "hello-test",
-        run_config=LocalRun(labels=["test"])
+with Flow(
+    "hello-test",
+    run_config=LocalRun(labels=["test"])
 ) as flow:
-    hello_task_two.set_upstream(hello_task)
-    hello_task_three.set_upstream(hello_task_two)
+    flow.add_edge(first, second)
+    flow.add_edge(second, third)
 
 
-
-
-flow.visualize()
+if __name__ == "__main__":
+    flow.run()
