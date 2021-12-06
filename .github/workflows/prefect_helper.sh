@@ -27,6 +27,11 @@ function clean_up_checksums() {
   rm -rf *.md5sum;
 }
 
+# Generates an md5 for a file name
+function get_md5_for_filename() {
+  echo -n $1 | md5sum | cut -d " " -f 1;
+}
+
 
 # Registers the tasks
 function register_tasks() {
