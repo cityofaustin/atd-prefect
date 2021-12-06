@@ -4,9 +4,17 @@ name: Register Flows
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ production, main ]
+    branches:
+      - main
+      - production
+    paths:
+      - "moped-api/**"
+  pull_request:
+    paths:
+      - ".github/workflows/prefect_helper.sh"
+      - ".github/workflows/register_flows.sh"
+      - "flows/**"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
