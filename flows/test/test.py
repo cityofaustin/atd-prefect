@@ -30,6 +30,8 @@ def third():
     logger.info("Three!")
 
 
+# Next, we define the flow (equivalent to a DAG).
+# Notice we use the label "test" to match this flow to an agent.
 with Flow(
     "hello-test",
     run_config=LocalRun(labels=["test"])
