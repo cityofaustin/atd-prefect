@@ -1,1 +1,5 @@
+# Directories
 .idea
+
+# Files
+*.md5sum
