@@ -16,6 +16,12 @@ case "${BRANCH_NAME}" in
   ;;
 esac
 
+# Centralizes the exit with a message
+function exit_with_error() {
+  echo "$1";
+  exit 1;
+}
+
 
 # Registers the tasks
 function register_tasks() {
