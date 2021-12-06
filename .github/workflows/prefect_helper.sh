@@ -22,6 +22,11 @@ function exit_with_error() {
   exit 1;
 }
 
+# Removes any checksum files
+function clean_up_checksums() {
+  rm -rf *.md5sum;
+}
+
 
 # Registers the tasks
 function register_tasks() {
