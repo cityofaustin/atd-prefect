@@ -2,6 +2,21 @@
 
 set -o errexit;
 
+export BUCKET_NAME="atd-prefect";
+
+#
+# Determine working stage based on branch name
+#
+case "${BRANCH_NAME}" in
+  "production")
+    export WORKING_STAGE="production";
+  ;;
+  *)
+    export WORKING_STAGE="staging";
+  ;;
+esac
+
+
 # Registers the tasks
 function register_tasks() {
   # First make sure to log in...
