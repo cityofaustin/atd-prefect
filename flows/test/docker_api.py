@@ -32,6 +32,7 @@ def docker_with_api():
         command="python example.py",
         environment=environment_variables,
         volumes=[f"{pathlib.Path(__file__).parent.resolve()}/scripts:/app"],
+        remove=True,
         detach=False,
         stdout=True
     ).decode("utf-8")
