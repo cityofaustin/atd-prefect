@@ -8,22 +8,14 @@ Labels: test
 """
 import docker
 from prefect import Flow, task
-from prefect.engine.state import Failed
 from prefect.run_configs import LocalRun
-
-# Slack
-from prefect.utilities.notifications import slack_notifier
 
 # Shell
 from prefect.tasks.shell import ShellTask
 
-# We can call it early
-handler = slack_notifier(only_states=[Failed])
-
 environment_variables = {
     "MESSAGE": "HELLO WORLD"
 }
-
 
 shell_task = ShellTask(
     name="shell_task",
