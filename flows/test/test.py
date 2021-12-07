@@ -4,12 +4,12 @@
 Name: Test Flow
 Description: This is a test flow that demonstrates how to run multiple tasks.
 Schedule: None
+Labels: test
 """
 
 import prefect
 from prefect import Flow, task
 from prefect.run_configs import LocalRun
-from prefect.tasks.control_flow import merge
 
 
 @task(name="First")
