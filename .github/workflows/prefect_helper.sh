@@ -79,6 +79,8 @@ function register_tasks() {
       echo "Processing flow file: ${FLOW_FILE} (project name: ${FLOW_PROJECT})";
       # Register the flow file using the folder name as the project name
       prefect register --project $FLOW_PROJECT --path $FLOW_FILE;
+      # If all is successful, then update the md5 file
+      save_md5_on_cloud $FLOW_FILE;
     else
       # Nothing to do, ignore...
       echo "❯❯❯ Success: '${FLOW_FILE}' (flow does not need redeploy, skipping)";
