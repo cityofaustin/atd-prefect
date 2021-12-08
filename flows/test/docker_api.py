@@ -2,10 +2,11 @@
 
 """
 Name: Run a docker container and capture output
-Description: A test on how to run a docker container using prefect's API
+Description: A test on how to run a docker container using docker-py API
 Schedule: None
 Labels: test
 """
+
 import pathlib
 import prefect
 
