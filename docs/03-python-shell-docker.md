@@ -1,5 +1,29 @@
 # Flows with Python, Shell & Docker
 
+## Shell
+
+Prefect has a simple implementation called `ShellTask`
+which can be used as easily as follows:
+
+```python
+from prefect.tasks.shell import ShellTask
+
+environment_variables = {
+    "MESSAGE": "HELLO WORLD"
+}
+
+shell_task = ShellTask(
+    name="shell_task",
+    command='echo "MESSAGE: ${MESSAGE}"',
+    env=environment_variables,
+    stream_output=True
+)
+
+[...]
+
+    flow.add_task(shell_task)
+```
+
 ## Docker
 
 Running docker tasks using Prefect's library is
