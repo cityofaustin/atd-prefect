@@ -24,6 +24,34 @@ shell_task = ShellTask(
     flow.add_task(shell_task)
 ```
 
+
+## Python
+
+Running python is not as different, we use 
+the same ShellTask class and we mix it up:
+
+```python
+from prefect.tasks.shell import ShellTask
+
+environment_variables = {
+    "MESSAGE": "HELLO WORLD"
+}
+
+python_task = ShellTask(
+    name="python_task",
+    command='python3 /static/path/of/example.py',
+    env=environment_variables,
+    stream_output=True
+)
+
+[...]
+
+    flow.add_task(python_task)
+```
+
+This is assuming that there is a known static location
+of the `/static/path/of/example.py` python file.
+
 ## Docker
 
 Running docker tasks using Prefect's library is
