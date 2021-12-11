@@ -7,13 +7,15 @@ Schedule: None
 Labels: test
 """
 
-from prefect import Flow, config
+from prefect import Flow
+from prefect.backend import get_key_value
 from prefect.run_configs import UniversalRun
 
 # E-Mail
 from prefect.tasks.notifications.email_task import EmailTask
 
-
+# Retrieve the email configuration
+email_config = get_key_value(key="email_config")
 
 """
 Task for sending email from an authenticated email service over SMTP.
@@ -23,11 +25,11 @@ email_task = EmailTask(
     name="email_task",
     subject="Test from ATD",
     msg="Hello this is a test from atd!",
-    email_to=None,  # <- Type your email here!
-    email_from=config.email.email_from,
-    smtp_server=config.email.smtp_server,
-    smtp_port=config.email.smtp_port,
-    smtp_type=config.email.smtp_type,
+    email_to=email_config["test_email"],  # <- Type your email here
+    email_from=email_config["email_from"],
+    smtp_server=email_config["smtp_server"],
+    smtp_port=email_config["smtp_port"],
+    smtp_type=email_config["smtp_type"],
     attachments=None
 )
 
