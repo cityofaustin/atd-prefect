@@ -197,3 +197,61 @@ Options:
      $ prefect register --project my-project -p flow.py --no-schedule
 
 ```
+
+
+## Storage
+
+The documentation is not very clear as to what exactly
+the registration does.  Registering the file does not
+seem to store the logic files on Prefect's cloud.
+
+For Prefect Cloud to run code uses the Storage class:
+
+>The Prefect Storage interface encapsulates logic for storing flows. Each storage unit is able to store multiple flows (with the constraint of name uniqueness within a given unit).
+
+The storage class needs to be defined for the flow,
+this tells the running agent where the code to the
+flow can be found:
+
+```python
+from prefect.storage import Local
+
+# Run only if this is the main file
+if __name__ == "__main__":
+    flow.storage = Local(directory=".")
+    flow.run()
+```
+
+With the code above, the flow can be executed
+with python locally, or with an agent running
+in this repo's root directory (wherever it is
+located in the agent's file system).
+
+There are other storage classes, including GitHub
+repository and AWS S3.
+
+The two require more configuration, but essentially
+it looks like this for GitHub:
+
+```python
+from prefect.storage import GitHub
+
+# Run only if this is the main file
+if __name__ == "__main__":
+    flow.storage = GitHub(repo="coa/repo_name", path="/flows/test/flow.py")
+    flow.run()
+```
+
+While this is fine, it presents a layer
+of complexity that is not necessary at this time.
+For more information visit the [documentation](https://docs.prefect.io/api/latest/storage.html).
+
+
+## Sources
+[1] https://docs.prefect.io/core/getting_started/basic-core-flow.html
+
+[2] https://docs.prefect.io/core/concepts/tasks.html#overview
+
+[3] https://docs.prefect.io/core/concepts/flows.html#overview
+
+[4] https://docs.prefect.io/api/latest/storage.html
