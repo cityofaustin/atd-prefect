@@ -38,6 +38,8 @@ environment_variables = {
 # we can pass it automatically next time!
 environment_variables_from_kv = get_key_value(key="test_kv")
 
+email_config = get_key_value(key="email_config")
+
 # Run a shell command
 shell_task = ShellTask(
     name="shell_task",
@@ -86,11 +88,11 @@ email_task = EmailTask(
     name="email_task",
     subject="Test from ATD",
     msg="Hello this is a test from atd!",
-    email_to=None,  # <- Type your email here
-    email_from=config.email.email_from,
-    smtp_server=config.email.smtp_server,
-    smtp_port=config.email.smtp_port,
-    smtp_type=config.email.smtp_type,
+    email_to=email_config["test_email"],  # <- Type your email here
+    email_from=email_config["email_from"],
+    smtp_server=email_config["smtp_server"],
+    smtp_port=email_config["smtp_port"],
+    smtp_type=email_config["smtp_type"],
     attachments=None
 )
 
