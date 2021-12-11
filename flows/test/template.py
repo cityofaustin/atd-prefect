@@ -7,7 +7,7 @@ Description: This flow is to test multiple features and serves as a template.
 Schedule: "*/5 * * * *"
 Labels: test
 """
-
+import json
 import docker
 import prefect
 import pathlib
@@ -19,7 +19,7 @@ from prefect.run_configs import UniversalRun
 from prefect.engine.state import Failed
 from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
-from prefect.client import Secret
+from prefect.backend import get_key_value
 
 from prefect.utilities.notifications import slack_notifier
 from prefect.tasks.notifications.email_task import EmailTask
@@ -34,9 +34,9 @@ environment_variables = {
     "MESSAGE": "HELLO WORLD"
 }
 
-# Notice how test_secret is actually already parsed,
+# Notice how test_kv is actually already parsed,
 # we can pass it automatically next time!
-environment_variables_from_secret = Secret("test_secret").get()
+environment_variables_from_kv = get_key_value(key="test_kv")
 
 # Run a shell command
 shell_task = ShellTask(
@@ -69,7 +69,7 @@ def docker_with_api():
         image="python:alpine",
         working_dir="/app",
         command="python example.py",
-        environment=environment_variables_from_secret,
+        environment=environment_variables_from_kv,
         volumes=[f"{pathlib.Path(__file__).parent.resolve()}/scripts:/app"],
         remove=True,
         detach=False,
