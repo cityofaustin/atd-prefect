@@ -8,7 +8,7 @@ Labels: test
 """
 
 from prefect import Flow, config
-from prefect.run_configs import LocalRun
+from prefect.run_configs import UniversalRun
 
 # E-Mail
 from prefect.tasks.notifications.email_task import EmailTask
@@ -35,7 +35,7 @@ email_task = EmailTask(
 # Create the flow
 with Flow(
     "email-test",
-    run_config=LocalRun(labels=["test"])
+    run_config=UniversalRun(labels=["test"])
 ) as flow:
     # Chain the two tasks
     flow.add_task(email_task)

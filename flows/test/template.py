@@ -15,7 +15,7 @@ from datetime import timedelta
 
 # Prefect
 from prefect import Flow, task, config
-from prefect.run_configs import LocalRun
+from prefect.run_configs import UniversalRun
 from prefect.engine.state import Failed
 from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
@@ -97,7 +97,7 @@ email_task = EmailTask(
 # Notice we use the label "test" to match this flow to an agent.
 with Flow(
     "template",
-    run_config=LocalRun(labels=["test"]),
+    run_config=UniversalRun(labels=["test"]),
     schedule=Schedule(clocks=[CronClock("*/5 * * * *")])
 ) as flow:
     flow.chain(shell_task, python_task, docker_with_api, email_task)

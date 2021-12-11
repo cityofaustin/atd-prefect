@@ -8,7 +8,7 @@ Labels: test
 """
 import docker
 from prefect import Flow, task
-from prefect.run_configs import LocalRun
+from prefect.run_configs import UniversalRun
 
 # Shell
 from prefect.tasks.shell import ShellTask
@@ -35,7 +35,7 @@ python_task = ShellTask(
 # Create the flow
 with Flow(
     "shell-python-test",
-    run_config=LocalRun(labels=["test"])
+    run_config=UniversalRun(labels=["test"])
 ) as flow:
     # Chain the two tasks
     flow.chain(shell_task, python_task)

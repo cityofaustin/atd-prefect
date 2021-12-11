@@ -8,7 +8,7 @@ Labels: test
 """
 
 from prefect import Flow, task
-from prefect.run_configs import LocalRun
+from prefect.run_configs import UniversalRun
 from prefect.engine.state import Failed
 from prefect.utilities.notifications import slack_notifier
 from prefect.tasks.notifications.slack_task import SlackTask
@@ -48,7 +48,7 @@ custom_slack_message = SlackTask(message="""
 # Notice we use the label "test" to match this flow to an agent.
 with Flow(
     "slack-test",
-    run_config=LocalRun(labels=["test"])
+    run_config=UniversalRun(labels=["test"])
 ) as flow:
     flow.add_edge(succeed, custom_slack_message)
     flow.add_edge(succeed, fail)

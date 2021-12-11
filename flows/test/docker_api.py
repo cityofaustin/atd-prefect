@@ -12,7 +12,7 @@ import prefect
 
 # Prefect
 from prefect import Flow, task
-from prefect.run_configs import LocalRun
+from prefect.run_configs import UniversalRun
 
 # Docker-py low-level API
 import docker
@@ -46,7 +46,7 @@ def docker_with_api():
 
 with Flow(
         "docker_api",
-        run_config=LocalRun(labels=["test"])
+        run_config=UniversalRun(labels=["test"])
 ) as flow:
     flow.add_task(docker_with_api)
 

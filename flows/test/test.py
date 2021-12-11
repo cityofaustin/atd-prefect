@@ -9,7 +9,7 @@ Labels: test
 
 import prefect
 from prefect import Flow, task
-from prefect.run_configs import LocalRun
+from prefect.run_configs import UniversalRun
 
 
 @task(name="First")
@@ -34,7 +34,7 @@ def third():
 # Notice we use the label "test" to match this flow to an agent.
 with Flow(
     "hello-test",
-    run_config=LocalRun(labels=["test"])
+    run_config=UniversalRun(labels=["test"])
 ) as flow:
     flow.add_edge(first, second)
     flow.add_edge(second, third)
