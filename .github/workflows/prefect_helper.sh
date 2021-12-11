@@ -56,6 +56,7 @@ function save_md5_on_cloud() {
     MD5_FILE_CHECKSUM=$(get_md5_from_file $FILE_NAME);
     echo -n $MD5_FILE_CHECKSUM > "${MD5_FILE_NAME}.md5sum";
     aws s3 cp "${MD5_FILE_NAME}.md5sum" "s3://${BUCKET_NAME}/deploys/${WORKING_STAGE}/${MD5_FILE_NAME}.md5sum" --quiet;
+    echo "❯❯❯ Updated: '${MD5_FILE_NAME}' (for file ${FILE_NAME})";
   } || {
     exit_with_error "Error: could not store md5 for '${FILE_NAME}'";
   }
@@ -76,7 +77,7 @@ function register_tasks() {
     if [[ $(flow_needs_redeploy "${FLOW_FILE}") == "True" ]]; then
       # Extract the project name
       FLOW_PROJECT=$(echo "${FLOW_FILE}" | cut -d "/" -f 2);
-      echo "Processing flow file: ${FLOW_FILE} (project name: ${FLOW_PROJECT})";
+      echo "❯❯❯ Deploying: '${FLOW_FILE}' (project name: ${FLOW_PROJECT})";
 
       # Register the flow file using the folder name as the project name
       prefect register --no-schedule \
@@ -88,7 +89,7 @@ function register_tasks() {
       save_md5_on_cloud $FLOW_FILE;
     else
       # Nothing to do, ignore...
-      echo "❯❯❯ Success: '${FLOW_FILE}' (flow does not need redeploy, skipping)";
+      echo "❯❯❯ Skipping: '${FLOW_FILE}' (flow does not need redeploy)";
     fi;
   done;
 
