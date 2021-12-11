@@ -19,6 +19,7 @@ from prefect.run_configs import UniversalRun
 from prefect.engine.state import Failed
 from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
+from prefect.client import Secret
 
 from prefect.utilities.notifications import slack_notifier
 from prefect.tasks.notifications.email_task import EmailTask
@@ -35,7 +36,7 @@ environment_variables = {
 
 # Notice how test_secret is actually already parsed,
 # we can pass it automatically next time!
-environment_variables_from_secret = config.template.test_secret
+environment_variables_from_secret = Secret("test_secret").get()
 
 # Run a shell command
 shell_task = ShellTask(
