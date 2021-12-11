@@ -6,8 +6,8 @@ Description: This is a test on how to run shell and python commands
 Schedule: None
 Labels: test
 """
-import docker
-from prefect import Flow, task
+from prefect import Flow
+from prefect.storage import Local
 from prefect.run_configs import UniversalRun
 
 # Shell
@@ -41,4 +41,5 @@ with Flow(
     flow.chain(shell_task, python_task)
 
 if __name__ == "__main__":
+    flow.storage = Local(directory=".")
     flow.run()

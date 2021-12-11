@@ -12,6 +12,7 @@ import prefect
 
 # Prefect
 from prefect import Flow, task
+from prefect.storage import Local
 from prefect.run_configs import UniversalRun
 
 # Docker-py low-level API
@@ -51,4 +52,5 @@ with Flow(
     flow.add_task(docker_with_api)
 
 if __name__ == "__main__":
+    flow.storage = Local(directory=".")
     flow.run()

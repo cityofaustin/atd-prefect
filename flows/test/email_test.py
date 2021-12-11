@@ -8,6 +8,7 @@ Labels: test
 """
 
 from prefect import Flow
+from prefect.storage import Local
 from prefect.backend import get_key_value
 from prefect.run_configs import UniversalRun
 
@@ -43,4 +44,5 @@ with Flow(
     flow.add_task(email_task)
 
 if __name__ == "__main__":
+    flow.storage = Local(directory=".")
     flow.run()

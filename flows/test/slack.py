@@ -8,6 +8,7 @@ Labels: test
 """
 
 from prefect import Flow, task
+from prefect.storage import Local
 from prefect.run_configs import UniversalRun
 from prefect.engine.state import Failed
 from prefect.utilities.notifications import slack_notifier
@@ -55,4 +56,5 @@ with Flow(
 
 
 if __name__ == "__main__":
+    flow.storage = Local(directory=".")
     flow.run()

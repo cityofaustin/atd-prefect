@@ -7,14 +7,14 @@ Description: This flow is to test multiple features and serves as a template.
 Schedule: "*/5 * * * *"
 Labels: test
 """
-import json
 import docker
 import prefect
 import pathlib
 from datetime import timedelta
 
 # Prefect
-from prefect import Flow, task, config
+from prefect import Flow, task
+from prefect.storage import Local
 from prefect.run_configs import UniversalRun
 from prefect.engine.state import Failed
 from prefect.schedules import Schedule
@@ -106,4 +106,5 @@ with Flow(
     flow.chain(shell_task, python_task, docker_with_api, email_task)
 
 if __name__ == "__main__":
+    flow.storage = Local(directory=".")
     flow.run()

@@ -9,6 +9,7 @@ Labels: test
 
 import prefect
 from prefect import Flow, task
+from prefect.storage import Local
 from prefect.run_configs import UniversalRun
 
 
@@ -41,4 +42,5 @@ with Flow(
 
 # Run only if this is the main file
 if __name__ == "__main__":
+    flow.storage = Local(directory=".")
     flow.run()
