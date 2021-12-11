@@ -65,9 +65,59 @@ from prefect.client import Secret
 my_secret_value = Secret("MYSECRET").get()
 ```
 
+## Key-Value Store
+
+Another method to work with stored data is by making use
+of the Key-Value store. We can set the values from the UI
+or it can be done programmatically in Python.
+
+From Prefect we read:
+
+>Key Value Store is a managed metadata database for Prefect Cloud.
+>Keys are strings. Values are JSON blobs.
+
+> The number of key value pairs allowed is limited by license, starting with 10 pairs on the Free tier. Values are limited to 10 KB in size.
+
+> Key value pairs can be configured via the Prefect CLI, Python library, API, and UI.
+
+### Example Uses with Python
+
+Setting Values: 
+
+```python
+from prefect.backend import set_key_value
+key_value_uuid = set_key_value(key="foo", value="bar")
+```
+
+Getting values:
+
+```python
+from prefect.backend import get_key_value
+value = get_key_value(key="foo")
+```
+
+Deleting Values:
+
+```python
+from prefect.backend import delete_key
+success = delete_key(key="foo")
+```
+
+Listing Values:
+
+```python
+from prefect.backend import list_keys
+my_keys = list_keys()
+```
+
+### Using a KV store in a flow
+
+
 
 ## Sources
 
 [1] https://docs.prefect.io/api/latest/tasks/secrets.html#prefectsecret
 
 [2] https://docs.prefect.io/api/latest/tasks/secrets.html#envvarsecret
+
+[3] https://docs.prefect.io/orchestration/concepts/kv_store.html
