@@ -132,11 +132,14 @@ More information can be [found here](https://docs.prefect.io/core/concepts/execu
 
 ## Sources
 States:
-	https://docs.prefect.io/core/concepts/states.html
+- https://docs.prefect.io/core/concepts/states.html
+
 Notification Tasks
-	https://docs.prefect.io/core/concepts/notifications.html#sending-a-simple-notification
-	https://docs.prefect.io/api/latest/tasks/notifications.html#notification-tasks
+- https://docs.prefect.io/core/concepts/notifications.html#sending-a-simple-notification
+- https://docs.prefect.io/api/latest/tasks/notifications.html#notification-tasks
+
 SlackTask:
-	https://docs.prefect.io/api/latest/tasks/notifications.html#slacktask
+- https://docs.prefect.io/api/latest/tasks/notifications.html#slacktask
+
 EmailTask:
-	https://docs.prefect.io/api/latest/tasks/notifications.html#emailtask
+- https://docs.prefect.io/api/latest/tasks/notifications.html#emailtask
