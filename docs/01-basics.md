@@ -103,12 +103,16 @@ $ python flow/test/test/py
 
 For now, the main branch is both staging and production.
 
-## Task Register
+## Flow Register
 
 After you are  happy with your prefect flow,
 you have the option to register the flow directly
 from your machine, or you should let github
 actions do that for you.
+
+What happens when you register a flow? From Prefect, we can read:
+
+> When you register a Flow, your code is securely stored on your infrastructure — your code never leaves your execution environment and is never sent to Prefect Cloud. Instead, Flow metadata is sent to Prefect Cloud for scheduling and orchestration.
 
 To let GH actions register the file just merge
 your file into the github action and merge to main.
