@@ -202,6 +202,11 @@ Options:
 
 ```
 
+###Prefect's architecture overview
+
+>Prefect's unique hybrid execution model keeps your code and data completely private while taking full advantage of our managed orchestration service.
+
+![](https://docs.prefect.io/prefect_architecture_overview.png)
 
 ## Storage
 
