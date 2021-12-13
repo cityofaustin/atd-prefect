@@ -97,6 +97,9 @@ https://docker-py.readthedocs.io/en/stable/
 
 ## Sources
 
-[1] https://docs.prefect.io/api/latest/tasks/shell.html#shelltask
+Shell Task:
+- https://docs.prefect.io/api/latest/tasks/shell.html#shelltask
 
-[2] https://docs.prefect.io/api/latest/tasks/docker.html#startcontainer
+Docker:
+- https://docker-py.readthedocs.io/
+- https://docs.prefect.io/api/latest/tasks/docker.html#startcontainer

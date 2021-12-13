@@ -146,8 +146,11 @@ with Flow('my-flow') as flow:
 
 ## Sources
 
-[1] https://docs.prefect.io/api/latest/tasks/secrets.html#prefectsecret
+Secrets
+- https://docs.prefect.io/api/latest/tasks/secrets.html#prefectsecret
 
-[2] https://docs.prefect.io/api/latest/tasks/secrets.html#envvarsecret
+Env Vars:
+- https://docs.prefect.io/api/latest/tasks/secrets.html#envvarsecret
 
-[3] https://docs.prefect.io/orchestration/concepts/kv_store.html
+KV Store:
+- https://docs.prefect.io/orchestration/concepts/kv_store.html

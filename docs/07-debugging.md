@@ -184,6 +184,6 @@ AssertionError:
 
 ## Sources
 
-https://docs.prefect.io/core/advanced_tutorials/local-debugging.html
-
-https://docs.prefect.io/api/latest/utilities/debug.html#functions
+Debugging:
+- https://docs.prefect.io/core/advanced_tutorials/local-debugging.html
+- https://docs.prefect.io/api/latest/utilities/debug.html#functions

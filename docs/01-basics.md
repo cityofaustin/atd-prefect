@@ -257,10 +257,12 @@ For more information visit the [documentation](https://docs.prefect.io/api/lates
 
 
 ## Sources
-[1] https://docs.prefect.io/core/getting_started/basic-core-flow.html
+Flow:
+- https://docs.prefect.io/core/getting_started/basic-core-flow.html
+- https://docs.prefect.io/core/concepts/flows.html#overview
 
-[2] https://docs.prefect.io/core/concepts/tasks.html#overview
+Tasks:
+- https://docs.prefect.io/core/concepts/tasks.html#overview
 
-[3] https://docs.prefect.io/core/concepts/flows.html#overview
-
-[4] https://docs.prefect.io/api/latest/storage.html
+Storage:
+- https://docs.prefect.io/api/latest/storage.html

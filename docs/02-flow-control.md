@@ -41,8 +41,15 @@ in Prefect, including these:
 There is no strong preference, most of our ETL or DAGs
 currently in Airflow do not have a complex graph.
 
+
+## Conditional Tasks
+
+https://docs.prefect.io/core/examples/conditional.html
+
 ## Sources
 
-[1] https://docs.prefect.io/api/latest/core/flow.html
+Flow:
+- https://docs.prefect.io/api/latest/core/flow.html
 
-[2] https://docs.prefect.io/api/latest/tasks/control_flow.html
+Flow Control:
+- https://docs.prefect.io/api/latest/tasks/control_flow.html
