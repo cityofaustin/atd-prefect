@@ -16,9 +16,9 @@ the execution of the python command, you may
 want to export the variable.
 
 ```bash
-$ export PREFECT__FLOWS__RUN_ON_SCHEDULE=false 
+$ export PREFECT__LOGGING__LEVEL=INFO 
 $ python flows/test/template.py
-$ unset PREFECT__FLOWS__RUN_ON_SCHEDULE
+$ export PREFECT__LOGGING__LEVEL=DEBUG
 ```
 
 Basically we persist the variable value using export,
