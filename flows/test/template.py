@@ -101,7 +101,15 @@ email_task = EmailTask(
 with Flow(
     "template",
     run_config=UniversalRun(labels=["test"]),
+    # Schedule:
+    #   When developing or troubleshooting a flow with a schedule
+    #   you may want to disable it by exporting the global variable before execution:
+    #       $ PREFECT__FLOWS__RUN_ON_SCHEDULE=false python flows/test/template.py
+    #   Alternatively, you can do something like this:
+    #       flow.run(run_on_schedule=False)
     schedule=Schedule(clocks=[CronClock("*/5 * * * *")])
+
+
 ) as flow:
     flow.chain(shell_task, python_task, docker_with_api, email_task)
 
