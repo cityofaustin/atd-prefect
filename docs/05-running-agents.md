@@ -5,7 +5,7 @@ only explored [LocalRun](https://docs.prefect.io/orchestration/flow_config/run_c
 and [DockerRun](https://docs.prefect.io/orchestration/flow_config/run_configs.html#dockerrun)
 deployments. They are both good approaches.
 
-###LocalRun
+### LocalRun
 
 The local agent answers for virtually all our needs
 we currently have with Airflow. It allows us to run
@@ -81,7 +81,7 @@ Options:
   -h, --help                      Show this message and exit.
 ```
 
-###DockerRun
+### DockerRun
 
 The docker agent behaves a lot like the Local agent. Basically,
 the only difference is that the flows are executed
