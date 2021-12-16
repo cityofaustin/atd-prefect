@@ -18,7 +18,7 @@ from datetime import timedelta
 
 # Prefect
 from prefect import Flow, task
-from prefect.storage import Local
+from prefect.storage import GitHub
 from prefect.run_configs import UniversalRun
 from prefect.engine.state import Failed
 from prefect.schedules import Schedule
@@ -118,5 +118,9 @@ with Flow(
     flow.chain(shell_task, python_task, docker_with_api, email_task)
 
 if __name__ == "__main__":
-    flow.storage = Local(path=".", stored_as_script=True)
+    flow.storage = GitHub(
+        repo="cityofaustin/atd-prefect",
+        ref=current_environment,  # The branch name
+        path=__file__,  # This assumes this file is registered from root folder in repo
+    )
     flow.run()
