@@ -118,5 +118,5 @@ with Flow(
     flow.chain(shell_task, python_task, docker_with_api, email_task)
 
 if __name__ == "__main__":
-    flow.storage = Local(directory=".")
+    flow.storage = Local(path=".", stored_as_script=True)
     flow.run()
