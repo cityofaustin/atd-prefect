@@ -100,8 +100,13 @@ email_task = EmailTask(
 # Next, we define the flow (equivalent to a DAG).
 # Notice we use the label "test" to match this flow to an agent.
 with Flow(
-    "template",
-    run_config=UniversalRun(labels=["test"]),
+    # Postfix the name of the flow with the environment it belongs to
+    f"template_{current_environment}",
+    # Run config will always need the current_environment
+    # plus whatever labels you need to attach to this flow
+    run_config=UniversalRun(
+        labels=[current_environment, "atd-data02"]
+    ),
     # Schedule:
     #   When developing or troubleshooting a flow with a schedule
     #   you may want to disable it by exporting the global variable before execution:
@@ -109,8 +114,6 @@ with Flow(
     #   Alternatively, you can do something like this:
     #       flow.run(run_on_schedule=False)
     schedule=Schedule(clocks=[CronClock("*/5 * * * *")])
-
-
 ) as flow:
     flow.chain(shell_task, python_task, docker_with_api, email_task)
 
