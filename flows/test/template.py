@@ -29,18 +29,15 @@ from prefect.utilities.notifications import slack_notifier
 from prefect.tasks.notifications.email_task import EmailTask
 from prefect.tasks.shell import ShellTask
 
+# First, we must always define the current environment, and default to staging:
+current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
+
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed])
 
 
-# Environment variables we define within here
-environment_variables = {
-    "MESSAGE": "HELLO WORLD"
-}
-
-# Notice how test_kv is actually already parsed,
-# we can pass it automatically next time!
-environment_variables_from_kv = get_key_value(key="test_kv")
+# Notice how test_kv is an object that contains our data as a dictionary:
+environment_variables = get_key_value(key=f"test_kv_{current_environment}")
 
 email_config = get_key_value(key="email_config")
 
