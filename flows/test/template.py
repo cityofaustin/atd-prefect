@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 
 """
-Name: Test multiple features
-Description: This flow is to test multiple features and serves as a template.
-    So far this is a very early demonstration, and it is likely to change a lot.
+Name: Flow Template
+Description: The purpose of this file is to serve as a template to
+    establish a pattern for the implementation of flows moving forward.
+    It's the very early stages of development, and it is bound to change a
+    lot as we learn and move forward.
 Schedule: "*/5 * * * *"
 Labels: test
 """
+
+import os
 import docker
 import prefect
 import pathlib
