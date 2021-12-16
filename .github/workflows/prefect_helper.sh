@@ -14,7 +14,10 @@ case "${BRANCH_NAME}" in
   *)
     export WORKING_STAGE="staging";
   ;;
-esac
+esac;
+
+# This environment variable is needed for flows
+export PREFECT_CURRENT_ENVIRONMENT=$WORKING_STAGE;
 
 # Centralizes the exit with a message
 function exit_with_error() {
