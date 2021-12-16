@@ -1,8 +1,8 @@
 # DevOps
 
-This page contains the instructions on how to:
+This page contains the instructions on:
 
-- Create a new flow
+- How to create a new flow
 - How to develop and test a flow
 - How to create a branch and PR for review
 - How to review the PR/branch locally.
