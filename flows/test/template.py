@@ -72,7 +72,7 @@ def docker_with_api():
         image="python:alpine",
         working_dir="/app",
         command="python example.py",
-        environment=environment_variables_from_kv,
+        environment=environment_variables,
         volumes=[f"{pathlib.Path(__file__).parent.resolve()}/scripts:/app"],
         remove=True,
         detach=False,
