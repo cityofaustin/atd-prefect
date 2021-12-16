@@ -105,19 +105,21 @@ For now, the main branch is both staging and production.
 
 ## Flow Register
 
-After you are  happy with your prefect flow,
+After you are happy with your prefect flow,
 you have the option to register the flow directly
-from your machine, or you should let github
-actions do that for you.
+from your machine, or you can let the GitHub Actions
+do it for you.
 
 What happens when you register a flow? From Prefect, we can read:
 
 > When you register a Flow, your code is securely stored on your infrastructure — your code never leaves your execution environment and is never sent to Prefect Cloud. Instead, Flow metadata is sent to Prefect Cloud for scheduling and orchestration.
 
 To let GH actions register the file just merge
-your file into the github action and merge to main.
+your file into the github main branch. For specific
+details about how to work the branches and PRs world
+go to the DevOps section of this documentation.
 
-Alternatively, you may run the register command:
+To register the flow yourself, there is the `prefect register` command:
 
 ```bash
 $ prefect register -h
@@ -202,7 +204,7 @@ Options:
 
 ```
 
-###Prefect's architecture overview
+## Prefect's architecture overview
 
 >Prefect's unique hybrid execution model keeps your code and data completely private while taking full advantage of our managed orchestration service.
 
@@ -214,7 +216,7 @@ The documentation is not very clear as to what exactly
 the registration does.  Registering the file does not
 seem to store the logic files on Prefect's cloud.
 
-For Prefect Cloud to run code uses the Storage class:
+For Prefect Cloud to run code it uses the Storage class:
 
 >The Prefect Storage interface encapsulates logic for storing flows. Each storage unit is able to store multiple flows (with the constraint of name uniqueness within a given unit).
 
