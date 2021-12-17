@@ -7,13 +7,17 @@ Schedule: None
 Labels: test
 """
 
+import os
 from prefect import Flow
-from prefect.storage import Local
+from prefect.storage import GitHub
 from prefect.backend import get_key_value
 from prefect.run_configs import UniversalRun
 
 # E-Mail
 from prefect.tasks.notifications.email_task import EmailTask
+
+# First, we must always define the current environment, and default to staging:
+current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 
 # Retrieve the email configuration
 email_config = get_key_value(key="email_config")
@@ -37,12 +41,16 @@ email_task = EmailTask(
 
 # Create the flow
 with Flow(
-    "email-test",
-    run_config=UniversalRun(labels=["test"])
+    f"email-test_{current_environment}",
+    storage=GitHub(
+        repo="cityofaustin/atd-prefect",
+        path="flows/test/email_test.py",
+        ref=current_environment.replace("staging", "main"),  # The branch name
+    ),
+    run_config=UniversalRun(labels=[current_environment, "atd-prefect-01"])
 ) as flow:
     # Chain the two tasks
     flow.add_task(email_task)
 
 if __name__ == "__main__":
-    flow.storage = Local(directory=".")
     flow.run()
