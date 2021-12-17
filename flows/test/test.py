@@ -37,7 +37,7 @@ def third():
 # Next, we define the flow (equivalent to a DAG).
 # Notice we use the label "test" to match this flow to an agent.
 with Flow(
-    "hello-test",
+    f"test_{current_environment}",
     run_config=UniversalRun(labels=[current_environment, "atd-prefect-01"])
 ) as flow:
     flow.add_edge(first, second)
