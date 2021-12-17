@@ -82,11 +82,11 @@ function register_tasks() {
       FLOW_PROJECT=$(echo "${FLOW_FILE}" | cut -d "/" -f 2);
       echo "❯❯❯ Deploying: '${FLOW_FILE}' (project name: ${FLOW_PROJECT})";
 
-      # Register the flow file using the folder name as the project name
-      prefect register --force --no-schedule \
-        --project $FLOW_PROJECT \
-        --label $FLOW_PROJECT \
-        --path $FLOW_FILE;
+      docker run -it \
+        --workdir="/prefect/${WORKING_STAGE}" \
+        -v "$(pwd):/prefect/${WORKING_STAGE}" \
+        atddocker/atd-prefect-builder:latest \
+        sh -c "prefect auth login --key ${PREFECT_KEY} && prefect register --force --no-schedule --project ${FLOW_PROJECT} --path ${FLOW_FILE}"
 
       # If all is successful, then update the md5 file
       save_md5_on_cloud $FLOW_FILE;
