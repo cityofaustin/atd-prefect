@@ -72,9 +72,6 @@ function flow_needs_redeploy() {
 
 # Registers the tasks
 function register_tasks() {
-  # First make sure to log in...
-  prefect auth login --key "${PREFECT_KEY}";
-
   # For each of the flow files
   for FLOW_FILE in $(grep -rl "__main__" flows); do
     if [[ $(flow_needs_redeploy "${FLOW_FILE}") == "True" ]]; then
