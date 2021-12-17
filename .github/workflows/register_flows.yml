@@ -60,6 +60,6 @@ jobs:
           echo "ACTION/BRANCH_NAME: ${BRANCH_NAME}"
           echo "PREFECT_PRNUM: ${PREFECT_PRNUM}"
           echo "PWD: $(pwd)"
-          git pull atddocker/atd-prefect-builder:latest
+          docker pull atddocker/atd-prefect-builder:latest
           source $(pwd)/.github/workflows/prefect_helper.sh
           register_tasks
