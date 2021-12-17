@@ -106,7 +106,7 @@ with Flow(
     # plus whatever labels you need to attach to this flow
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
-        path="flows/test/template.py",  # This assumes this file is registered from root folder in repo
+        path=f"{__file__}",  # This assumes this file is registered from root folder in repo
         ref=current_environment,  # The branch name
     ),
     run_config=UniversalRun(
