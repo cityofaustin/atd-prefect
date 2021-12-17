@@ -16,6 +16,7 @@ from prefect.run_configs import UniversalRun
 # First, we must always define the current environment, and default to staging:
 current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 
+
 @task(name="First")
 def first():
     logger = prefect.context.get("logger")
@@ -38,6 +39,9 @@ def third():
 # Notice we use the label "test" to match this flow to an agent.
 with Flow(
     f"test_{current_environment}",
+    storage=Local(
+        directory="/prefect/production" if current_environment == "production" else "/prefect/staging"
+    ),
     run_config=UniversalRun(labels=[current_environment, "atd-prefect-01"])
 ) as flow:
     flow.add_edge(first, second)
@@ -45,5 +49,4 @@ with Flow(
 
 # Run only if this is the main file
 if __name__ == "__main__":
-    flow.storage = Local(directory=f"/prefect/{current_environment}")
     flow.run()
