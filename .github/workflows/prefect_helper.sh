@@ -83,7 +83,7 @@ function register_tasks() {
       echo "❯❯❯ Deploying: '${FLOW_FILE}' (project name: ${FLOW_PROJECT})";
 
       # Register the flow file using the folder name as the project name
-      prefect register --no-schedule \
+      prefect register --force --no-schedule \
         --project $FLOW_PROJECT \
         --label $FLOW_PROJECT \
         --path $FLOW_FILE;
