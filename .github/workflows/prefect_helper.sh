@@ -85,7 +85,6 @@ function register_tasks() {
       # Register the flow file using the folder name as the project name
       prefect register --force --no-schedule \
         --project $FLOW_PROJECT \
-        --label $FLOW_PROJECT \
         --path $FLOW_FILE;
 
       # If all is successful, then update the md5 file
