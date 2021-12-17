@@ -10,12 +10,12 @@ on:
       - production
     paths:
       - ".github/workflows/prefect_helper.sh"
-      - ".github/workflows/register_flows.sh"
+      - ".github/workflows/register_flows.yml"
       - "flows/**"
   pull_request:
     paths:
       - ".github/workflows/prefect_helper.sh"
-      - ".github/workflows/register_flows.sh"
+      - ".github/workflows/register_flows.yml"
       - "flows/**"
 
   # Allows you to run this workflow manually from the Actions tab
