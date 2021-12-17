@@ -18,7 +18,7 @@ from datetime import timedelta
 
 # Prefect
 from prefect import Flow, task
-from prefect.storage import Local
+from prefect.storage import GitHub
 from prefect.run_configs import UniversalRun
 from prefect.engine.state import Failed
 from prefect.schedules import Schedule
@@ -35,10 +35,10 @@ current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed])
 
-
 # Notice how test_kv is an object that contains our data as a dictionary:
 environment_variables = get_key_value(key=f"test_kv_{current_environment}")
 
+# Retrieve the email configuration
 email_config = get_key_value(key="email_config")
 
 # Run a shell command
@@ -71,9 +71,9 @@ def docker_with_api():
     response = docker.from_env().containers.run(
         image="python:alpine",
         working_dir="/app",
-        command="python example.py",
+        command='echo "MESSAGE: ${MESSAGE}"',
         environment=environment_variables,
-        volumes=[f"{pathlib.Path(__file__).parent.resolve()}/scripts:/app"],
+        volumes=None,  # ie: [f"{pathlib.Path(__file__).parent.resolve()}/scripts:/app"]
         remove=True,
         detach=False,
         stdout=True
@@ -102,6 +102,12 @@ email_task = EmailTask(
 with Flow(
     # Postfix the name of the flow with the environment it belongs to
     f"template_{current_environment}",
+    # Let's configure the agents to download the file from this repo
+    storage=GitHub(
+        repo="cityofaustin/atd-prefect",
+        path="flows/test/template.py",
+        ref=current_environment.replace("staging", "main"),  # The branch name
+    ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
     run_config=UniversalRun(
@@ -118,5 +124,4 @@ with Flow(
     flow.chain(shell_task, python_task, docker_with_api, email_task)
 
 if __name__ == "__main__":
-    flow.storage = Local(directory=".")
     flow.run()

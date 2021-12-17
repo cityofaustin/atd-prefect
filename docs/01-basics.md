@@ -15,7 +15,24 @@ is currently stored in 1Password.
 3. Save it in this exact location in your machine:
 ```~/.prefect/config.toml```
 
-Done.
+The next thing you will need is a prefect api key. To
+get one you can visit this link, and click "+ Create API Key":
+
+https://cloud.prefect.io/user/keys
+
+Whenever you have a key, you will need to export it like so:
+
+```shell
+$ export PREFECT__CLOUD__API_KEY="<YOUR-KEY>"
+```
+
+If you will be using agents, you may want to run this command:
+
+```shell
+$ prefect auth login --key <YOUR-KEY>
+```
+
+For more info on keys, visit [this page](https://docs.prefect.io/orchestration/concepts/api_keys.html#using-api-keys).
 
 ## Environment
 
