@@ -10,7 +10,7 @@ Labels: test
 import os
 import prefect
 from prefect import Flow, task
-from prefect.storage import Local
+from prefect.storage import GitHub
 from prefect.run_configs import UniversalRun
 
 # First, we must always define the current environment, and default to staging:
@@ -39,8 +39,10 @@ def third():
 # Notice we use the label "test" to match this flow to an agent.
 with Flow(
     f"test_{current_environment}",
-    storage=Local(
-        directory="/prefect/production" if current_environment == "production" else "/prefect/staging"
+    storage=GitHub(
+        repo="cityofaustin/atd-prefect",
+        path="flows/test/test.py",
+        ref=current_environment.replace("staging", "main"),  # The branch name
     ),
     run_config=UniversalRun(labels=[current_environment, "atd-prefect-01"])
 ) as flow:
