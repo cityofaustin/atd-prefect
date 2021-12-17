@@ -38,12 +38,12 @@ def third():
 # Notice we use the label "test" to match this flow to an agent.
 with Flow(
     "hello-test",
-    run_config=UniversalRun(labels=[current_environment, "atd-data02"])
+    run_config=UniversalRun(labels=[current_environment, "atd-prefect-01"])
 ) as flow:
     flow.add_edge(first, second)
     flow.add_edge(second, third)
 
 # Run only if this is the main file
 if __name__ == "__main__":
-    flow.storage = Local(path=".", stored_as_script=True)
+    flow.storage = Local(directory=f"/prefect/{current_environment}")
     flow.run()
