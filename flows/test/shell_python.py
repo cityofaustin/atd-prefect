@@ -6,6 +6,8 @@ Description: This is a test on how to run shell and python commands
 Schedule: None
 Labels: test
 """
+
+import os
 from prefect import Flow
 from prefect.storage import GitHub
 from prefect.run_configs import UniversalRun
