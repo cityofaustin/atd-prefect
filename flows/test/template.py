@@ -71,9 +71,9 @@ def docker_with_api():
     response = docker.from_env().containers.run(
         image="python:alpine",
         working_dir="/app",
-        command="python example.py",
+        command='echo "MESSAGE: ${MESSAGE}"',
         environment=environment_variables,
-        volumes=[f"{pathlib.Path(__file__).parent.resolve()}/scripts:/app"],
+        volumes=None,  # ie: [f"{pathlib.Path(__file__).parent.resolve()}/scripts:/app"]
         remove=True,
         detach=False,
         stdout=True
