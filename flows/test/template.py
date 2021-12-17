@@ -123,4 +123,5 @@ if __name__ == "__main__":
         ref=current_environment,  # The branch name
         path=__file__,  # This assumes this file is registered from root folder in repo
     )
+
     flow.run()
