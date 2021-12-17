@@ -104,6 +104,11 @@ with Flow(
     f"template_{current_environment}",
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
+    storage=GitHub(
+        repo="cityofaustin/atd-prefect",
+        ref=current_environment,  # The branch name
+        path=__file__,  # This assumes this file is registered from root folder in repo
+    ),
     run_config=UniversalRun(
         labels=[current_environment, "atd-data02"]
     ),
@@ -118,10 +123,4 @@ with Flow(
     flow.chain(shell_task, python_task, docker_with_api, email_task)
 
 if __name__ == "__main__":
-    flow.storage = GitHub(
-        repo="cityofaustin/atd-prefect",
-        ref=current_environment,  # The branch name
-        path=__file__,  # This assumes this file is registered from root folder in repo
-    )
-
     flow.run()
