@@ -45,4 +45,5 @@ with Flow(
 
 # Run only if this is the main file
 if __name__ == "__main__":
+    flow.storage = Local(path=".", stored_as_script=True)
     flow.run()
