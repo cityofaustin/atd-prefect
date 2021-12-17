@@ -35,10 +35,10 @@ current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed])
 
-
 # Notice how test_kv is an object that contains our data as a dictionary:
 environment_variables = get_key_value(key=f"test_kv_{current_environment}")
 
+# Retrieve the email configuration
 email_config = get_key_value(key="email_config")
 
 # Run a shell command
@@ -106,7 +106,7 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/test/template.py",
-        ref=current_environment,  # The branch name
+        ref=current_environment.replace("staging", "main"),  # The branch name
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
