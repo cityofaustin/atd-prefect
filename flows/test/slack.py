@@ -7,14 +7,18 @@ Schedule: None
 Labels: test
 """
 
+import os
 from prefect import Flow, task
-from prefect.storage import Local
+from prefect.storage import GitHub
 from prefect.run_configs import UniversalRun
 from prefect.engine.state import Failed
 from prefect.utilities.notifications import slack_notifier
 from prefect.tasks.notifications.slack_task import SlackTask
 
 from datetime import datetime
+
+# First, we must always define the current environment, and default to staging:
+current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 
 # We can call it early
 handler = slack_notifier(only_states=[Failed])
@@ -48,13 +52,17 @@ custom_slack_message = SlackTask(message="""
 # Next, we define the flow (equivalent to a DAG).
 # Notice we use the label "test" to match this flow to an agent.
 with Flow(
-    "slack-test",
-    run_config=UniversalRun(labels=["test"])
+    f"slack-test_{current_environment}",
+    storage=GitHub(
+        repo="cityofaustin/atd-prefect",
+        path="flows/test/slack.py",
+        ref=current_environment.replace("staging", "main"),  # The branch name
+    ),
+    run_config=UniversalRun(labels=[current_environment, "atd-prefect-01"])
 ) as flow:
     flow.add_edge(succeed, custom_slack_message)
     flow.add_edge(succeed, fail)
 
 
 if __name__ == "__main__":
-    flow.storage = Local(directory=".")
     flow.run()
