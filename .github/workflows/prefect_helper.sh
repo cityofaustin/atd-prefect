@@ -79,7 +79,7 @@ function register_tasks() {
       FLOW_PROJECT=$(echo "${FLOW_FILE}" | cut -d "/" -f 2);
       echo "❯❯❯ Deploying: '${FLOW_FILE}' (project name: ${FLOW_PROJECT})";
 
-      docker run -it \
+      docker run -t \
         --workdir="/prefect/${WORKING_STAGE}" \
         -v "$(pwd):/prefect/${WORKING_STAGE}" \
         atddocker/atd-prefect-builder:latest \
