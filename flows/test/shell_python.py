@@ -45,7 +45,7 @@ with Flow(
         path="flows/test/shell_python.py",
         ref=current_environment.replace("staging", "main"),  # The branch name
     ),
-    run_config=UniversalRun(labels=["test"]),
+    run_config=UniversalRun(labels=[current_environment, "atd-prefect-01"])
 ) as flow:
     # Chain the two tasks
     flow.chain(shell_task, python_task)
