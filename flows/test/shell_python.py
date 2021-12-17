@@ -39,7 +39,7 @@ python_task = ShellTask(
 
 # Create the flow
 with Flow(
-    "shell-python-test",
+    f"shell-python_{current_environment}",
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/test/shell_python.py",
