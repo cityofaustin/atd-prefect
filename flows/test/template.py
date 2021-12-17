@@ -102,13 +102,14 @@ email_task = EmailTask(
 with Flow(
     # Postfix the name of the flow with the environment it belongs to
     f"template_{current_environment}",
-    # Run config will always need the current_environment
-    # plus whatever labels you need to attach to this flow
+    # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
-        path=f"{__file__}",  # This assumes this file is registered from root folder in repo
+        path="flows/test/template.py",
         ref=current_environment,  # The branch name
     ),
+    # Run config will always need the current_environment
+    # plus whatever labels you need to attach to this flow
     run_config=UniversalRun(
         labels=[current_environment, "atd-data02"]
     ),
