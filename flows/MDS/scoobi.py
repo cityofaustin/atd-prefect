@@ -123,7 +123,7 @@ with Flow(
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
-        path="flows/mds/scoobi.py",
+        path="flows/MDS/scoobi.py",
         ref=current_environment.replace("staging", "main"),  # The branch name
     ),
     # Run config will always need the current_environment
