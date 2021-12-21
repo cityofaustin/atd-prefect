@@ -8,9 +8,6 @@ Labels: atd-data02
 """
 
 import os
-import docker
-import prefect
-from datetime import datetime, timedelta
 
 # Prefect
 from prefect import Flow, task
