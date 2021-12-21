@@ -31,12 +31,10 @@ current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 handler = slack_notifier(only_states=[Failed])
 
 # Notice how test_kv is an object that contains our data as a dictionary:
-environment_variables = get_key_value(key=f"atd_mds_config_{current_environment}")
-docker_image = f"atddocker/atd-mds-etl:{current_environment}"
-
-
 mds_provider = "scoobi"
-current_time = datetime.now() + timedelta(days=-1, hours=-6)
+docker_image = f"atddocker/atd-mds-etl:{current_environment}"
+environment_variables = get_key_value(key=f"atd_mds_config_{current_environment}")
+current_time = datetime.now() + timedelta(days=-1)
 time_max = f"{current_time.year}-{current_time.month}-{current_time.day}-{(current_time.hour)}"
 
 
