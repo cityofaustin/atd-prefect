@@ -144,4 +144,4 @@ with Flow(
     )
 
 if __name__ == "__main__":
-    flow.run(run_on_schedule=False)
+    flow.run()
