@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
 """
-Name: Bird MDS
-Description: The purpose of this flow is to gather data from Bird's
-    MDS platform every 15th minute of every hour.
-Schedule: "15 * * * *"
+Name: Process unfinished tasks
+Description: The purpose of this flow is to process all stages
+    for all active MDS providers. This is basically a catch-all
+    process for any failed or missing attempts in the past.
+
+Schedule: "0 2 * * *"
 Labels: atd-data02
 """
 
@@ -31,25 +33,29 @@ current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 handler = slack_notifier(only_states=[Failed])
 
 # Notice how test_kv is an object that contains our data as a dictionary:
-mds_provider = "bird"
 docker_image = f"atddocker/atd-mds-etl:{current_environment}"
 environment_variables = get_key_value(key=f"atd_mds_config_{current_environment}")
-current_time = datetime.now() + timedelta(days=-1)
-time_max = f"{current_time.year}-{current_time.month}-{current_time.day}-{(current_time.hour)}"
+
+# Current Time
+current_time = datetime.now()
+current_time_min = current_time + timedelta(days=-90)
+current_time_max = current_time + timedelta(days=-1)
+time_min = f"{current_time_min.year}-{current_time_min.month}-{current_time_min.day}-01"
+time_max = f"{current_time_max.year}-{current_time_max.month}-{current_time_max.day}-{current_time_max.hour}"
 
 
-# Retrieve the provider's data
+# Reprocess unfinished tasks for lime
 @task(
-    name="provider_extract",
-    max_retries=3,
+    name="process_unfinished_lime",
+    max_retries=2,
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler]
 )
-def provider_extract():
+def process_unfinished_lime():
     response = docker.from_env().containers.run(
         image=docker_image,
         working_dir="/app",
-        command=f"./provider_extract.py --provider '{mds_provider}' --time-max '{time_max}' --interval 1",
+        command=f"./provider_runtool.py --provider 'lime' --time-min '{time_min}' --time-max '{time_max}' --incomplete-only --no-logs",
         environment=environment_variables,
         volumes=None,
         remove=True,
@@ -61,53 +67,72 @@ def provider_extract():
     return response
 
 
-# Sync the data with the database
+# Reprocess unfinished tasks for bird
 @task(
-    name="provider_sync_db",
-    max_retries=3,
+    name="process_unfinished_bird",
+    max_retries=2,
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler]
 )
-def provider_sync_db():
+def process_unfinished_bird():
     response = docker.from_env().containers.run(
         image=docker_image,
         working_dir="/app",
-        command=f"./provider_sync_db.py --provider '{mds_provider}' --time-max '{time_max}' --interval 1",
+        command=f"./provider_runtool.py --provider 'bird' --time-min '{time_min}' --time-max '{time_max}' --incomplete-only --no-logs",
         environment=environment_variables,
         volumes=None,
         remove=True,
         detach=False,
         stdout=True
     ).decode("utf-8")
-
     logger = prefect.context.get("logger")
     logger.info(response)
-
     return response
 
 
-# Sync the data with socrata
+# Reprocess unfinished tasks for wheels
 @task(
-    name="provider_sync_socrata",
-    max_retries=3,
+    name="process_unfinished_wheels",
+    max_retries=2,
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler]
 )
-def provider_sync_socrata():
+def process_unfinished_wheels():
     response = docker.from_env().containers.run(
         image=docker_image,
         working_dir="/app",
-        command=f"./provider_sync_socrata.py --provider '{mds_provider}' --time-max '{time_max}' --interval 1",
+        command=f"./provider_runtool.py --provider 'wheels' --time-min '{time_min}' --time-max '{time_max}' --incomplete-only --no-logs",
         environment=environment_variables,
         volumes=None,
         remove=True,
         detach=False,
         stdout=True
     ).decode("utf-8")
-
     logger = prefect.context.get("logger")
     logger.info(response)
+    return response
 
+
+# Reprocess unfinished tasks for wheels
+@task(
+    name="process_unfinished_scoobi",
+    max_retries=2,
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler]
+)
+def process_unfinished_scoobi():
+    response = docker.from_env().containers.run(
+        image=docker_image,
+        working_dir="/app",
+        command=f"./provider_runtool.py --provider 'scoobi' --time-min '{time_min}' --time-max '{time_max}' --incomplete-only --no-logs",
+        environment=environment_variables,
+        volumes=None,
+        remove=True,
+        detach=False,
+        stdout=True
+    ).decode("utf-8")
+    logger = prefect.context.get("logger")
+    logger.info(response)
     return response
 
 
@@ -115,11 +140,11 @@ def provider_sync_socrata():
 # Notice we use the label "test" to match this flow to an agent.
 with Flow(
     # Postfix the name of the flow with the environment it belongs to
-    f"atd_mds_{mds_provider}_{current_environment}",
+    f"atd_mds_unfinished_{current_environment}",
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
-        path="flows/MDS/bird.py",
+        path="flows/MDS/unfinished.py",
         ref=current_environment.replace("staging", "main"),  # The branch name
     ),
     # Run config will always need the current_environment
@@ -127,12 +152,19 @@ with Flow(
     run_config=UniversalRun(
         labels=[current_environment, "atd-data02"]
     ),
-    schedule=Schedule(clocks=[CronClock("15 * * * *")])
+    schedule=Schedule(clocks=[CronClock("0 2 * * *")])
 ) as flow:
+    """
+        While there is nothing stopping us from having
+        the tasks run concurrently, I would argue it is best
+        to keep them chained. This is to not overwhelm the
+        Hasura database, it is very small.
+    """
     flow.chain(
-        provider_extract,
-        provider_sync_db,
-        provider_sync_socrata
+        process_unfinished_lime,
+        process_unfinished_bird,
+        process_unfinished_wheels,
+        process_unfinished_scoobi,
     )
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ Name: Wheels MDS
 Description: The purpose of this flow is to gather data from Wheel's
     MDS platform every 30th minute of every hour.
 Schedule: "30 * * * *"
-Labels: test
+Labels: atd-data02
 """
 
 import os
@@ -119,7 +119,7 @@ with Flow(
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
-        path="flows/MDS/scoobi.py",
+        path="flows/MDS/wheels.py",
         ref=current_environment.replace("staging", "main"),  # The branch name
     ),
     # Run config will always need the current_environment

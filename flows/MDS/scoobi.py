@@ -5,7 +5,7 @@ Name: Scoobi MDS
 Description: The purpose of this flow is to gather data from Scoobi's
     MDS platform every 30th minute of every hour.
 Schedule: "30 * * * *"
-Labels: test
+Labels: atd-data02
 """
 
 import os
