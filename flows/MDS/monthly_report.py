@@ -35,7 +35,6 @@ handler = slack_notifier(only_states=[Failed])
 docker_image = f"atddocker/atd-mds-etl:{current_environment}"
 environment_variables = get_key_value(key=f"atd_mds_monthly_report_{current_environment}")
 email_config = get_key_value(key="aws_email_config")
-email_recipients = get_key_value(key="atd_mds_monthly_report_recipients")
 
 
 # Sync the data with socrata
