@@ -20,7 +20,7 @@ from prefect.tasks.notifications.email_task import EmailTask
 current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 
 # Retrieve the email configuration
-email_config = get_key_value(key="email_config")
+email_config = get_key_value(key="aws_email_config")
 
 """
 Task for sending email from an authenticated email service over SMTP.

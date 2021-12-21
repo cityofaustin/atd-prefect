@@ -39,7 +39,7 @@ handler = slack_notifier(only_states=[Failed])
 environment_variables = get_key_value(key=f"test_kv_{current_environment}")
 
 # Retrieve the email configuration
-email_config = get_key_value(key="email_config")
+email_config = get_key_value(key="aws_email_config")
 
 # Run a shell command
 shell_task = ShellTask(
