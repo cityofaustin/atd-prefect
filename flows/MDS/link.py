@@ -119,7 +119,7 @@ with Flow(
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
-        path="flows/MDS/wheels.py",
+        path="flows/MDS/link.py",
         ref=current_environment.replace("staging", "main"),  # The branch name
     ),
     # Run config will always need the current_environment
