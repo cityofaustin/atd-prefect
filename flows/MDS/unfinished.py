@@ -39,7 +39,7 @@ environment_variables = get_key_value(key=f"atd_mds_config_{current_environment}
 # Current Time
 current_time = datetime.now()
 current_time_min = current_time + timedelta(days=-90)
-current_time_max = current_time + timedelta(days=-1)
+current_time_max = current_time + timedelta(days=-1, hours=-8)
 time_min = f"{current_time_min.year}-{current_time_min.month}-{current_time_min.day}-01"
 time_max = f"{current_time_max.year}-{current_time_max.month}-{current_time_max.day}-{current_time_max.hour}"
 
