@@ -116,9 +116,18 @@ we are going to use an existing flow:
 $ python flow/test/test.py
 ```
 
-#### Environments
+## Environments
 
-For now, the main branch is both staging and production.
+The main branch contains the staging environment,
+while production contains all work in production.
+
+A single machine (either on AWS or CTM) will likely
+be running two agents, one for staging and another
+for production, each with labels that signal what
+processes they will be running.
+
+For more information on this, read page no. 5 of
+this documentation to learn how the agents are run.
 
 ## Flow Register
 
@@ -230,8 +239,9 @@ Options:
 ## Storage
 
 The documentation is not very clear as to what exactly
-the registration does.  Registering the file does not
-seem to store the logic files on Prefect's cloud.
+the registration does other than to generate metadata about
+the flow. However, it is clear that it doesn't store
+the python code into their cloud.
 
 For Prefect Cloud to run code it uses the Storage class:
 
@@ -270,9 +280,62 @@ if __name__ == "__main__":
     flow.run()
 ```
 
-While this is fine, it presents a layer
-of complexity that is not necessary at this time.
-For more information visit the [documentation](https://docs.prefect.io/api/latest/storage.html).
+#### Why do we use GitHub storage?
+
+It may seem counterproductive to use the GitHub
+storage class, but it turns out to be effective.
+
+For one, it enables us to specify in what repository
+the code lives, and also the branch. This is helpful
+because it downloads the file from the repo/branch
+before execution. While downloading the file is
+not necessary for us, it makes it very helful when
+running in remote/cloud environments.
+
+For us to use the class, we simply declare the
+`storage=` argument in the Flow class constructor:
+
+```python
+with Flow(
+    f"slack-test_{current_environment}",
+    storage=GitHub(
+        repo="cityofaustin/atd-prefect",
+        path="flows/test/slack.py",
+        ref=current_environment.replace("staging", "main"),  # The branch name
+    ),
+    run_config=UniversalRun(labels=[current_environment, "atd-prefect-01"])
+```
+
+In the GitHub class constructor, the repo argument
+will likely never change, as it will almost always be
+the same. Ref will always be production, or main, so
+this one too will never change. However, `path` must
+always have the name of this file. At some point
+I attempted to automate each of those values, but
+I always ended up having problems when registering 
+the flows I ended up keeping them like that.
+
+#### Why doesn't Local storage work?
+
+When registering a flow, the register command captures
+the context of the file, including where in the
+file system it lives. This is presents a problem
+when you need to distribute flows to cloud servers
+that have little configuration or where the file system
+looks very different from local.
+
+Unfortunately, using the local storage class is a 
+bit cumbersome and difficult to work with. One
+attempt I made to make it work was to develop
+a docker container that makes the deployment
+of flows more uniform. While this worked whenever
+a flow was being registered, it didn't work
+when the flows were executed because the running
+agents were having trouble finding the files
+in the local file system.
+
+It may still be possible to make local work,
+but that will have to wait for more testing.
 
 
 ## Sources
