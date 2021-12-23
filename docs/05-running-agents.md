@@ -160,6 +160,87 @@ Options:
   -h, --help                      Show this message and exit.
 ```
 
+## Two Environments
+
+Imagine there is a central directory called for
+example `~/prefect`, and within here you will
+find two subdirectories, `~/prefect/production` and `~/prefect/staging`.
+
+Each of those subdirectories has a clone of the
+repository, with staging containing the main
+branch, and production the production branch.
+
+Each gets updated every 5 minutes. This may not
+be the exact location in the filesystem, but
+this is how it is implemented in principle. 
+
+## Running on CTM servers
+
+We use screens to divide the two processes,
+just so they can be easily accessed. You may
+want to run this `screen -ls` to find them.
+
+Each screen is a shell session running in the
+background, but it makes it a lot easier to
+bring to the foreground.
+
+Within the screen session, we simply go to
+`cd ~/prefect/production` or `cd ~/prefect/staging`
+(depending on what environment you want to run)
+and lastly we run the agent with these labels:
+
+Assuming we want to run a staging agent, we go
+to that directory in the file system and run this:
+
+```shell
+prefect agent local start \
+    -l atd-data04 \ 
+    -l staging \ 
+    --no-hostname-label \
+    -p <path to prefect staging in file system>
+```
+
+Basically, the first part makes sure we are
+running in local mode. The `-l` flag indicates
+we are establishing two label, one is `atd-data04`
+and the other is `staging`. These two labels
+tell prefect this agent will only run flows that
+have those two specific labels. The `-p` flag
+tells the agent where it can find the code, it
+basically overrides the default behavior.
+
+## Running in the cloud (aws, etc)
+
+The principle is the same as above, there would
+be two folders with two branches of the same repo.
+This is all assuming the server running in AWS
+is configured in a very similar way (if not exactly)
+as a CTM server.
+
+Following the same steps as above, the only
+difference would be the labeling. Imagine this
+time we want to run a production agent. To do this
+we would simply create (or find a screen session),
+then within that session we change directory to
+`cd ~/prefect/production`, and then we run this
+command:
+
+```shell
+prefect agent local start \
+    -l atd-prefect-05 \ 
+    -l production \ 
+    --no-hostname-label \
+    -p <path to prefect staging in file system>
+```
+
+Notice the labels are matching production, and the
+label is different. This tells prefect that his
+agent will specifically run any flows that match
+those two labels.
+
+**After this manner is how we target flows to run
+on a specific server and a specific environment.**
+
 ## Sources:
 
 Orchestration:
