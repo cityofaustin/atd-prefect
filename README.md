@@ -41,7 +41,7 @@ you may now run it using python:
 
 ```bash
 # Run the ETL locally
-$ python flows/flow/test.py
+$ python flows/test/test.py
 ```
 
 #### Using cloud agents
@@ -59,6 +59,8 @@ by running.
 
 ```bash
 $ export PREFECT_KEY="YOUR_PREFECT_API_KEY"
+- or -
+$ prefect auth login --key "YOUR_PREFECT_API_KEY"
 ```
 
 You can retrieve your API key by going to the prefect
