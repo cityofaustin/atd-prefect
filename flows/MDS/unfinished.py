@@ -23,6 +23,7 @@ from prefect.engine.state import Failed
 from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
 from prefect.backend import get_key_value
+from prefect.triggers import all_successful
 
 from prefect.utilities.notifications import slack_notifier
 
@@ -72,7 +73,8 @@ def process_unfinished_lime():
     name="process_unfinished_bird",
     max_retries=2,
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler]
+    state_handlers=[handler],
+    trigger=all_successful,
 )
 def process_unfinished_bird():
     response = docker.from_env().containers.run(
@@ -95,7 +97,8 @@ def process_unfinished_bird():
     name="process_unfinished_wheels",
     max_retries=2,
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler]
+    state_handlers=[handler],
+    trigger=all_successful,
 )
 def process_unfinished_wheels():
     response = docker.from_env().containers.run(
@@ -118,7 +121,8 @@ def process_unfinished_wheels():
     name="process_unfinished_scoobi",
     max_retries=2,
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler]
+    state_handlers=[handler],
+    trigger=all_successful,
 )
 def process_unfinished_scoobi():
     response = docker.from_env().containers.run(
