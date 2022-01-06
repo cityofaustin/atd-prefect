@@ -21,6 +21,7 @@ from prefect.engine.state import Failed
 from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
 from prefect.backend import get_key_value
+from prefect.triggers import all_successful
 
 from prefect.utilities.notifications import slack_notifier
 
@@ -66,7 +67,8 @@ def provider_extract():
     name="provider_sync_db",
     max_retries=3,
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler]
+    state_handlers=[handler],
+    trigger=all_successful,
 )
 def provider_sync_db():
     response = docker.from_env().containers.run(
@@ -91,7 +93,8 @@ def provider_sync_db():
     name="provider_sync_socrata",
     max_retries=3,
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler]
+    state_handlers=[handler],
+    trigger=all_successful,
 )
 def provider_sync_socrata():
     response = docker.from_env().containers.run(
