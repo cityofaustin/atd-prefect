@@ -36,7 +36,7 @@ def third():
 # Next, we define the flow (equivalent to a DAG).
 # Notice we use the label "test" to match this flow to an agent.
 with Flow(
-    f"test_{current_environment}",
+    f"skillshare_{current_environment}",
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/test/skillshare.py",
