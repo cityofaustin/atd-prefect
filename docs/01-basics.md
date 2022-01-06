@@ -289,7 +289,7 @@ For one, it enables us to specify in what repository
 the code lives, and also the branch. This is helpful
 because it downloads the file from the repo/branch
 before execution. While downloading the file is
-not necessary for us, it makes it very helful when
+not necessary for us, it makes it very helpful when
 running in remote/cloud environments.
 
 For us to use the class, we simply declare the
@@ -319,13 +319,14 @@ the flows I ended up keeping them like that.
 
 When registering a flow, the register command captures
 the context of the file, including where in the
-file system it lives. This is presents a problem
+file system it lives. This presents a problem
 when you need to distribute flows to cloud servers
-that have little configuration or where the file system
+that have little configuration and where the file system
 looks very different from local.
 
 Unfortunately, using the local storage class is a 
-bit cumbersome and difficult to work with. One
+bit cumbersome and difficult to work with in multiple
+environments (when managing the context metadata). One
 attempt I made to make it work was to develop
 a docker container that makes the deployment
 of flows more uniform. While this worked whenever
@@ -334,9 +335,10 @@ when the flows were executed because the running
 agents were having trouble finding the files
 in the local file system.
 
-It may still be possible to make local work,
-but that will have to wait for more testing.
-
+It may still be possible to make local work, and
+it would solve the problem about having extra
+configuration settings when using the GithHub
+storage class.
 
 ## Sources
 Flow:
