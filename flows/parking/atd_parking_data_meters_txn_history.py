@@ -44,10 +44,11 @@ prev_execution_key = f"atd_parking_data_meters_prev_exec_production"
 prev_execution_date_success = get_key_value(prev_execution_key)
 start_date = prev_execution_date_success if prev_execution_date_success else "2021-12-25"
 
+
 # Retrieve the provider's data
 @task(
     name="parking_transaction_history_to_s3",
-    max_retries=2,
+    max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler]
