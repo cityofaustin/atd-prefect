@@ -11,6 +11,7 @@ import os
 from prefect import Flow
 from prefect.storage import GitHub
 from prefect.run_configs import UniversalRun
+from prefect.backend import get_key_value
 
 # Shell
 from prefect.tasks.shell import ShellTask
@@ -18,9 +19,7 @@ from prefect.tasks.shell import ShellTask
 # First, we must always define the current environment, and default to staging:
 current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 
-environment_variables = {
-    "MESSAGE": "HELLO WORLD"
-}
+environment_variables = get_key_value(key=f"test_kv_staging")
 
 shell_task = ShellTask(
     name="shell_task",
