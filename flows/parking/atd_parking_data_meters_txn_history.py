@@ -8,7 +8,6 @@ Labels: atd-data02, parking
 """
 
 import os
-import pdb
 
 import docker
 import prefect
@@ -22,6 +21,7 @@ from prefect.engine.state import Failed
 from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
 from prefect.backend import set_key_value, get_key_value
+from prefect.triggers import all_successful
 
 from prefect.utilities.notifications import slack_notifier
 
@@ -44,10 +44,11 @@ prev_execution_key = f"atd_parking_data_meters_prev_exec_production"
 prev_execution_date_success = get_key_value(prev_execution_key)
 start_date = prev_execution_date_success if prev_execution_date_success else "2021-12-25"
 
+
 # Retrieve the provider's data
 @task(
     name="parking_transaction_history_to_s3",
-    max_retries=2,
+    max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler]
@@ -70,10 +71,11 @@ def parking_transaction_history_to_s3():
 # Sync the data with the database
 @task(
     name="parking_payment_history_to_s3",
-    max_retries=2,
+    max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler]
+    state_handlers=[handler],
+    trigger=all_successful
 )
 def parking_payment_history_to_s3():
     response = docker.from_env().containers.run(
@@ -90,11 +92,10 @@ def parking_payment_history_to_s3():
     return response
 
 
-@task
+@task(trigger=all_successful)
 def update_last_exec_time():
     new_date = datetime.today().strftime('%Y-%m-%d')
     set_key_value(key=prev_execution_key, value=new_date)
-
 
 
 # Next, we define the flow (equivalent to a DAG).
