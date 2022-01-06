@@ -71,10 +71,11 @@ def parking_transaction_history_to_s3():
 # Sync the data with the database
 @task(
     name="parking_payment_history_to_s3",
-    max_retries=2,
+    max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler]
+    state_handlers=[handler],
+    trigger=all_successful
 )
 def parking_payment_history_to_s3():
     response = docker.from_env().containers.run(
