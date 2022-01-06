@@ -92,11 +92,10 @@ def parking_payment_history_to_s3():
     return response
 
 
-@task
+@task(trigger=all_successful)
 def update_last_exec_time():
     new_date = datetime.today().strftime('%Y-%m-%d')
     set_key_value(key=prev_execution_key, value=new_date)
-
 
 
 # Next, we define the flow (equivalent to a DAG).
