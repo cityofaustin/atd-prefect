@@ -21,6 +21,7 @@ from prefect.engine.state import Failed
 from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
 from prefect.backend import set_key_value, get_key_value
+from prefect.triggers import all_successful
 
 from prefect.utilities.notifications import slack_notifier
 
