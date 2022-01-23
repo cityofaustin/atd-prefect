@@ -1,7 +1,7 @@
 # Directories
 .idea
+venv
 
 # Files
 *.md5sum
-
-venv
+*.env
