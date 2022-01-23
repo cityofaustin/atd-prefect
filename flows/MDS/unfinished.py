@@ -116,7 +116,7 @@ def process_unfinished_wheels():
     return response
 
 
-# Reprocess unfinished tasks for wheels
+# Reprocess unfinished tasks for scoobi
 @task(
     name="process_unfinished_scoobi",
     max_retries=2,
@@ -129,6 +129,30 @@ def process_unfinished_scoobi():
         image=docker_image,
         working_dir="/app",
         command=f"./provider_runtool.py --provider 'scoobi' --time-min '{time_min}' --time-max '{time_max}' --incomplete-only --no-logs",
+        environment=environment_variables,
+        volumes=None,
+        remove=True,
+        detach=False,
+        stdout=True
+    ).decode("utf-8")
+    logger = prefect.context.get("logger")
+    logger.info(response)
+    return response
+
+
+# Reprocess unfinished tasks for free2move
+@task(
+    name="process_unfinished_free2move",
+    max_retries=2,
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
+    trigger=all_successful,
+)
+def process_unfinished_free2move():
+    response = docker.from_env().containers.run(
+        image=docker_image,
+        working_dir="/app",
+        command=f"./provider_runtool.py --provider 'free2move' --time-min '{time_min}' --time-max '{time_max}' --incomplete-only --no-logs",
         environment=environment_variables,
         volumes=None,
         remove=True,
