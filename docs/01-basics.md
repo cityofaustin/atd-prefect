@@ -113,7 +113,7 @@ The next step is to actually run the flow. For this,
 we are going to use an existing flow:
 
 ```bash
-$ python flow/test/test.py
+$ python flows/test/test.py
 ```
 
 ## Environments
