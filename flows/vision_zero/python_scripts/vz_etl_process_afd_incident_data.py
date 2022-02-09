@@ -9,6 +9,8 @@ import boto3
 import pandas
 import mailparser
 import email
+import psycopg2
+from psycopg2 import Error
 
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -52,21 +54,56 @@ def get_most_recent_file(bucket, client):
     return newest_object
 
 
+def upload_data_to_postgres(data):
+    try:
+        connection = psycopg2.connect(
+            user=DB_USERNAME,
+            password=DB_PASSWORD,
+            host=DB_HOSTNAME,
+            port=DB_PORT,
+            database=DB_DATABASE,
+        )
+        cursor = connection.cursor()
+        # cursor.execute("TRUNCATE afd__incidents;")
+        cursor.close()
+    except (Exception, Error) as error:
+        print("Error while connecting to PostgreSQL", error)
+
+    print(data.shape)
+    cursor = connection.cursor()
+    for index, row in data.iterrows():
+        if not index % 1000:
+            print(str(index) + ":")
+
+        if isinstance(row["X"], str):
+            continue
+        sql = "insert into afd__incidents (incident_number, ems_incident_number, call_datetime, calendar_year, jurisdiction, address, problem, flagged_incs, geometry) values (%s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_Point(%s, %s), 4326));"
+        values = [
+            row["Incident_Number"],
+            row["EMS_IncidentNumber"],
+            row["Inc_Date"].strftime("%Y-%m-%d")
+            + " "
+            + row["Inc_Time"].strftime("%H:%M:%S"),
+            row["CalendarYear"],
+            row["Jurisdiction"],
+            row["CAD_Address"],
+            row["CAD_Problem"],
+            row["Flagged_Incs"],
+            row["X"],
+            row["Y"],
+        ]
+
+        cursor.execute(sql, values)
+    connection.commit()
+
+    if connection:
+        connection.close()
+        print("PostgreSQL connection is closed")
+
+
 def get_timestamp():
     current = datetime.now()
-    return (
-        str(current.year)
-        + "-"
-        + str(current.month)
-        + "-"
-        + str(current.day)
-        + "-"
-        + str(current.hour)
-        + "-"
-        + str(current.minute)
-        + "-"
-        + str(current.second)
-    )
+    return f"{str(current.year)}-{str(current.month)}-{str(current.day)}-{str(current.hour)}-{str(current.minute)}-{str(current.second)}"
 
 
 def main():
@@ -75,14 +112,15 @@ def main():
 
     # Initialize AWS clients and connect to S3 resources
     # aws_s3_resource = boto3.resource("s3")
-    pp.pprint("Connecting to AWS S3 bucket...")
     # my_bucket = aws_s3_resource.Bucket("atd-afd-incident-data")
+    pp.pprint("Connecting to AWS S3 bucket...")
     aws_s3_client = boto3.client("s3")
 
     newest_object = get_most_recent_file("atd-afd-incident-data", aws_s3_client)
     contents = newest_object["Body"].read().decode("utf-8")
 
-    # Given the s3 object content is the ses email, get the message content and attachment using email package
+    # Given the s3 object content is the SES email,
+    # get the message content and attachment using email package
     msg = email.message_from_string(contents)
     attachment = msg.get_payload()[1]
     # Write the attachment to a temp location
@@ -101,9 +139,11 @@ def main():
         pp.pprint("The file was not found")
 
     # Extract the csv from email
-    data = pandas.read_excel("/tmp/attach.xlsx")
+    data = pandas.read_excel("/tmp/attach.xlsx", header=0)
 
-    pp.pprint(data)
+    # TODO: Trim data to last 60 days
+
+    upload_data_to_postgres(data)
 
     # Clean up the file from temp location
     os.remove("/tmp/attach.xlsx")
