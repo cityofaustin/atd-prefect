@@ -77,6 +77,7 @@ def upload_data_to_postgres(data):
 
         if isinstance(row["X"], str):
             continue
+        # TODO: update this to upsert instead of insert
         sql = "insert into afd__incidents (incident_number, ems_incident_number, call_datetime, calendar_year, jurisdiction, address, problem, flagged_incs, geometry) values (%s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_Point(%s, %s), 4326));"
         values = [
             row["Incident_Number"],
@@ -142,6 +143,8 @@ def main():
     data = pandas.read_excel("/tmp/attach.xlsx", header=0)
 
     # TODO: Trim data to last 60 days
+    # Learned from AFD that its rare for incident updates to change after the first 30 days.
+    # Allowing 60 days just to be safe.
 
     upload_data_to_postgres(data)
 
