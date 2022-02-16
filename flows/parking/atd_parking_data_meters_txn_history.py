@@ -42,7 +42,29 @@ environment_variables = get_key_value(key=f"atd_parking_data_meters")
 # Last execution date
 prev_execution_key = f"atd_parking_data_meters_prev_exec_production"
 prev_execution_date_success = get_key_value(prev_execution_key)
-start_date = prev_execution_date_success if prev_execution_date_success else "2021-12-25"
+
+
+def get_start_date(prev_execution_date_success):
+    """Creates a start date 7 days before the date of the last successful run of the flow 
+
+    Args:
+        prev_execution_date_success (string): Date of the last successful run of the flow 
+        
+    Returns:
+        list: The start date (string) which is 7 days before the last run. 
+        Defaults to 2021-12-25 if none were previously successful. 
+    """
+    if prev_execution_date_success:
+        # parse CLI arg date
+        start_date = datetime.strptime(prev_execution_date_success, "%Y-%m-%d")
+        start_date = start_date - timedelta(days=7)
+
+        return start_date.strftime("%Y-%m-%d")
+    else:
+        return "2021-12-25"
+
+
+start_date = get_start_date(prev_execution_date_success)
 
 
 # Retrieve the provider's data
@@ -51,19 +73,23 @@ start_date = prev_execution_date_success if prev_execution_date_success else "20
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler]
+    state_handlers=[handler],
 )
 def parking_transaction_history_to_s3():
-    response = docker.from_env().containers.run(
-        image=docker_image,
-        working_dir=None,
-        command=f"python txn_history.py -v --report transactions --env {env} --start {start_date}",
-        environment=environment_variables,
-        volumes=None,
-        remove=True,
-        detach=False,
-        stdout=True
-    ).decode("utf-8")
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python txn_history.py -v --report transactions --env {env} --start {start_date}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
     logger.info(response)
     return response
 
@@ -75,26 +101,30 @@ def parking_transaction_history_to_s3():
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
-    trigger=all_successful
+    trigger=all_successful,
 )
 def parking_payment_history_to_s3():
-    response = docker.from_env().containers.run(
-        image=docker_image,
-        working_dir=None,
-        command=f"python txn_history.py -v --report payments --env {env} --start {start_date}",
-        environment=environment_variables,
-        volumes=None,
-        remove=True,
-        detach=False,
-        stdout=True
-    ).decode("utf-8")
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python txn_history.py -v --report payments --env {env} --start {start_date}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
     logger.info(response)
     return response
 
 
 @task(trigger=all_successful)
 def update_last_exec_time():
-    new_date = datetime.today().strftime('%Y-%m-%d')
+    new_date = datetime.today().strftime("%Y-%m-%d")
     set_key_value(key=prev_execution_key, value=new_date)
 
 
@@ -111,15 +141,13 @@ with Flow(
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
-    run_config=UniversalRun(
-        labels=[current_environment, "atd-data02"]
-    ),
-    schedule=Schedule(clocks=[CronClock("35 3 * * *")])
+    run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
+    schedule=Schedule(clocks=[CronClock("35 3 * * *")]),
 ) as flow:
     flow.chain(
         parking_transaction_history_to_s3,
         parking_payment_history_to_s3,
-        update_last_exec_time
+        update_last_exec_time,
     )
 
 
