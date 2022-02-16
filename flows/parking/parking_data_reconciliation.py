@@ -184,6 +184,62 @@ def matching_transactions():
     return response
 
 
+# Uploading payments records to socrata dataset
+@task(
+    name="payments_to_socrata",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
+    trigger=all_successful,
+)
+def payments_to_socrata():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python parking_socrata.py --dataset payments",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
+# Uploading Fiserv records to socrata dataset
+@task(
+    name="fiserv_to_socrata",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
+    trigger=all_successful,
+)
+def fiserv_to_socrata():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python parking_socrata.py --dataset fiserv",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
 @task(trigger=all_successful)
 def update_last_exec_time():
     new_date = datetime.today().strftime("%Y-%m-%d")
@@ -204,13 +260,15 @@ with Flow(
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
     run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
-    schedule=Schedule(clocks=[CronClock("30 5 * * *")]),
+    schedule=Schedule(clocks=[CronClock("00 5 * * *")]),
 ) as flow:
     flow.chain(
         fiserv_email_parse,
         fiserv_emails_to_db,
         payment_csv_to_db,
         matching_transactions,
+        payments_to_socrata,
+        fiserv_to_socrata,
         update_last_exec_time,
     )
 
