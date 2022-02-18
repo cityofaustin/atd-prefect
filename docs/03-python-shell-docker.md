@@ -27,7 +27,7 @@ shell_task = ShellTask(
 
 ## Python
 
-Running python is not as different, we use 
+Running python is not that different, we use 
 the same ShellTask class and we mix it up:
 
 ```python

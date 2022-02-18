@@ -26,7 +26,7 @@ Whenever you have a key, you will need to export it like so:
 $ export PREFECT__CLOUD__API_KEY="<YOUR-KEY>"
 ```
 
-If you will be using agents, you may want to run this command:
+If you will be using agents, you may instead want to run this command:
 
 ```shell
 $ prefect auth login --key <YOUR-KEY>
@@ -113,7 +113,7 @@ The next step is to actually run the flow. For this,
 we are going to use an existing flow:
 
 ```bash
-$ python flow/test/test.py
+$ python flows/test/test.py
 ```
 
 ## Environments
@@ -136,14 +136,14 @@ you have the option to register the flow directly
 from your machine, or you can let the GitHub Actions
 do it for you.
 
-What happens when you register a flow? From Prefect, we can read:
+What happens when you register a flow? From Prefect, we read:
 
 > When you register a Flow, your code is securely stored on your infrastructure — your code never leaves your execution environment and is never sent to Prefect Cloud. Instead, Flow metadata is sent to Prefect Cloud for scheduling and orchestration.
 
 To let GH actions register the file just merge
 your file into the github main branch. For specific
 details about how to work the branches and PRs world
-go to the DevOps section of this documentation.
+go to the DevOps section (page no. 10) of this documentation.
 
 To register the flow yourself, there is the `prefect register` command:
 
