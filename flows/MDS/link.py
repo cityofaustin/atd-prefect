@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from prefect import Flow, task
 from prefect.storage import GitHub
 from prefect.run_configs import UniversalRun
-from prefect.engine.state import Failed
+from prefect.engine.state import Failed, TriggerFailed
 from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
 from prefect.backend import get_key_value
@@ -29,7 +29,7 @@ from prefect.utilities.notifications import slack_notifier
 current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 
 # Set up slack fail handler
-handler = slack_notifier(only_states=[Failed])
+handler = slack_notifier(only_states=[Failed, TriggerFailed])
 
 # Notice how test_kv is an object that contains our data as a dictionary:
 mds_provider = "link"
