@@ -40,7 +40,7 @@ def first():
 email_task = EmailTask(
     name="email_task",
     subject="Test from ATD",
-    msg=str(Parameter('task_results', "empty")),
+    msg="this is a test",
     email_to="chia.berry@austintexas.gov",  # <- Type your email here
     email_from=email_config["email_from"],
     smtp_server=email_config["smtp_server"],
@@ -73,7 +73,6 @@ with Flow(
     result=PrefectResult()
 ) as first_flow:
     email_data = first()
-    print(first_flow.serialize()['tasks'])
 
 
 with Flow(
@@ -93,10 +92,8 @@ with Flow(
 ) as second_flow:
     first_flow_run_id = create_flow_run(flow_name=first_flow.name)
     first_data = get_task_run_result(first_flow_run_id, task_slug="first-slug-copy")
-    # email_message = Parameter("email_message", default="there was nothing")
-    # transform_and_show(first_data)
-    # email_task(task_args=dict(msg=str(first_data)))
-    second_flow.add_edge(first_data, email_task(task_args=dict(msg=str(first_data))))
+    transform_and_show(first_data)
+    second_flow.add_edge(first_data, email_task(task_args=dict(msg_plain=str(first_data))))
 
 
 if __name__ == "__main__":
