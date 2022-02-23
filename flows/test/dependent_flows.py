@@ -53,11 +53,11 @@ with Flow(
     # Postfix the name of the flow with the environment it belongs to
     f"dependent_flow_one_{current_environment}",
     # Let's configure the agents to download the file from this repo
-    # storage=GitHub(
-    #     repo="cityofaustin/atd-prefect",
-    #     path="flows/test/dependent_flows.py",
-    #     ref=current_environment.replace("staging", "main"),  # The branch name
-    # ),
+    storage=GitHub(
+        repo="cityofaustin/atd-prefect",
+        path="flows/test/dependent_flows.py",
+        ref="7368-knack-banner",  # The branch name
+    ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
     run_config=UniversalRun(
@@ -71,11 +71,11 @@ with Flow(
     # Postfix the name of the flow with the environment it belongs to
     f"dependent_flows_email_{current_environment}",
     # Let's configure the agents to download the file from this repo
-    # storage=GitHub(
-    #     repo="cityofaustin/atd-prefect",
-    #     path="flows/test/dependent_flows.py",
-    #     ref=current_environment.replace("staging", "main"),  # The branch name
-    # ),
+    storage=GitHub(
+        repo="cityofaustin/atd-prefect",
+        path="flows/test/dependent_flows.py",
+        ref="7368-knack-banner",  # The branch name
+    ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
     run_config=UniversalRun(
