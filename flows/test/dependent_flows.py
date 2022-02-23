@@ -92,8 +92,7 @@ with Flow(
 ) as second_flow:
     first_flow_run_id = create_flow_run(flow_name=first_flow.name)
     first_data = get_task_run_result(first_flow_run_id, task_slug="first-slug-copy")
-    transform_and_show(first_data)
-    second_flow.add_edge(first_data, email_task(task_args=dict(msg_plain=str(first_data))))
+    second_flow.add_edge(first_data, email_task(msg_plain=first_data))
 
 
 if __name__ == "__main__":
