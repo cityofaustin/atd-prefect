@@ -9,13 +9,14 @@ Labels: test
 
 import os
 import prefect
+import json
 
 # Prefect
-from prefect import Flow, task, Parameter
+from prefect import Flow, task
 from prefect.tasks.prefect import create_flow_run, get_task_run_result
 from prefect.storage import GitHub
 from prefect.run_configs import UniversalRun
-from prefect.engine.results import PrefectResult, LocalResult
+from prefect.engine.results import PrefectResult
 from prefect.backend import get_key_value
 
 from prefect.tasks.notifications.email_task import EmailTask
@@ -33,7 +34,7 @@ email_config = get_key_value(key="aws_email_config")
 @task(name="First", result=PrefectResult(), slug="first-slug")
 def first():
     logger = prefect.context.get("logger")
-    logger.info("ONE!!!")
+    logger.info("First Task")
     return {"users": "thing"}
 
 
@@ -41,7 +42,7 @@ email_task = EmailTask(
     name="email_task",
     subject="Test from ATD",
     msg="this is a test",
-    email_to="chia.berry@austintexas.gov",  # <- Type your email here
+    email_to=email_config["email_to"],  # <- Type your email here
     email_from=email_config["email_from"],
     smtp_server=email_config["smtp_server"],
     smtp_port=email_config["smtp_port"],
@@ -51,9 +52,9 @@ email_task = EmailTask(
 
 
 @task(log_stdout=True)
-def transform_and_show(email_data):
-    print(f"Got: {email_data!r}")
-    return email_data
+def format_dict(flow_data):
+    print(f"Got: {flow_data!r}")
+    return json.dumps(flow_data)
 
 
 with Flow(
@@ -92,7 +93,10 @@ with Flow(
 ) as second_flow:
     first_flow_run_id = create_flow_run(flow_name=first_flow.name)
     first_data = get_task_run_result(first_flow_run_id, task_slug="first-slug-copy")
-    second_flow.add_edge(first_data, email_task(msg_plain=first_data))
+    # The easiest why to get a task slug is by printing flow.serialize()['tasks']
+    # So for example I printed first_flow.serialize() and found the slugs in the tasks from my first flow
+    formatted_data = format_dict(first_data)
+    second_flow.chain(first_data, formatted_data, email_task(msg_plain=formatted_data))
 
 
 if __name__ == "__main__":
