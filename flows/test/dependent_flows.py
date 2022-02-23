@@ -49,6 +49,13 @@ email_task = EmailTask(
     attachments=None
 )
 
+
+@task(log_stdout=True)
+def transform_and_show(email_data):
+    print(f"Got: {email_data!r}")
+    return email_data
+
+
 with Flow(
     # Postfix the name of the flow with the environment it belongs to
     f"dependent_flow_one_{current_environment}",
@@ -65,8 +72,8 @@ with Flow(
     ),
     result=PrefectResult()
 ) as first_flow:
-    data = first()
-    flow_run = create_flow_run(flow_name="dependent_flows_email_staging", project_name="test", parameters={"task_results": data})
+    email_data = first()
+
 
 with Flow(
     # Postfix the name of the flow with the environment it belongs to
@@ -83,14 +90,12 @@ with Flow(
         labels=[current_environment, "atd-data02"]
     ),
 ) as second_flow:
-    #email_msg = Parameter('task_results', "empty")
-    second_flow.add_task(email_task)
-    #(task_args=dict(msg=email_msg))
-    # first_flow_run_id = create_flow_run(flow_name=first_flow.name)
-    # first_data = get_task_run_result(first_flow_run_id, task_slug="first-slug")
-    # # email_message = Parameter("email_message", default="there was nothing")
-    # email_task(task_args=dict(msg=str({"test":"one"})))
+    first_flow_run_id = create_flow_run(flow_name=first_flow.name)
+    first_data = get_task_run_result(first_flow_run_id, task_slug="first-slug")
+    # email_message = Parameter("email_message", default="there was nothing")
+    transform_and_show(first_data)
+    email_task(task_args=dict(msg=str(first_data)))
 
 
 if __name__ == "__main__":
-    first_flow.run()
+    second_flow.run()
