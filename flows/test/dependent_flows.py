@@ -40,7 +40,7 @@ def first():
 email_task = EmailTask(
     name="email_task",
     subject="Test from ATD",
-    msg="Hello this is a test from atd!",
+    msg=str(Parameter('task_results', "empty")),
     email_to="chia.berry@austintexas.gov",  # <- Type your email here
     email_from=email_config["email_from"],
     smtp_server=email_config["smtp_server"],
@@ -83,8 +83,9 @@ with Flow(
         labels=[current_environment, "atd-data02"]
     ),
 ) as second_flow:
-    email_msg = Parameter('task_results', "empty")
-    email_task(task_args=dict(msg=email_msg))
+    #email_msg = Parameter('task_results', "empty")
+    second_flow.add_task(email_task)
+    #(task_args=dict(msg=email_msg))
     # first_flow_run_id = create_flow_run(flow_name=first_flow.name)
     # first_data = get_task_run_result(first_flow_run_id, task_slug="first-slug")
     # # email_message = Parameter("email_message", default="there was nothing")
