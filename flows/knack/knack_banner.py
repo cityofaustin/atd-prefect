@@ -32,6 +32,7 @@ handler = slack_notifier(only_states=[Failed, TriggerFailed]) # todo, add a diff
 docker_image = f"atddocker/atd-knack-banner:{current_environment}"
 environment_variables = get_key_value(key=f"atd_knack_banner_{current_environment}")
 
+
 # Retrieve the provider's data
 @task(
     name="HR knack banner integration",
@@ -53,6 +54,7 @@ def knack_banner_update_employees():
     logger = prefect.context.get("logger")
     logger.info(response)
     return response
+
 
 with Flow(
     f"atd_knack_banner_{current_environment}",

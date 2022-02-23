@@ -41,8 +41,7 @@ def first():
 email_task = EmailTask(
     name="email_task",
     subject="Test from ATD",
-    msg="this is a test",
-    email_to=email_config["email_to"],  # <- Type your email here
+    email_to=email_config["test_email"],  # <- Type your email here
     email_from=email_config["email_from"],
     smtp_server=email_config["smtp_server"],
     smtp_port=email_config["smtp_port"],
@@ -96,7 +95,7 @@ with Flow(
     # The easiest why to get a task slug is by printing flow.serialize()['tasks']
     # So for example I printed first_flow.serialize() and found the slugs in the tasks from my first flow
     formatted_data = format_dict(first_data)
-    second_flow.chain(first_data, formatted_data, email_task(msg_plain=formatted_data))
+    second_flow.chain(first_data, formatted_data, email_task(msg=formatted_data))
 
 
 if __name__ == "__main__":
