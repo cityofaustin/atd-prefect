@@ -11,7 +11,7 @@ import os
 import prefect
 
 # Prefect
-from prefect import Flow, task
+from prefect import Flow, task, Parameter
 from prefect.tasks.prefect import create_flow_run, get_task_run_result
 from prefect.storage import GitHub
 from prefect.run_configs import UniversalRun
@@ -65,7 +65,8 @@ with Flow(
     ),
     result=PrefectResult()
 ) as first_flow:
-    first_result = first()
+    data = first()
+    flow_run = create_flow_run(flow_name="dependent_flows_email_staging", project_name="test", parameters={"task_results": data})
 
 with Flow(
     # Postfix the name of the flow with the environment it belongs to
@@ -82,11 +83,13 @@ with Flow(
         labels=[current_environment, "atd-data02"]
     ),
 ) as second_flow:
-    first_flow_run_id = create_flow_run(flow_name=first_flow.name)
-    first_data = get_task_run_result(first_flow_run_id, task_slug="first-slug")
-    # email_message = Parameter("email_message", default="there was nothing")
-    email_task(task_args=dict(msg=first_data))
+    email_msg = Parameter('task_results', "empty")
+    email_task(task_args=dict(msg=email_msg))
+    # first_flow_run_id = create_flow_run(flow_name=first_flow.name)
+    # first_data = get_task_run_result(first_flow_run_id, task_slug="first-slug")
+    # # email_message = Parameter("email_message", default="there was nothing")
+    # email_task(task_args=dict(msg=str({"test":"one"})))
 
 
 if __name__ == "__main__":
-    second_flow.run()
+    first_flow.run()
