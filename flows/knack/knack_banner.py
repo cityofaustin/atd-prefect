@@ -32,7 +32,6 @@ handler = slack_notifier(only_states=[Failed, TriggerFailed]) # todo, add a diff
 docker_image = f"atddocker/atd-knack-banner:{current_environment}"
 environment_variables = get_key_value(key=f"atd_knack_banner_{current_environment}")
 
-
 # Retrieve the provider's data
 @task(
     name="HR knack banner integration",
@@ -63,7 +62,7 @@ with Flow(
         ref=current_environment.replace("staging", "main"),
     ),
     run_config=UniversalRun(
-        labels=[current_environment, "atd-data04"]
+        labels=[current_environment, "atd-data02"]
     ),
     # schedule=Schedule(clocks=[CronClock("45 13 * * *")])
 ) as flow:

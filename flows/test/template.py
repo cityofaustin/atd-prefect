@@ -6,7 +6,7 @@ Description: The purpose of this file is to serve as a template to
     establish a pattern for the implementation of flows moving forward.
     It's the very early stages of development, and it is bound to change a
     lot as we learn and move forward.
-Schedule: "*/5 * * * *"
+Schedule: "*/5 * * * *" # UTC time
 Labels: test
 """
 
