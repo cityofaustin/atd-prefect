@@ -116,11 +116,11 @@ with Flow(
     ),
 ) as send_email_flow:
     get_data_flow_run_id = create_flow_run(flow_name=get_data_flow.name)
-    wait_for_data_flow_run = wait_for_flow_run(get_data_flow_run_id, raise_final_state="True")
+    # wait_for_data_flow_run = wait_for_flow_run(get_data_flow_run_id, raise_final_state="True")
     script_result = get_task_run_result(get_data_flow_run_id, task_slug="knack-banner-copy")
     formatted_data = format_email_body(script_result)
     # explicitly wait for previous flow to complete before getting task run result
-    script_result.set_upstream(wait_for_data_flow_run)
+    # script_result.set_upstream(wait_for_data_flow_run)
     send_email_flow.chain(script_result, formatted_data, email_task(msg=formatted_data))
 
 
