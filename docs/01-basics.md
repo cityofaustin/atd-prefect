@@ -221,7 +221,7 @@ before execution. While downloading the file is
 not necessary for us, it makes it very helpful when
 running in remote/cloud environments.
 
-For us to use the class, we simply declare the
+For us to use the class, declare the
 `storage=` argument in the Flow class constructor:
 
 ```python
@@ -237,9 +237,8 @@ with Flow(
 
 In the GitHub class constructor, the repo argument
 will likely never change, as it will almost always be
-the same. Ref will always be production, or main, so
-this one too will never change. However, `path` must
-always have the name of this file. At some point
+the same. Ref can be production, main, or your branch. However, `path` must
+always have the name of the file containing your flow(s). At some point
 I attempted to automate each of those values, but
 I always ended up having problems when registering 
 the flows I ended up keeping them like that.

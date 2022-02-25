@@ -50,7 +50,6 @@ environment_variables = get_key_value(key=f"atd_knack_banner_{current_environmen
     slug="knack-banner"
 )
 def knack_banner_update_employees():
-    # https://stackoverflow.com/questions/54000979/docker-py-how-to-get-exit-code-returned-by-process-running-inside-container
     client = docker.from_env()
     container = client.containers.run(
         image=docker_image,
@@ -58,21 +57,20 @@ def knack_banner_update_employees():
         command=f"./atd-knack-banner/update_employees.py",
         environment=environment_variables,
         volumes=None,
-        # remove=True,
         detach=True,
         stdout=True
-    )#.decode("utf-8")
+    )
     result = container.wait()
     container.remove()
     logger = prefect.context.get("logger")
     logger.info(result)
     return result
-    # return response
 
 
+# Configure email task
 email_task = EmailTask(
     name="email_task",
-    subject="Test from ATD",
+    subject="HR updates from Banner",
     email_to="chia.berry@austintexas.gov",  # <- Type your email here
     email_from=email_config["email_from"],
     smtp_server=email_config["smtp_server"],
@@ -83,6 +81,7 @@ email_task = EmailTask(
 
 
 @task(log_stdout=True)
+# todo: update this formatting once knack-banner script is updated
 def format_email_body(flow_data):
     print(f"Got: {flow_data!r}")
     return json.dumps(flow_data)
@@ -106,16 +105,12 @@ with Flow(
 
 
 with Flow(
-    # Postfix the name of the flow with the environment it belongs to
     f"send_hr_email_{current_environment}",
-    # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/test/knack_banner.py",
         ref="7368-knack-banner",  # The branch name
     ),
-    # Run config will always need the current_environment
-    # plus whatever labels you need to attach to this flow
     run_config=UniversalRun(
         labels=[current_environment, "atd-data02"]
     ),
@@ -124,6 +119,7 @@ with Flow(
     wait_for_data_flow_run = wait_for_flow_run(get_data_flow_run_id, raise_final_state="True")
     script_result = get_task_run_result(get_data_flow_run_id, task_slug="knack-banner-copy")
     formatted_data = format_email_body(script_result)
+    # explicitly wait for previous flow to complete before getting task run result
     script_result.set_upstream(wait_for_data_flow_run)
     send_email_flow.chain(script_result, formatted_data, email_task(msg=formatted_data))
 

@@ -89,6 +89,8 @@ def docker_with_api():
     return response
 ```
 
+If instead you would like to get the exit code instead of the logs, set up the container like so: https://stackoverflow.com/questions/54000979/docker-py-how-to-get-exit-code-returned-by-process-running-inside-container
+
 For more details on how to run docker using the api
 follow docker-py's documentation.
 
