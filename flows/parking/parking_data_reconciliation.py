@@ -64,7 +64,7 @@ def decide_prev_month(prev_execution_date_success):
     """
     if prev_execution_date_success:
         last_date = datetime.strptime(prev_execution_date_success, "%Y-%m-%d")
-        if last_date.day < 8:
+        if last_date.day < 8 or last_date.day > 26:
             return True
         else:
             return False
