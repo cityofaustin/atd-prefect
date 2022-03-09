@@ -79,6 +79,7 @@ def knack_banner_update_employees():
       )
       .decode("utf-8")
     )
+    logger = prefect.context.get("logger")
     logger.info(response)
     return {test: "im testing"}
 
