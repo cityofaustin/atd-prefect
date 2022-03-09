@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 # Prefect
 from prefect import Flow, task
 from prefect.engine.results import PrefectResult
-from prefect.tasks.prefect import create_flow_run, get_task_run_result, wait_for_flow_run
+from prefect.tasks.prefect import create_flow_run, get_task_run_result
 from prefect.storage import GitHub
 from prefect.run_configs import UniversalRun
 from prefect.engine.state import Failed, TriggerFailed
@@ -31,7 +31,7 @@ from prefect.tasks.notifications.email_task import EmailTask
 current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "production")
 
 # Set up slack fail handler
-handler = slack_notifier(only_states=[Failed, TriggerFailed]) # todo, add a different state handler if it doesnt run at all
+handler = slack_notifier(only_states=[Failed, TriggerFailed])
 
 docker_image = f"atddocker/atd-knack-banner:{current_environment}"
 
@@ -46,7 +46,6 @@ environment_variables = get_key_value(key=f"atd_knack_banner_{current_environmen
     max_retries=3,
     retry_delay=timedelta(minutes=5),
     # state_handlers=[handler],
-    # result=PrefectResult(),
     slug="knack-banner"
 )
 def knack_banner_update_employees():
@@ -116,11 +115,8 @@ with Flow(
     ),
 ) as send_email_flow:
     get_data_flow_run_id = create_flow_run(flow_name=get_data_flow.name)
-    # wait_for_data_flow_run = wait_for_flow_run(get_data_flow_run_id, raise_final_state="True")
     script_result = get_task_run_result(get_data_flow_run_id, task_slug="knack-banner-copy")
     formatted_data = format_email_body(script_result)
-    # explicitly wait for previous flow to complete before getting task run result
-    # script_result.set_upstream(wait_for_data_flow_run)
     send_email_flow.chain(script_result, formatted_data, email_task(msg=formatted_data))
 
 
