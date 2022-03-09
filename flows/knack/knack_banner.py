@@ -19,7 +19,7 @@ from prefect.engine.results import PrefectResult
 from prefect.tasks.prefect import create_flow_run, get_task_run_result
 from prefect.storage import GitHub
 from prefect.run_configs import UniversalRun
-from prefect.engine.state import Failed, TriggerFailed
+from prefect.engine.state import Failed, TriggerFailed, Retrying
 from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
 from prefect.backend import get_key_value
