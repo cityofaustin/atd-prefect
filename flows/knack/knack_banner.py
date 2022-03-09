@@ -43,34 +43,51 @@ environment_variables = get_key_value(key=f"atd_knack_banner_{current_environmen
 # Retrieve the provider's data
 @task(
     name="HR knack banner integration",
-    max_retries=3,
+    max_retries=2,
     retry_delay=timedelta(minutes=5),
     # state_handlers=[handler],
     slug="knack-banner"
 )
 def knack_banner_update_employees():
-    client = docker.from_env()
-    container = client.containers.run(
-        image=docker_image,
-        working_dir="/app",
-        command=f"./atd-knack-banner/update_employees.py",
-        environment=environment_variables,
-        volumes=None,
-        detach=True,
-        stdout=True
+    # client = docker.from_env()
+    # container = client.containers.run(
+    #     image=docker_image,
+    #     working_dir="/app",
+    #     command=f"./atd-knack-banner/update_employees.py",
+    #     environment=environment_variables,
+    #     volumes=None,
+    #     detach=True,
+    #     stdout=True
+    # )
+    # result = container.wait()
+    # container.remove()
+    # logger = prefect.context.get("logger")
+    # logger.info(result)
+    # print("triggering a change pls")
+    # return result
+    response = (
+      docker.from_env()
+      .containers.run(
+          image=docker_image,
+          working_dir="/app",
+          command=f"./atd-knack-banner/update_employees.py",
+          environment=environment_variables,
+          volumes=None,
+          remove=True,
+          detach=False,
+          stdout=True,
+      )
+      .decode("utf-8")
     )
-    result = container.wait()
-    container.remove()
-    logger = prefect.context.get("logger")
-    logger.info(result)
-    return result
+    logger.info(response)
+    return {test: "im testing"}
 
 
 # Configure email task
 email_task = EmailTask(
     name="email_task",
     subject="HR updates from Banner",
-    email_to="chia.berry@austintexas.gov",  # <- Type your email here
+    email_to="chia.berry@austintexas.gov",
     email_from=email_config["email_from"],
     smtp_server=email_config["smtp_server"],
     smtp_port=email_config["smtp_port"],
@@ -100,7 +117,6 @@ with Flow(
     # schedule=Schedule(clocks=[CronClock("45 13 * * *")])
 ) as get_data_flow:
     email_data = knack_banner_update_employees()
-
 
 
 with Flow(
