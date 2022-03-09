@@ -31,7 +31,7 @@ from prefect.tasks.notifications.email_task import EmailTask
 current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "production")
 
 # Set up slack fail handler
-handler = slack_notifier(only_states=[Failed, TriggerFailed])
+handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
 
 docker_image = f"atddocker/atd-knack-banner:{current_environment}"
 
@@ -81,7 +81,7 @@ def knack_banner_update_employees():
     )
     logger = prefect.context.get("logger")
     logger.info(response)
-    return {test: "im testing"}
+    return {"test": "im testing"}
 
 
 # Configure email task
