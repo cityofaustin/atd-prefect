@@ -53,7 +53,7 @@ def knack_banner_update_employees():
     container = client.containers.run(
       image=docker_image,
       working_dir="/app",
-      command=f"./atd-knack-banner/update_employees.py",
+      command=f"./atd-knack-banner/update_employees.py > testfile",
       environment=environment_variables,
       volumes=None,
       detach=True,
@@ -63,8 +63,8 @@ def knack_banner_update_employees():
     container.remove()
     logger = prefect.context.get("logger")
     logger.info(result)
-    # return result
-    return {"test": "im testing"}
+    return result
+    # return {"test": "im testing"}
 
 
 # Configure email task
@@ -111,7 +111,7 @@ with Flow(
         ref="7368-knack-banner",  # The branch name
     ),
     run_config=UniversalRun(
-        labels=[current_environment, "atd-data02"]
+        labels=["test", "atd-data02"]
     ),
 ) as send_email_flow:
     get_data_flow_run_id = create_flow_run(flow_name=get_data_flow.name)
