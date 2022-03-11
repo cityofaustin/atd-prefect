@@ -62,6 +62,7 @@ def knack_banner_update_employees():
     result = container.wait()
     container.remove()
     logger = prefect.context.get("logger")
+    logger.info("***** ", os.getcwd())
     logger.info(result)
     return result
     # return {"test": "im testing"}
