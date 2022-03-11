@@ -62,7 +62,6 @@ def knack_banner_update_employees():
     logger = prefect.context.get("logger")
     logger.info(response)
     return response
-    # return {"test": "im testing"}
 
 
 # Configure email task
