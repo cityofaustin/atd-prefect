@@ -33,7 +33,7 @@ current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "production")
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
 
-docker_image = f"atddocker/atd-knack-banner:{current_environment}"
+docker_image = f"atddocker/atd-knack-banner:latest"
 
 # Retrieve the email configuration
 email_config = get_key_value(key="aws_email_config")
