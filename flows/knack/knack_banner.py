@@ -49,23 +49,19 @@ environment_variables = get_key_value(key=f"atd_knack_banner_{current_environmen
     slug="knack-banner"
 )
 def knack_banner_update_employees():
-    client = docker.from_env()
-    container = client.containers.run(
-      image=docker_image,
-      working_dir="/app",
-      command=f"./atd-knack-banner/update_employees.py > testfile",
-      environment=environment_variables,
-      volumes=None,
-      detach=True,
-      stdout=True
-    )
-    result = container.wait()
-    newlogs = container.exec_run("ls")
-    container.remove()
+    response = docker.from_env().containers.run(
+        image=docker_image,
+        working_dir="/app",
+        command=f"./atd-knack-banner/update_employees.py",
+        environment=environment_variables,
+        volumes=None,
+        remove=True,
+        detach=False,
+        stdout=True
+    ).decode("utf-8")
     logger = prefect.context.get("logger")
-    logger.info(newlogs)
-    logger.info(result)
-    return result
+    logger.info(response)
+    return response
     # return {"test": "im testing"}
 
 
