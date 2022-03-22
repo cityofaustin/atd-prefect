@@ -27,6 +27,7 @@ from prefect.triggers import all_successful
 
 from prefect.utilities.notifications import slack_notifier
 
+
 # First, we must always define the current environment, and default to staging:
 # current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 
@@ -35,12 +36,14 @@ current_environment = "test"
 # Set up slack fail handler
 # handler = slack_notifier(only_states=[Failed])
 
+docker_env = "latest"
+docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
+
 # Logger instance
 logger = prefect.context.get("logger")
 
 # Notice how test_kv is an object that contains our data as a dictionary:
 env = "prod"  # if current_environment == "production" else "staging"
-docker_image = f"atddocker/atd-parking-data-meters:{current_environment}"
 environment_variables = get_key_value(key="trail_counters")
 
 # Last execution date
@@ -110,11 +113,11 @@ with Flow(
     # Postfix the name of the flow with the environment it belongs to
     f"trail_counter_pub_{current_environment}",
     # Let's configure the agents to download the file from this repo
-    # storage=GitHub(
-    #     repo="cityofaustin/atd-prefect",
-    #     path="flows/trail/parking_data_reconciliation.py",
-    #     ref=current_environment.replace("staging", "main"),  # The branch name
-    # ),
+    storage=GitHub(
+        repo="cityofaustin/atd-ped-bike-crash",
+        path="counter_data.py",
+        ref="trail-counters",  # The branch name
+    ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
     # run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
