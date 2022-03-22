@@ -128,7 +128,7 @@ def fiserv_emails_to_db():
     return response
 
 
-# Upload the payment CSVs to postgres
+# Upload the ATD payment CSVs to postgres
 @task(
     name="payment_csv_to_db",
     max_retries=1,
@@ -144,6 +144,34 @@ def payment_csv_to_db():
             image=docker_image,
             working_dir=None,
             command=f"python payments_s3.py --lastmonth {prev_month}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
+# Upload the PARD payment CSVs to postgres
+@task(
+    name="pard_payment_csv_to_db",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
+    trigger=all_successful,
+)
+def payment_csv_to_db():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python payments_s3.py --lastmonth {prev_month} --user pard",
             environment=environment_variables,
             volumes=None,
             remove=True,

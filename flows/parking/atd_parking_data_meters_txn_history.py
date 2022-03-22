@@ -122,6 +122,34 @@ def parking_payment_history_to_s3():
     return response
 
 
+# Get pool pass data
+@task(
+    name="pard_payment_history_to_s3",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+    trigger=all_successful,
+)
+def pard_payment_history_to_s3():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python txn_history.py -v --report payments --env {env} --user pard --start {start_date}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
 @task(trigger=all_successful)
 def update_last_exec_time():
     new_date = datetime.today().strftime("%Y-%m-%d")
@@ -147,6 +175,7 @@ with Flow(
     flow.chain(
         parking_transaction_history_to_s3,
         parking_payment_history_to_s3,
+        pard_payment_history_to_s3,
         update_last_exec_time,
     )
 
