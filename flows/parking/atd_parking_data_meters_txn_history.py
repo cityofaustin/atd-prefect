@@ -27,16 +27,19 @@ from prefect.utilities.notifications import slack_notifier
 
 # First, we must always define the current environment, and default to staging:
 current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
-
+current_environment = "test"
 # Set up slack fail handler
-handler = slack_notifier(only_states=[Failed])
+# handler = slack_notifier(only_states=[Failed])
 
 # Logger instance
 logger = prefect.context.get("logger")
 
 # Notice how test_kv is an object that contains our data as a dictionary:
-env = "prod"  # if current_environment == "production" else "staging"
-docker_image = f"atddocker/atd-parking-data-meters:{current_environment}"
+env = "dev"  # if current_environment == "production" else "staging"
+
+docker_env = "latest"
+docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
+# docker_image = f"atddocker/atd-parking-data-meters:{current_environment}"
 environment_variables = get_key_value(key=f"atd_parking_data_meters")
 
 # Last execution date
@@ -65,7 +68,7 @@ def get_start_date(prev_execution_date_success):
 
 
 start_date = get_start_date(prev_execution_date_success)
-
+start_date = "2022-03-20"
 
 # Retrieve the provider's data
 @task(
@@ -73,7 +76,7 @@ start_date = get_start_date(prev_execution_date_success)
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
 )
 def parking_transaction_history_to_s3():
     response = (
@@ -100,7 +103,7 @@ def parking_transaction_history_to_s3():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def parking_payment_history_to_s3():
@@ -165,18 +168,20 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/parking/atd_parking_data_meters_txn_history.py",
-        ref=current_environment.replace("staging", "main"),  # The branch name
+        ref="pard-data-flow",  # The branch name
+        # ref=current_environment.replace("staging", "main"),  # The branch name
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
-    run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
+    # run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
+    run_config=UniversalRun(labels=["test", "ATD-JRWJXM2-D1.coacd.org"]),
     schedule=Schedule(clocks=[CronClock("35 3 * * *")]),
 ) as flow:
     flow.chain(
         parking_transaction_history_to_s3,
         parking_payment_history_to_s3,
         pard_payment_history_to_s3,
-        update_last_exec_time,
+        # update_last_exec_time,
     )
 
 

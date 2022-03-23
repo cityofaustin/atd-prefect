@@ -29,16 +29,20 @@ from prefect.utilities.notifications import slack_notifier
 
 # First, we must always define the current environment, and default to staging:
 current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
+current_environment = "test"
+
 
 # Set up slack fail handler
-handler = slack_notifier(only_states=[Failed])
+# handler = slack_notifier(only_states=[Failed])
 
 # Logger instance
 logger = prefect.context.get("logger")
 
 # Notice how test_kv is an object that contains our data as a dictionary:
-env = "prod"  # if current_environment == "production" else "staging"
-docker_image = f"atddocker/atd-parking-data-meters:{current_environment}"
+env = "dev"  # if current_environment == "production" else "staging"
+# docker_image = f"atddocker/atd-parking-data-meters:{current_environment}"
+docker_env = "latest"
+docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
 environment_variables = get_key_value(key=f"atd_parking_data_meters")
 
 # Last execution date
@@ -79,7 +83,7 @@ prev_month = decide_prev_month(prev_execution_date_success)
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
 )
 def fiserv_email_parse():
     response = (
@@ -106,7 +110,7 @@ def fiserv_email_parse():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def fiserv_emails_to_db():
@@ -134,7 +138,7 @@ def fiserv_emails_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def payment_csv_to_db():
@@ -162,10 +166,10 @@ def payment_csv_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
-def payment_csv_to_db():
+def pard_payment_csv_to_db():
     response = (
         docker.from_env()
         .containers.run(
@@ -190,7 +194,7 @@ def payment_csv_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def matching_transactions():
@@ -218,7 +222,7 @@ def matching_transactions():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def payments_to_socrata():
@@ -246,7 +250,7 @@ def payments_to_socrata():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def fiserv_to_socrata():
@@ -282,22 +286,25 @@ with Flow(
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
-        path="flows/parking/parking_data_reconciliation.py",
-        ref=current_environment.replace("staging", "main"),  # The branch name
+        path="flows/parking/atd_parking_data_meters_txn_history.py",
+        ref="pard-data-flow",  # The branch name
+        # ref=current_environment.replace("staging", "main"),  # The branch name
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
-    run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
+    # run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
+    run_config=UniversalRun(labels=["test", "ATD-JRWJXM2-D1.coacd.org"]),
     schedule=Schedule(clocks=[CronClock("00 5 * * *")]),
 ) as flow:
     flow.chain(
         fiserv_email_parse,
         fiserv_emails_to_db,
         payment_csv_to_db,
+        pard_payment_csv_to_db,
         matching_transactions,
         payments_to_socrata,
         fiserv_to_socrata,
-        update_last_exec_time,
+        # update_last_exec_time,
     )
 
 
