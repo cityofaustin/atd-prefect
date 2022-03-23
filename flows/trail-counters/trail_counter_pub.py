@@ -36,36 +36,34 @@ current_environment = "test"
 # Set up slack fail handler
 # handler = slack_notifier(only_states=[Failed])
 
-docker_env = "latest"
-docker_image = f"atddocker/atd-trail-counters:{docker_env}"
+docker_tag = "latest"
+docker_path = "atddocker/atd-trail-counters"
+docker_image = f"{docker_path}:{docker_tag}"
 
 # Logger instance
 logger = prefect.context.get("logger")
 
 # Notice how test_kv is an object that contains our data as a dictionary:
-env = "prod"  # if current_environment == "production" else "staging"
 environment_variables = get_key_value(key="trail_counters")
 
 # Last execution date
-prev_execution_key = f"parking_data_reconciliation_prev_exec"
-# prev_execution_date_success = get_key_value(prev_execution_key)
-
-prev_execution_date_success = None
+prev_execution_key = "trail_counters_prev_exec"
+prev_execution_date_success = get_key_value(prev_execution_key)
 
 
 def get_start_date(prev_execution_date_success):
-    """Creates a start date 7 days before the date of the last successful run of the flow 
+    """Creates a start date 3 days before the date of the last successful run of the flow 
     Args:
         prev_execution_date_success (string): Date of the last successful run of the flow 
         
     Returns:
-        list: The start date (string) which is 7 days before the last run. 
-        Defaults to 2021-12-25 if none were previously successful. 
+        list: The start date (string) which is 3 days before the last run. 
+        Defaults to 2014-01-01 if none were previously successful. 
     """
     if prev_execution_date_success:
         # parse CLI arg date
         start_date = datetime.strptime(prev_execution_date_success, "%Y-%m-%d")
-        start_date = start_date - timedelta(days=7)
+        start_date = start_date - timedelta(days=3)
 
         return start_date.strftime("%Y-%m-%d")
     else:
@@ -73,6 +71,21 @@ def get_start_date(prev_execution_date_success):
 
 
 start_date = get_start_date(prev_execution_date_success)
+
+
+@task(
+    name="pull_docker_image",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+)
+def pull_docker_image():
+    client = docker.from_env()
+    client.images.pull(docker_path, tag=docker_tag)
+
+    return
+
 
 # This script does everything, gets data and puts it in socrata.
 @task(
@@ -121,11 +134,13 @@ with Flow(
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
-    # run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
-    run_config=UniversalRun(labels=["test", "ATD-JRWJXM2-D1.coacd.org"]),
+    run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
+    # run_config=UniversalRun(labels=["test", "ATD-JRWJXM2-D1.coacd.org"]),
     schedule=Schedule(clocks=[CronClock("00 12 * * *")]),
 ) as flow:
-    res = trail_counter_task()
+    flow.chain(
+        pull_docker_image, trail_counter_task,
+    )
 
 if __name__ == "__main__":
     flow.run()
