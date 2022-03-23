@@ -24,6 +24,8 @@ from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
 from prefect.backend import set_key_value, get_key_value
 from prefect.triggers import all_successful
+from prefect.tasks.docker import PullImage
+
 
 from prefect.utilities.notifications import slack_notifier
 
@@ -43,6 +45,13 @@ env = "dev"  # if current_environment == "production" else "staging"
 # docker_image = f"atddocker/atd-parking-data-meters:{current_environment}"
 docker_env = "latest"
 docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
+
+image = PullImage(
+    docker_server_url="unix:///var/run/docker.sock",
+    repository="atddocker/atd-parking-data-meters",
+    tag=docker_env,
+)
+
 environment_variables = get_key_value(key=f"atd_parking_data_meters")
 
 # Last execution date
