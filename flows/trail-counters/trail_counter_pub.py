@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
 """
-Name: Parking Data Reconciliation Flows
-Description: Parse Fiserv emails then upsert the CSVs to a postgres DB.
-    Grab the payment data retrived from flowbird and upsert tha to a postgres DB.
-    Then, compare them before uploading the data to Socrata.
-Schedule: "30 5 * * *"
-Labels: atd-data02, parking
+Name: Trail Counter Data Publishing
+Description: Gets data from the public trail counter endpoint.
+    Then puts the data in a Socrata dataset.
+Schedule: "00 12 * * *"
+Labels: atd-data02, trail-counters
 """
 
 import os
@@ -29,12 +28,10 @@ from prefect.utilities.notifications import slack_notifier
 
 
 # First, we must always define the current environment, and default to staging:
-# current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
-
-current_environment = "test"
+current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 
 # Set up slack fail handler
-# handler = slack_notifier(only_states=[Failed])
+handler = slack_notifier(only_states=[Failed])
 
 docker_tag = "latest"
 docker_path = "atddocker/atd-trail-counters"
@@ -78,7 +75,7 @@ start_date = get_start_date(prev_execution_date_success)
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
 )
 def pull_docker_image():
     client = docker.from_env()
@@ -93,7 +90,7 @@ def pull_docker_image():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
 )
 def trail_counter_task():
     print("what")
@@ -135,12 +132,9 @@ with Flow(
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
     run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
-    # run_config=UniversalRun(labels=["test", "ATD-JRWJXM2-D1.coacd.org"]),
     schedule=Schedule(clocks=[CronClock("00 12 * * *")]),
 ) as flow:
-    flow.chain(
-        pull_docker_image, trail_counter_task,
-    )
+    flow.chain(pull_docker_image, trail_counter_task, update_last_exec_time)
 
 if __name__ == "__main__":
     flow.run()
