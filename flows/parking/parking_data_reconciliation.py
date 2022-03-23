@@ -41,7 +41,7 @@ current_environment = "test"
 logger = prefect.context.get("logger")
 
 # Notice how test_kv is an object that contains our data as a dictionary:
-env = "dev"  # if current_environment == "production" else "staging"
+env = "prod"  # if current_environment == "production" else "staging"
 # docker_image = f"atddocker/atd-parking-data-meters:{current_environment}"
 docker_env = "latest"
 docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
@@ -85,6 +85,21 @@ def decide_prev_month(prev_execution_date_success):
 
 
 prev_month = decide_prev_month(prev_execution_date_success)
+
+
+@task(
+    name="pull_docker_image",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+)
+def pull_docker_image():
+    client = docker.from_env()
+    client.images.pull("atddocker/atd-parking-data-meters", all_tags=True)
+
+    return
+
 
 # First, process the latest emails from Fiserv
 @task(
@@ -306,9 +321,10 @@ with Flow(
     schedule=Schedule(clocks=[CronClock("00 5 * * *")]),
 ) as flow:
     flow.chain(
+        pull_docker_image,
         # fiserv_email_parse,
         # fiserv_emails_to_db,
-        payment_csv_to_db,
+        # payment_csv_to_db,
         pard_payment_csv_to_db,
         matching_transactions,
         # payments_to_socrata,

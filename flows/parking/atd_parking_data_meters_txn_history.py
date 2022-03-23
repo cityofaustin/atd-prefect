@@ -36,7 +36,7 @@ current_environment = "test"
 logger = prefect.context.get("logger")
 
 # Notice how test_kv is an object that contains our data as a dictionary:
-env = "dev"  # if current_environment == "production" else "staging"
+env = "prod"  # if current_environment == "production" else "staging"
 
 docker_env = "latest"
 docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
@@ -77,6 +77,21 @@ def get_start_date(prev_execution_date_success):
 
 start_date = get_start_date(prev_execution_date_success)
 start_date = "2022-03-20"
+
+
+@task(
+    name="pull_docker_image",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+)
+def pull_docker_image():
+    client = docker.from_env()
+    client.images.pull("atddocker/atd-parking-data-meters", all_tags=True)
+
+    return
+
 
 # Retrieve the provider's data
 @task(
@@ -186,8 +201,9 @@ with Flow(
     schedule=Schedule(clocks=[CronClock("35 3 * * *")]),
 ) as flow:
     flow.chain(
-        parking_transaction_history_to_s3,
-        parking_payment_history_to_s3,
+        pull_docker_image,
+        # parking_transaction_history_to_s3,
+        # parking_payment_history_to_s3,
         pard_payment_history_to_s3,
         # update_last_exec_time,
     )
