@@ -83,6 +83,7 @@ start_date = get_start_date(prev_execution_date_success)
     # state_handlers=[handler],
 )
 def trail_counter_task():
+    print("what")
     response = (
         docker.from_env()
         .containers.run(
@@ -124,11 +125,7 @@ with Flow(
     run_config=UniversalRun(labels=["test", "ATD-JRWJXM2-D1.coacd.org"]),
     schedule=Schedule(clocks=[CronClock("00 12 * * *")]),
 ) as flow:
-    flow.chain(
-        trail_counter_task,
-        # update_last_exec_time,
-    )
-
+    res = trail_counter_task()
 
 if __name__ == "__main__":
     flow.run()
