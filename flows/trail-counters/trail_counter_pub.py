@@ -37,7 +37,7 @@ current_environment = "test"
 # handler = slack_notifier(only_states=[Failed])
 
 docker_env = "latest"
-docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
+docker_image = f"atddocker/atd-trail-counters:{docker_env}"
 
 # Logger instance
 logger = prefect.context.get("logger")
@@ -114,9 +114,9 @@ with Flow(
     f"trail_counter_pub_{current_environment}",
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
-        repo="cityofaustin/atd-ped-bike-crash",
-        path="counter_data.py",
-        ref="trail-counters",  # The branch name
+        repo="cityofaustin/atd-prefect",
+        path="flows/trail-counters/trail_counter_pub.py",
+        ref="trail-counters-flow",  # The branch name
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
