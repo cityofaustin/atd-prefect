@@ -46,11 +46,11 @@ env = "dev"  # if current_environment == "production" else "staging"
 docker_env = "latest"
 docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
 
-image = PullImage(
-    docker_server_url="unix:///var/run/docker.sock",
-    repository="atddocker/atd-parking-data-meters",
-    tag=docker_env,
-)
+# image = PullImage(
+#     docker_server_url="unix:///var/run/docker.sock",
+#     repository="atddocker/atd-parking-data-meters",
+#     tag=docker_env,
+# )
 
 environment_variables = get_key_value(key=f"atd_parking_data_meters")
 
@@ -295,7 +295,7 @@ with Flow(
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
-        path="flows/parking/atd_parking_data_meters_txn_history.py",
+        path="flows/parking/parking_data_reconciliation.py",
         ref="pard-data-flow",  # The branch name
         # ref=current_environment.replace("staging", "main"),  # The branch name
     ),
@@ -306,13 +306,13 @@ with Flow(
     schedule=Schedule(clocks=[CronClock("00 5 * * *")]),
 ) as flow:
     flow.chain(
-        fiserv_email_parse,
-        fiserv_emails_to_db,
+        # fiserv_email_parse,
+        # fiserv_emails_to_db,
         payment_csv_to_db,
         pard_payment_csv_to_db,
         matching_transactions,
-        payments_to_socrata,
-        fiserv_to_socrata,
+        # payments_to_socrata,
+        # fiserv_to_socrata,
         # update_last_exec_time,
     )
 
