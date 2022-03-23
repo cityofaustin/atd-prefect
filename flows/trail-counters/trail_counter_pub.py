@@ -127,7 +127,7 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/trail-counters/trail_counter_pub.py",
-        ref="trail-counters-flow",  # The branch name
+        ref="main",  # The branch name
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
