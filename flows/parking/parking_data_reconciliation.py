@@ -43,7 +43,7 @@ logger = prefect.context.get("logger")
 # Notice how test_kv is an object that contains our data as a dictionary:
 env = "prod"  # if current_environment == "production" else "staging"
 # docker_image = f"atddocker/atd-parking-data-meters:{current_environment}"
-docker_env = "latest"
+docker_env = "test"
 docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
 
 # image = PullImage(
@@ -317,18 +317,18 @@ with Flow(
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
     # run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
-    run_config=UniversalRun(labels=["test", "ATD-JRWJXM2-D1.coacd.org"]),
+    run_config=UniversalRun(labels=["test", "atd-data02"]),
     schedule=Schedule(clocks=[CronClock("00 5 * * *")]),
 ) as flow:
     flow.chain(
         pull_docker_image,
-        # fiserv_email_parse,
-        # fiserv_emails_to_db,
-        # payment_csv_to_db,
+        fiserv_email_parse,
+        fiserv_emails_to_db,
+        payment_csv_to_db,
         pard_payment_csv_to_db,
         matching_transactions,
-        # payments_to_socrata,
-        # fiserv_to_socrata,
+        payments_to_socrata,
+        fiserv_to_socrata,
         # update_last_exec_time,
     )
 
