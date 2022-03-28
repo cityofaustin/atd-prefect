@@ -197,15 +197,15 @@ with Flow(
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
     # run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
-    run_config=UniversalRun(labels=["test", "ATD-JRWJXM2-D1.coacd.org"]),
+    run_config=UniversalRun(labels=["test", "atd-data02"]),
     schedule=Schedule(clocks=[CronClock("35 3 * * *")]),
 ) as flow:
     flow.chain(
         pull_docker_image,
-        # parking_transaction_history_to_s3,
-        # parking_payment_history_to_s3,
+        parking_transaction_history_to_s3,
+        parking_payment_history_to_s3,
         pard_payment_history_to_s3,
-        # update_last_exec_time,
+        update_last_exec_time,
     )
 
 
