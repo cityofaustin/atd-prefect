@@ -84,7 +84,7 @@ def build_flow():
         run_config=UniversalRun(labels=["test", "atd-data02"]),
         schedule=Schedule(clocks=[CronClock("30 12 * * *")]),
     ) as flow:
-        s3_to_socrata
+        s3_to_socrata()
     return flow
 
 
