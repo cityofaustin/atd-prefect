@@ -41,6 +41,20 @@ environment_variables = get_key_value(key=f"atd_finance_data")
 
 
 @task(
+    name="pull_docker_image",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+)
+def pull_docker_image():
+    client = docker.from_env()
+    client.images.pull("atddocker/atd-finance-data", all_tags=True)
+
+    return
+
+
+@task(
     name="s3_to_socrata",
     max_retries=1,
     timeout=timedelta(minutes=60),
@@ -68,25 +82,21 @@ def s3_to_socrata():
 
 # Next, we define the flow (equivalent to a DAG).
 # Notice we use the label "test" to match this flow to an agent.
-def build_flow():
-    with Flow(
-        # Postfix the name of the flow with the environment it belongs to
-        f"atd_finance_{current_environment}",
-        # Let's configure the agents to download the file from this repo
-        storage=GitHub(
-            repo="cityofaustin/atd-prefect",
-            path="flows/moped/finance_data.py",
-            ref="atd-finance-data",
-            # ref=current_environment.replace("staging", "main"),  # The branch name
-        ),
-        # Run config will always need the current_environment
-        # plus whatever labels you need to attach to this flow
-        run_config=UniversalRun(labels=["test", "atd-data02"]),
-        schedule=Schedule(clocks=[CronClock("30 12 * * *")]),
-    ) as flow:
-        s3_to_socrata()
-    return flow
+with Flow(
+    # Postfix the name of the flow with the environment it belongs to
+    f"atd_finance_{current_environment}",
+    # Let's configure the agents to download the file from this repo
+    storage=GitHub(
+        repo="cityofaustin/atd-prefect",
+        path="flows/moped/finance_data.py",
+        ref="atd-finance-data",
+        # ref=current_environment.replace("staging", "main"),  # The branch name
+    ),
+    # Run config will always need the current_environment
+    # plus whatever labels you need to attach to this flow
+    run_config=UniversalRun(labels=["test", "atd-data02"]),
+    schedule=Schedule(clocks=[CronClock("30 12 * * *")]),
+) as flow:
+    flow.chain(pull_docker_image, s3_to_socrata)
 
-
-flow = build_flow()
 flow.run()
