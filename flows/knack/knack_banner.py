@@ -12,6 +12,7 @@ import docker
 import prefect
 import json
 from datetime import datetime, timedelta
+import pathlib
 
 # Prefect
 from prefect import Flow, task
@@ -33,7 +34,7 @@ current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "production")
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
 
-docker_image = f"atddocker/atd-knack-banner:latest"
+docker_image = f"atddocker/atd-knack-banner:production"
 
 # Retrieve the email configuration
 email_config = get_key_value(key="aws_email_config")
@@ -49,7 +50,8 @@ environment_variables = get_key_value(key=f"atd_knack_banner_{current_environmen
     slug="knack-banner"
 )
 def knack_banner_update_employees():
-    response = docker.from_env().containers.run(
+    docker_client = docker.from_env()
+    response = docker_client.containers.run(
         image=docker_image,
         working_dir="/app",
         command=f"./atd-knack-banner/update_employees.py",
@@ -60,6 +62,8 @@ def knack_banner_update_employees():
         stdout=True
     ).decode("utf-8")
     logger = prefect.context.get("logger")
+    logger.info(docker_client.list(all=True))
+    logger.info(pathlib.Path(__file__).parent.resolve())
     logger.info(response)
     return response
 
@@ -80,8 +84,12 @@ email_task = EmailTask(
 @task(log_stdout=True)
 # todo: update this formatting once knack-banner script is updated
 def format_email_body(flow_data):
-    print(f"Got: {flow_data!r}")
-    return json.dumps(flow_data)
+    flow_data_list = flow_data.split('\n')
+    info_list = []
+    for line in flow_data_list:
+      if line[0:9] == "INFO:root":
+        info_list.append(line[10:]+'\n')
+    return json.dumps(info_list)
 
 
 with Flow(
