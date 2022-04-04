@@ -62,7 +62,7 @@ def knack_banner_update_employees():
         stdout=True
     ).decode("utf-8")
     logger = prefect.context.get("logger")
-    logger.info(docker_client.list(all=True))
+    logger.info(docker_client.containers.list(all=True))
     logger.info(pathlib.Path(__file__).parent.resolve())
     logger.info(response)
     return response
