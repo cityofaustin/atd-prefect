@@ -27,7 +27,7 @@ from prefect.triggers import all_successful
 from prefect.utilities.notifications import slack_notifier
 from prefect.tasks.notifications.email_task import EmailTask
 
-current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "production")
+current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
@@ -44,7 +44,7 @@ environment_variables = get_key_value(key=f"atd_knack_banner_{current_environmen
     name="HR knack banner integration",
     max_retries=2,
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     slug="knack-banner",
 )
 def knack_banner_update_employees():
@@ -70,8 +70,9 @@ def knack_banner_update_employees():
 # Configure email task
 email_task = EmailTask(
     name="email_task",
-    subject="HR updates from Banner",
-    email_to="chia.berry@austintexas.gov",
+    subject="Knack HR updates from Banner",
+    email_to=environment_variables["EMAIL_ADDRESS"],
+    email_to_cc="chia.berry@austintexas.gov",
     email_from=email_config["email_from"],
     smtp_server=email_config["smtp_server"],
     smtp_port=email_config["smtp_port"],
@@ -80,7 +81,7 @@ email_task = EmailTask(
 )
 
 
-@task(log_stdout=True)
+@task(log_stdout=True, state_handlers=[handler])
 def format_email_body(flow_data):
     flow_data_list = flow_data.split("\n")
     info_list = []
@@ -88,7 +89,6 @@ def format_email_body(flow_data):
     for line in flow_data_list:
         if line[0:9] == "INFO:root":
             info_list.append(line[10:] + "<br>")
-    logger.info(info_list)
     return " ".join(info_list)
 
 
@@ -111,7 +111,7 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/test/knack_banner.py",
-        ref="7368-knack-banner",  # The branch name
+        ref=current_environment.replace("staging", "main"),  # The branch name
     ),
     run_config=UniversalRun(labels=["test", "atd-data02"]),
 ) as send_email_flow:
