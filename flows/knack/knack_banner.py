@@ -27,7 +27,7 @@ from prefect.triggers import all_successful
 from prefect.utilities.notifications import slack_notifier
 from prefect.tasks.notifications.email_task import EmailTask
 
-current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
+current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "production")
 
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
@@ -97,7 +97,7 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/knack/knack_banner.py",
-        ref="7368-knack-banner",
+        ref=current_environment.replace("staging", "main")
     ),
     run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
     result=PrefectResult(),
