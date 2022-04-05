@@ -52,7 +52,7 @@ email_task = EmailTask(
 
 @task(log_stdout=True)
 def format_dict(flow_data):
-    print(f"Got: {flow_data!r}")
+    print(f"Got: {flow_data}")
     return json.dumps(flow_data)
 
 
