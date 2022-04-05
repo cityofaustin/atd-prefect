@@ -63,6 +63,7 @@ def knack_banner_update_employees():
     ).decode("utf-8")
     logger = prefect.context.get("logger")
     logger.info(docker_client.containers.list(all=True))
+    logger.info(docker_client.images.list())
     logger.info(pathlib.Path().resolve())
     logger.info(response)
     return response
@@ -88,8 +89,8 @@ def format_email_body(flow_data):
     info_list = []
     for line in flow_data_list:
       if line[0:9] == "INFO:root":
-        info_list.append(line[10:]+'\n')
-    return json.dumps(info_list)
+        info_list.append(line[10:])
+    return info_list
 
 
 with Flow(
