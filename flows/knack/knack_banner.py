@@ -10,9 +10,7 @@ Labels: atd-data02, knack
 import os
 import docker
 import prefect
-import json
 from datetime import datetime, timedelta
-import pathlib
 
 # Prefect
 from prefect import Flow, task
@@ -34,7 +32,7 @@ current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "production")
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
 
-docker_image = f"atddocker/atd-knack-banner:production"
+docker_image = f"atddocker/atd-knack-banner:{current_environment}"
 
 # Retrieve the email configuration
 email_config = get_key_value(key="aws_email_config")
@@ -86,6 +84,7 @@ email_task = EmailTask(
 def format_email_body(flow_data):
     flow_data_list = flow_data.split("\n")
     info_list = []
+    # only email the logs that are labeled "INFO:root"
     for line in flow_data_list:
         if line[0:9] == "INFO:root":
             info_list.append(line[10:] + "<br>")
@@ -101,8 +100,8 @@ with Flow(
         ref="7368-knack-banner",
     ),
     run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
-    result=PrefectResult()
-    # schedule=Schedule(clocks=[CronClock("45 13 * * *")])
+    result=PrefectResult(),
+    schedule=Schedule(clocks=[CronClock("45 13 * * *")])
 ) as get_data_flow:
     email_data = knack_banner_update_employees()
 
