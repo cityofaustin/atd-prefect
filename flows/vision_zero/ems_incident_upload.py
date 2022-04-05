@@ -302,8 +302,11 @@ def clean_up():
 
 
 with Flow(
-    "EMS Incident Data Flow",
-    run_config=UniversalRun(labels=["atd-data02", "staging"]),
+    FLOW_NAME,
+    storage=STORAGE,
+    run_config=UniversalRun(
+        labels=["atd-data02", "staging"], env={"EXTRA_PIP_PACKAGES": "pandas"}
+    ),
 ) as f:
     timestamp = get_timestamp()
     aws_s3_client = create_boto_client()
