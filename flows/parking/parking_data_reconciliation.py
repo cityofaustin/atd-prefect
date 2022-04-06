@@ -212,6 +212,62 @@ def pard_payment_csv_to_db():
     return response
 
 
+# Upload the PARD payment CSVs to postgres
+@task(
+    name="pard_payment_csv_to_db",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+    trigger=all_successful,
+)
+def pard_payment_csv_to_db():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python payments_s3.py --lastmonth {prev_month} --user pard",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
+# Upload the Passport app data CSVs to postgres
+@task(
+    name="app_data_to_db",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+    trigger=all_successful,
+)
+def app_data_to_db():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python passport_DB.py --lastmonth {prev_month}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
 # Match the payments to the fiserv reports
 @task(
     name="matching_transactions",
@@ -296,6 +352,34 @@ def fiserv_to_socrata():
     return response
 
 
+# Uploading Parking transactions records to public socrata dataset
+@task(
+    name="transactions_to_socrata",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+    trigger=all_successful,
+)
+def transactions_to_socrata():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python parking_socrata.py --dataset transactions",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
 @task(trigger=all_successful)
 def update_last_exec_time():
     new_date = datetime.today().strftime("%Y-%m-%d")
@@ -326,9 +410,11 @@ with Flow(
         fiserv_emails_to_db,
         payment_csv_to_db,
         pard_payment_csv_to_db,
+        app_data_to_db,
         matching_transactions,
         payments_to_socrata,
         fiserv_to_socrata,
+        transactions_to_socrata,
         # update_last_exec_time,
     )
 

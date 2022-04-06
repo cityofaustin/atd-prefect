@@ -176,6 +176,34 @@ def pard_payment_history_to_s3():
     return response
 
 
+# Get passport app data
+@task(
+    name="app_txn_history_to_s3",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+    trigger=all_successful,
+)
+def app_txn_history_to_s3():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python passport_txns.py -v --env {env} --start {start_date}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
 @task(trigger=all_successful)
 def update_last_exec_time():
     new_date = datetime.today().strftime("%Y-%m-%d")
@@ -205,6 +233,7 @@ with Flow(
         parking_transaction_history_to_s3,
         parking_payment_history_to_s3,
         pard_payment_history_to_s3,
+        app_txn_history_to_s3,
         update_last_exec_time,
     )
 
