@@ -268,6 +268,34 @@ def app_data_to_db():
     return response
 
 
+# Upload the smartfolio transactions CSVs to postgres
+@task(
+    name="smartfolio_csv_to_db",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+    trigger=all_successful,
+)
+def smartfolio_csv_to_db():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python smartfolio_s3.py --lastmonth {prev_month}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
 # Match the payments to the fiserv reports
 @task(
     name="matching_transactions",
@@ -412,6 +440,7 @@ with Flow(
         pard_payment_csv_to_db,
         app_data_to_db,
         matching_transactions,
+        smartfolio_csv_to_db,
         payments_to_socrata,
         fiserv_to_socrata,
         transactions_to_socrata,
