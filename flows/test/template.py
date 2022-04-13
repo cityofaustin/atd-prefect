@@ -6,7 +6,7 @@ Description: The purpose of this file is to serve as a template to
     establish a pattern for the implementation of flows moving forward.
     It's the very early stages of development, and it is bound to change a
     lot as we learn and move forward.
-Schedule: "*/5 * * * *"
+Schedule: "*/5 * * * *" # UTC time
 Labels: test
 """
 
@@ -33,6 +33,8 @@ from prefect.tasks.shell import ShellTask
 current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 
 # Set up slack fail handler
+# when testing locally, you may want to comment out the handlers
+# so as not to notify our slack channel
 handler = slack_notifier(only_states=[Failed])
 
 # Notice how test_kv is an object that contains our data as a dictionary:

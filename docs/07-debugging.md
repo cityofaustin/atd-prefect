@@ -110,7 +110,7 @@ raise failed_state.result
 Example:
 
 ```python
-rom prefect import Flow, task
+from prefect import Flow, task
 
 
 @task
