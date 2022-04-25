@@ -31,26 +31,16 @@ from prefect.utilities.notifications import slack_notifier
 
 # First, we must always define the current environment, and default to staging:
 current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
-current_environment = "test"
-
 
 # Set up slack fail handler
-# handler = slack_notifier(only_states=[Failed])
+handler = slack_notifier(only_states=[Failed])
 
 # Logger instance
 logger = prefect.context.get("logger")
 
-# Notice how test_kv is an object that contains our data as a dictionary:
-env = "prod"  # if current_environment == "production" else "staging"
-# docker_image = f"atddocker/atd-parking-data-meters:{current_environment}"
-docker_env = "test"
+# Select the appropriate tag for the Docker Image
+docker_env = "production"
 docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
-
-# image = PullImage(
-#     docker_server_url="unix:///var/run/docker.sock",
-#     repository="atddocker/atd-parking-data-meters",
-#     tag=docker_env,
-# )
 
 environment_variables = get_key_value(key=f"atd_parking_data_meters")
 
@@ -77,7 +67,9 @@ def decide_prev_month(prev_execution_date_success):
     """
     if prev_execution_date_success:
         last_date = datetime.strptime(prev_execution_date_success, "%Y-%m-%d")
-        if last_date.day < 8:
+        # If in the first 8 days of the month of last few days of the month re-run
+        # the previous month's data to make sure it is complete.
+        if last_date.day < 8 or last_date.day > 26:
             return True
         else:
             return False
@@ -86,13 +78,13 @@ def decide_prev_month(prev_execution_date_success):
 
 prev_month = decide_prev_month(prev_execution_date_success)
 
-
+# Task to pull the latest Docker image
 @task(
     name="pull_docker_image",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
 )
 def pull_docker_image():
     client = docker.from_env()
@@ -107,7 +99,7 @@ def pull_docker_image():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
 )
 def fiserv_email_parse():
     response = (
@@ -134,7 +126,7 @@ def fiserv_email_parse():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def fiserv_emails_to_db():
@@ -162,7 +154,7 @@ def fiserv_emails_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def payment_csv_to_db():
@@ -190,7 +182,7 @@ def payment_csv_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def pard_payment_csv_to_db():
@@ -218,7 +210,7 @@ def pard_payment_csv_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def pard_payment_csv_to_db():
@@ -246,7 +238,7 @@ def pard_payment_csv_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def app_data_to_db():
@@ -274,7 +266,7 @@ def app_data_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def smartfolio_csv_to_db():
@@ -302,7 +294,7 @@ def smartfolio_csv_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def matching_transactions():
@@ -330,7 +322,7 @@ def matching_transactions():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def payments_to_socrata():
@@ -358,7 +350,7 @@ def payments_to_socrata():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def fiserv_to_socrata():
@@ -386,7 +378,7 @@ def fiserv_to_socrata():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def transactions_to_socrata():
@@ -423,13 +415,11 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/parking/parking_data_reconciliation.py",
-        ref="pard-data-flow",  # The branch name
-        # ref=current_environment.replace("staging", "main"),  # The branch name
+        ref="production",  # The branch name
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
-    # run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
-    run_config=UniversalRun(labels=["test", "atd-data02"]),
+    run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
     schedule=Schedule(clocks=[CronClock("00 5 * * *")]),
 ) as flow:
     flow.chain(
@@ -444,7 +434,7 @@ with Flow(
         payments_to_socrata,
         fiserv_to_socrata,
         transactions_to_socrata,
-        # update_last_exec_time,
+        update_last_exec_time,
     )
 
 
