@@ -5,6 +5,7 @@ import tempfile
 import time
 
 SFTP_ENDPOINT = os.getenv('SFTP_ENDPOINT')
+ZIP_PASSWORD = os.getenv('ZIP_PASSWORD')
 
 with tempfile.TemporaryDirectory() as zip_tmpdir:
   sysrsync.run(
@@ -16,12 +17,6 @@ with tempfile.TemporaryDirectory() as zip_tmpdir:
     destination=zip_tmpdir
     )
   print("Temp Directory:", zip_tmpdir)
-  for filename in os.listdir(zip_tmpdir):
-    print("File:", filename)
-    with tempfile.TemporaryDirectory() as extract_tmpdir:
-    unzip_command = f'7za -y -p{ZIP_PASSWORD} -o"{extract_tmpdir}" x "{zip_tmpdir}"
 
-
-
-
-  # 7za -y -p$CRIS_PASSWORD -o"/root/automated-tasks/extracts" x "/home/txdot/*.zip";
+  with tempfile.TemporaryDirectory() as extract_tmpdir:
+  unzip_command = f'7za -y -p{ZIP_PASSWORD} -o"{extract_tmpdir}" x "{zip_tmpdir}"'
