@@ -1,1 +1,2 @@
 export SFTP_ENDPOINT= 
+export ZIP_PASSWORD=
