@@ -4,6 +4,7 @@ import sysrsync
 import tempfile
 import time
 import pprint
+import shutil
 
 SFTP_ENDPOINT = os.getenv('SFTP_ENDPOINT')
 ZIP_PASSWORD = os.getenv('ZIP_PASSWORD')
@@ -36,6 +37,9 @@ def unzip_archives(archives_directory):
   return(extracted_csv_directories)
 
 def cleanup_temporary_directories(single, list):
+  shutil.rmtree(single)
+  for directory in list:
+    shutil.rmtree(directory)
   print("no empty blocks in python")
 
 
