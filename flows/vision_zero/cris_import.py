@@ -40,7 +40,6 @@ def cleanup_temporary_directories(single, list):
   shutil.rmtree(single)
   for directory in list:
     shutil.rmtree(directory)
-  print("no empty blocks in python")
 
 
 with Flow("VZ Ingest") as f:
