@@ -31,7 +31,6 @@ def unzip_archives(archives_directory):
     #with tempfile.TemporaryDirectory() as extract_tmpdir:
     extract_tmpdir = tempfile.mkdtemp()
     unzip_command = f'7za -y -p{ZIP_PASSWORD} -o"{extract_tmpdir}" x "{archives_directory}/{filename}"'
-    print("Unzip command:", unzip_command)
     os.system(unzip_command)
     extracted_csv_directories.append(extract_tmpdir)
   return(extracted_csv_directories)
