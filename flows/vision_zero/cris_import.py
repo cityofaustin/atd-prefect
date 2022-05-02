@@ -16,6 +16,7 @@ ZIP_PASSWORD = os.getenv('ZIP_PASSWORD')
 
 pp = pprint.PrettyPrinter(indent=2)
 
+
 @task
 def download_extract_archives():
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
@@ -31,18 +32,19 @@ def download_extract_archives():
   print("Temp Directory:", zip_tmpdir)
   return(zip_tmpdir)
 
+
 @task
 def unzip_archives(archives_directory):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   extracted_csv_directories = []
   for filename in os.listdir(archives_directory):
     print("File:", filename)
-    #with tempfile.TemporaryDirectory() as extract_tmpdir:
     extract_tmpdir = tempfile.mkdtemp()
     unzip_command = f'7za -y -p{ZIP_PASSWORD} -o"{extract_tmpdir}" x "{archives_directory}/{filename}"'
     os.system(unzip_command)
     extracted_csv_directories.append(extract_tmpdir)
   return(extracted_csv_directories)
+
 
 @task
 def get_docker_image(extracts):
