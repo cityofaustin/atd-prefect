@@ -11,6 +11,8 @@ import docker
 from colorama import init, Fore, Style
 init()
 
+docker_client = docker.from_env()
+
 SFTP_ENDPOINT = os.getenv('SFTP_ENDPOINT')
 ZIP_PASSWORD = os.getenv('ZIP_PASSWORD')
 
@@ -49,16 +51,20 @@ def unzip_archives(archives_directory):
 @task
 def build_docker_image(extracts):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
-  docker_client = docker.from_env()
   build_result = docker_client.images.build(
     path="./atd-vz-data/atd-etl",
     tag="vz-etl"
   )
   return build_result[0]
 
+@task
+def run_docker_image(vz_etl_image):
+  print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
+  docker_client.containers.run(vz_etl_image)
+  return None
 
 @task
-def cleanup_temporary_directories(single, list):
+def cleanup_temporary_directories(single, list, token):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   shutil.rmtree(single)
   for directory in list:
@@ -69,6 +75,7 @@ with Flow("VZ Ingest") as f:
   zip_location = download_extract_archives()
   extracts = unzip_archives(zip_location)
   image = build_docker_image(extracts)
-  cleanup_temporary_directories(zip_location, extracts)
+  token = run_docker_image(image)
+  cleanup_temporary_directories(zip_location, extracts, token)
 
 f.run()
