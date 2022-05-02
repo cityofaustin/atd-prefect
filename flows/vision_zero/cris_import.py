@@ -45,8 +45,9 @@ def unzip_archives(archives_directory):
   return(extracted_csv_directories)
 
 @task
-def docker():
+def get_docker_image(extracts):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
+  docker_client = docker.from_env()
   return None
 
 
