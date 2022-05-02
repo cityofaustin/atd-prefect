@@ -12,6 +12,7 @@ ZIP_PASSWORD = os.getenv('ZIP_PASSWORD')
 pp = pprint.PrettyPrinter(indent=2)
 
 def download_extract_archives():
+  print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   zip_tmpdir = tempfile.mkdtemp()
   sysrsync.run(
     verbose=True,
@@ -36,6 +37,7 @@ def unzip_archives(archives_directory):
   return(extracted_csv_directories)
 
 def cleanup_temporary_directories(single, list):
+  print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   shutil.rmtree(single)
   for directory in list:
     shutil.rmtree(directory)
