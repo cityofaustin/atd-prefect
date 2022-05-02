@@ -1,10 +1,15 @@
 import os
+import sys
 from prefect import task, Flow
 import sysrsync
 import tempfile
 import time
 import pprint
 import shutil
+import docker
+
+from colorama import init, Fore, Style
+init()
 
 SFTP_ENDPOINT = os.getenv('SFTP_ENDPOINT')
 ZIP_PASSWORD = os.getenv('ZIP_PASSWORD')
@@ -26,6 +31,7 @@ def download_extract_archives():
   return(zip_tmpdir)
 
 def unzip_archives(archives_directory):
+  print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   extracted_csv_directories = []
   for filename in os.listdir(archives_directory):
     print("File:", filename)
@@ -35,6 +41,11 @@ def unzip_archives(archives_directory):
     os.system(unzip_command)
     extracted_csv_directories.append(extract_tmpdir)
   return(extracted_csv_directories)
+
+def docker():
+  print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
+  #client = docker.from_env()
+
 
 def cleanup_temporary_directories(single, list):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
@@ -47,8 +58,6 @@ with Flow("VZ Ingest") as f:
   zip_location = download_extract_archives()
   extracts = unzip_archives(zip_location)
   cleanup_temporary_directories(zip_location, extracts)
-
-  pp.pprint(extracts)
-  
+  docker()
 
 f.run()
