@@ -84,7 +84,7 @@ def cleanup_temporary_directories(single, list, container_tmpdirs):
     shutil.rmtree(directory)
 
 
-with Flow("VZ Ingest") as f:
+with Flow("Vision Zero Crash Ingest") as f:
   zip_location = download_extract_archives()
   extracts = unzip_archives(zip_location)
   image = build_docker_image(extracts)
