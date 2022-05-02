@@ -47,19 +47,18 @@ def unzip_archives(archives_directory):
 
 
 @task
-def get_docker_image(extracts):
+def build_docker_image(extracts):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   docker_client = docker.from_env()
   build_result = docker_client.images.build(
     path="./atd-vz-data/atd-etl",
     tag="vz-etl"
   )
-  pp.pprint(build_result)
-  return None
+  return build_result[0]
 
 
 @task
-def cleanup_temporary_directories(single, list, rc):
+def cleanup_temporary_directories(single, list):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   shutil.rmtree(single)
   for directory in list:
@@ -69,7 +68,7 @@ def cleanup_temporary_directories(single, list, rc):
 with Flow("VZ Ingest") as f:
   zip_location = download_extract_archives()
   extracts = unzip_archives(zip_location)
-  rc = get_docker_image(extracts)
-  cleanup_temporary_directories(zip_location, extracts, rc)
+  image = build_docker_image(extracts)
+  cleanup_temporary_directories(zip_location, extracts)
 
 f.run()
