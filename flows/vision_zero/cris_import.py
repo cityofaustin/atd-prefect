@@ -47,11 +47,11 @@ def unzip_archives(archives_directory):
 @task
 def docker():
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
-  #client = docker.from_env()
+  return None
 
 
 @task
-def cleanup_temporary_directories(single, list):
+def cleanup_temporary_directories(single, list, rc):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   shutil.rmtree(single)
   for directory in list:
@@ -61,7 +61,7 @@ def cleanup_temporary_directories(single, list):
 with Flow("VZ Ingest") as f:
   zip_location = download_extract_archives()
   extracts = unzip_archives(zip_location)
-  cleanup_temporary_directories(zip_location, extracts)
-  docker()
+  rc = get_docker_image(extracts)
+  cleanup_temporary_directories(zip_location, extracts, rc)
 
 f.run()
