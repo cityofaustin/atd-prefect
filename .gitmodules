@@ -1,0 +1,3 @@
+[submodule "flows/vision_zero/atd-vz-data"]
+	path = flows/vision_zero/atd-vz-data
+	url = https://github.com/cityofaustin/atd-vz-data
