@@ -58,10 +58,20 @@ def build_docker_image(extracts):
   return build_result[0]
 
 @task
-def run_docker_image(vz_etl_image):
+def run_docker_image(vz_etl_image, command):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
-  docker_client.containers.run(vz_etl_image)
-  return None
+  
+  docker_tmpdir = tempfile.mkdtemp()
+  volumes = {
+    docker_tmpdir: {'bind': '/app/tmp', 'mode': 'rw'}
+    }
+
+  docker_client.containers.run(
+    image=vz_etl_image,
+    command=command,
+    volumes=volumes
+    )
+  return docker_tmpdir
 
 @task
 def cleanup_temporary_directories(single, list, token):
@@ -75,7 +85,7 @@ with Flow("VZ Ingest") as f:
   zip_location = download_extract_archives()
   extracts = unzip_archives(zip_location)
   image = build_docker_image(extracts)
-  token = run_docker_image(image)
+  token = run_docker_image(image, 'bash')
   cleanup_temporary_directories(zip_location, extracts, token)
 
 f.run()
