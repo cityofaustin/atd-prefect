@@ -50,6 +50,11 @@ def unzip_archives(archives_directory):
 def get_docker_image(extracts):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   docker_client = docker.from_env()
+  build_result = docker_client.images.build(
+    path="./atd-vz-data/atd-etl",
+    tag="vz-etl"
+  )
+  pp.pprint(build_result)
   return None
 
 
