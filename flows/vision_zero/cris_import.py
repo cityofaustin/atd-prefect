@@ -35,7 +35,7 @@ def download_extract_archives():
   return(zip_tmpdir)
 
 
-@task
+@task(nout=1)
 def unzip_archives(archives_directory):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   extracted_csv_directories = []
@@ -58,12 +58,13 @@ def build_docker_image(extracts):
   return build_result[0]
 
 @task
-def run_docker_image(vz_etl_image, command):
+def run_docker_image(extracted_data, vz_etl_image, command):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   
   docker_tmpdir = tempfile.mkdtemp()
   volumes = {
-    docker_tmpdir: {'bind': '/app/tmp', 'mode': 'rw'}
+    docker_tmpdir: {'bind': '/app/tmp', 'mode': 'rw'},
+    extracted_data: {'bind': '/data', 'mode': 'rw'}
     }
 
   docker_client.containers.run(
@@ -74,10 +75,12 @@ def run_docker_image(vz_etl_image, command):
   return docker_tmpdir
 
 @task
-def cleanup_temporary_directories(single, list, token):
+def cleanup_temporary_directories(single, list, container_tmpdirs):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   shutil.rmtree(single)
   for directory in list:
+    shutil.rmtree(directory)
+  for directory in container_tmpdirs:
     shutil.rmtree(directory)
 
 
@@ -85,7 +88,10 @@ with Flow("VZ Ingest") as f:
   zip_location = download_extract_archives()
   extracts = unzip_archives(zip_location)
   image = build_docker_image(extracts)
-  token = run_docker_image(image, 'bash')
-  cleanup_temporary_directories(zip_location, extracts, token)
+  container_tmpdirs = []
+  for extract in extracts:
+    container_tmpdir = run_docker_image(extract, image, 'bash')
+    container_tmpdirs.append(container_tmpdir)
+  cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
 
 f.run()
