@@ -70,7 +70,8 @@ def run_docker_image(extracted_data, vz_etl_image, command):
   docker_client.containers.run(
     image=vz_etl_image,
     command=command,
-    volumes=volumes
+    volumes=volumes,
+    remove=True
     )
   return docker_tmpdir
 
@@ -82,6 +83,7 @@ def cleanup_temporary_directories(single, list, container_tmpdirs):
     shutil.rmtree(directory)
   for directory in container_tmpdirs:
     shutil.rmtree(directory)
+  return None
 
 
 with Flow("Vision Zero Crash Ingest") as f:
@@ -90,7 +92,7 @@ with Flow("Vision Zero Crash Ingest") as f:
   image = build_docker_image(extracts)
   container_tmpdirs = []
   for extract in extracts:
-    container_tmpdir = run_docker_image(extract, image, 'bash')
+    container_tmpdir = run_docker_image(extract, image, ['sleep', '120'])
     container_tmpdirs.append(container_tmpdir)
   cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
 
