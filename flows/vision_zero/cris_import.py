@@ -16,6 +16,7 @@ ZIP_PASSWORD = os.getenv('ZIP_PASSWORD')
 
 pp = pprint.PrettyPrinter(indent=2)
 
+@task
 def download_extract_archives():
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   zip_tmpdir = tempfile.mkdtemp()
@@ -30,6 +31,7 @@ def download_extract_archives():
   print("Temp Directory:", zip_tmpdir)
   return(zip_tmpdir)
 
+@task
 def unzip_archives(archives_directory):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   extracted_csv_directories = []
@@ -42,11 +44,13 @@ def unzip_archives(archives_directory):
     extracted_csv_directories.append(extract_tmpdir)
   return(extracted_csv_directories)
 
+@task
 def docker():
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   #client = docker.from_env()
 
 
+@task
 def cleanup_temporary_directories(single, list):
   print(Fore.GREEN + sys._getframe(  ).f_code.co_name + "()", Style.RESET_ALL)
   shutil.rmtree(single)
