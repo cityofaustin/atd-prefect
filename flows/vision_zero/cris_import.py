@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 from prefect import task, Flow
 import sysrsync
 import tempfile
@@ -15,6 +16,9 @@ docker_client = docker.from_env()
 
 SFTP_ENDPOINT = os.getenv('SFTP_ENDPOINT')
 ZIP_PASSWORD = os.getenv('ZIP_PASSWORD')
+RAW_AIRFLOW_CONFIG_JSON = os.getenv('RAW_AIRFLOW_CONFIG')
+RAW_AIRFLOW_CONFIG = json.loads(RAW_AIRFLOW_CONFIG_JSON)
+
 
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -67,12 +71,14 @@ def run_docker_image(extracted_data, vz_etl_image, command):
     extracted_data: {'bind': '/data', 'mode': 'rw'}
     }
 
-  docker_client.containers.run(
+  log = docker_client.containers.run(
     image=vz_etl_image,
     command=command,
     volumes=volumes,
-    remove=True
+    remove=True,
+    environment=RAW_AIRFLOW_CONFIG
     )
+  print(log)
   return docker_tmpdir
 
 @task
@@ -86,7 +92,7 @@ def cleanup_temporary_directories(single, list, container_tmpdirs):
   return None
 
 
-with Flow("Vision Zero Crash Ingest") as f:
+with Flow("Vision Zero Crash Ingest") as flow:
   zip_location = download_extract_archives()
   extracts = unzip_archives(zip_location)
   image = build_docker_image(extracts)
@@ -97,4 +103,4 @@ with Flow("Vision Zero Crash Ingest") as f:
       container_tmpdirs.append(container_tmpdir)
   cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
 
-f.run()
+flow.run()
