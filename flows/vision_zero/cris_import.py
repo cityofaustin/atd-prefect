@@ -92,8 +92,9 @@ with Flow("Vision Zero Crash Ingest") as f:
   image = build_docker_image(extracts)
   container_tmpdirs = []
   for extract in extracts:
-    container_tmpdir = run_docker_image(extract, image, ['sleep', '120'])
-    container_tmpdirs.append(container_tmpdir)
+    for table in ['crash', 'unit', 'person', 'primaryperson', 'charges']:
+      container_tmpdir = run_docker_image(extract, image, ['/app/process_hasura_import.py', table])
+      container_tmpdirs.append(container_tmpdir)
   cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
 
 f.run()
