@@ -17,7 +17,7 @@ from prefect.run_configs import UniversalRun
 from prefect.utilities.debug import is_serializable
 from colorama import init, Fore, Style
 
-init()
+init() # init colorama for ANSI color codes
 
 docker_client = docker.from_env()
 
@@ -88,7 +88,7 @@ def run_docker_image(extracted_data, vz_etl_image, command):
     print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
 
     docker_tmpdir = tempfile.mkdtemp()
-    return docker_tmpdir  # this is short circuiting out the rest of this routine (for speed of dev)
+    #return docker_tmpdir  # this is short circuiting out the rest of this routine (for speed of dev)
     volumes = {
         docker_tmpdir: {"bind": "/app/tmp", "mode": "rw"},
         extracted_data: {"bind": "/data", "mode": "rw"},
@@ -99,7 +99,7 @@ def run_docker_image(extracted_data, vz_etl_image, command):
         name="vz_etl",
         command=command,
         volumes=volumes,
-        network_mode="host",  # this isn't right.. this isn't what i want.
+        network_mode="host",  # This should be doable in bridged network mode. TODO: Investigate
         remove=True,
         environment=RAW_AIRFLOW_CONFIG,
     )
@@ -122,13 +122,11 @@ project_name = "Vision Zero Crash Import"
 
 with Flow(
     project_name,
-    schedule=Schedule(clocks=[CronClock("* * * * *")]),
-    run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
+    #schedule=Schedule(clocks=[CronClock("* * * * *")]),
+    #run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
 ) as flow:
 
     # repo = pull_from_github()
-    # this doesn't need the repo argument to work; this is forcing the serializing of the functions.
-    # this should be replaced with explicit prefect serialization directives
     # zip_location = download_extract_archives(repo)
 
     zip_location = download_extract_archives()
@@ -149,3 +147,4 @@ result = is_serializable(flow)
 print(result)
 
 # flow.register(project_name=project_name)
+flow.run()
