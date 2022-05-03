@@ -30,16 +30,17 @@ RAW_AIRFLOW_CONFIG = json.loads(RAW_AIRFLOW_CONFIG_JSON)
 
 pp = pprint.PrettyPrinter(indent=2)
 
+
 @task
 def pull_from_github():
     print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     repo = Repo(PWD)
     origin = repo.remotes[0]
     pull_result = origin.pull()
-    
-    #sms = repo.submodules
-    #for sm in sms:
-        #print(sm.remotes)
+
+    # sms = repo.submodules
+    # for sm in sms:
+    # print(sm.remotes)
 
     return repo
 
@@ -87,7 +88,7 @@ def run_docker_image(extracted_data, vz_etl_image, command):
     print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
 
     docker_tmpdir = tempfile.mkdtemp()
-    return docker_tmpdir # this is short circuiting out the rest of this routine (for speed of dev)
+    return docker_tmpdir  # this is short circuiting out the rest of this routine (for speed of dev)
     volumes = {
         docker_tmpdir: {"bind": "/app/tmp", "mode": "rw"},
         extracted_data: {"bind": "/data", "mode": "rw"},
@@ -116,21 +117,21 @@ def cleanup_temporary_directories(single, list, container_tmpdirs):
         shutil.rmtree(directory)
     return None
 
-project_name = 'Vision Zero Crash Import'
 
-with Flow(project_name, 
-      schedule=Schedule(clocks=[CronClock("* * * * *")]),
-      run_config=UniversalRun(labels=["vision-zero", "atd-data03"])
+project_name = "Vision Zero Crash Import"
 
-      ) as flow:
+with Flow(
+    project_name,
+    schedule=Schedule(clocks=[CronClock("* * * * *")]),
+    run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
+) as flow:
 
-    #repo = pull_from_github()
-    # this doesn't need the repo argument to work; this is forcing the serializing of the functions. 
+    # repo = pull_from_github()
+    # this doesn't need the repo argument to work; this is forcing the serializing of the functions.
     # this should be replaced with explicit prefect serialization directives
-    #zip_location = download_extract_archives(repo) 
+    # zip_location = download_extract_archives(repo)
 
-
-    zip_location = download_extract_archives() 
+    zip_location = download_extract_archives()
     extracts = unzip_archives(zip_location)
     image = build_docker_image(extracts)
     container_tmpdirs = []
@@ -147,4 +148,4 @@ with Flow(project_name,
 result = is_serializable(flow)
 print(result)
 
-#flow.register(project_name=project_name)
+# flow.register(project_name=project_name)
