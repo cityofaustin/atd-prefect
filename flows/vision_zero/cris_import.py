@@ -8,6 +8,7 @@ import time
 import pprint
 import shutil
 import docker
+from git import Repo
 
 from colorama import init, Fore, Style
 
@@ -15,6 +16,7 @@ init()
 
 docker_client = docker.from_env()
 
+PWD = os.getenv("PWD")
 SFTP_ENDPOINT = os.getenv("SFTP_ENDPOINT")
 ZIP_PASSWORD = os.getenv("ZIP_PASSWORD")
 RAW_AIRFLOW_CONFIG_JSON = os.getenv("RAW_AIRFLOW_CONFIG")
@@ -23,9 +25,22 @@ RAW_AIRFLOW_CONFIG = json.loads(RAW_AIRFLOW_CONFIG_JSON)
 
 pp = pprint.PrettyPrinter(indent=2)
 
+@task
+def pull_from_github():
+    print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+    repo = Repo(PWD)
+    origin = repo.remotes[0]
+    pull_result = origin.pull()
+    
+    #sms = repo.submodules
+    #for sm in sms:
+        #print(sm.remotes)
+
+    return repo
+
 
 @task
-def download_extract_archives():
+def download_extract_archives(repo):
     print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     zip_tmpdir = tempfile.mkdtemp()
     sysrsync.run(
@@ -67,6 +82,7 @@ def run_docker_image(extracted_data, vz_etl_image, command):
     print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
 
     docker_tmpdir = tempfile.mkdtemp()
+    return docker_tmpdir # this is short circuiting out the rest of this routine (for speed of dev)
     volumes = {
         docker_tmpdir: {"bind": "/app/tmp", "mode": "rw"},
         extracted_data: {"bind": "/data", "mode": "rw"},
@@ -97,7 +113,10 @@ def cleanup_temporary_directories(single, list, container_tmpdirs):
 
 
 with Flow("Vision Zero Crash Ingest") as flow:
-    zip_location = download_extract_archives()
+    repo = pull_from_github()
+    # this doesn't need the repo argument to work; this is forcing the serializing of the functions. 
+    # this should be replaced with explicit prefect serialization directives
+    zip_location = download_extract_archives(repo) 
     extracts = unzip_archives(zip_location)
     image = build_docker_image(extracts)
     container_tmpdirs = []
