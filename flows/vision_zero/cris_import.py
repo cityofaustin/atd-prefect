@@ -9,7 +9,11 @@ import pprint
 import shutil
 import docker
 from git import Repo
-
+from prefect.schedules import Schedule
+from prefect.schedules.clocks import CronClock
+from prefect.run_configs import UniversalRun
+import datetime
+from prefect.utilities.debug import is_serializable
 from colorama import init, Fore, Style
 
 init()
@@ -40,7 +44,7 @@ def pull_from_github():
 
 
 @task
-def download_extract_archives(repo):
+def download_extract_archives():
     print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     zip_tmpdir = tempfile.mkdtemp()
     sysrsync.run(
@@ -111,12 +115,21 @@ def cleanup_temporary_directories(single, list, container_tmpdirs):
         shutil.rmtree(directory)
     return None
 
+project_name = 'Vision Zero Crash Import'
 
-with Flow("Vision Zero Crash Ingest") as flow:
-    repo = pull_from_github()
+with Flow(project_name, 
+      schedule=Schedule(clocks=[CronClock("* * * * *")]),
+      run_config=UniversalRun(labels=["vision-zero", "atd-data03"])
+
+      ) as flow:
+
+    #repo = pull_from_github()
     # this doesn't need the repo argument to work; this is forcing the serializing of the functions. 
     # this should be replaced with explicit prefect serialization directives
-    zip_location = download_extract_archives(repo) 
+    #zip_location = download_extract_archives(repo) 
+
+
+    zip_location = download_extract_archives() 
     extracts = unzip_archives(zip_location)
     image = build_docker_image(extracts)
     container_tmpdirs = []
@@ -124,11 +137,13 @@ with Flow("Vision Zero Crash Ingest") as flow:
         for table in ["crash", "unit", "person", "primaryperson", "charges"]:
             # this construct is useful to have the docker image spin while you run a process manually
             # container_tmpdir = run_docker_image(extract, image, ['sleep', '3000'])
-
             container_tmpdir = run_docker_image(
                 extract, image, ["/app/process_hasura_import.py", table]
             )
             container_tmpdirs.append(container_tmpdir)
     cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
 
-flow.run()
+result = is_serializable(flow)
+print(result)
+
+#flow.register(project_name=project_name)
