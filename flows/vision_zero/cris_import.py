@@ -73,8 +73,10 @@ def run_docker_image(extracted_data, vz_etl_image, command):
 
   log = docker_client.containers.run(
     image=vz_etl_image,
+    name='vz_etl',
     command=command,
     volumes=volumes,
+    network_mode="host", # this isn't right.. this isn't what i want.
     remove=True,
     environment=RAW_AIRFLOW_CONFIG
     )
@@ -99,6 +101,9 @@ with Flow("Vision Zero Crash Ingest") as flow:
   container_tmpdirs = []
   for extract in extracts:
     for table in ['crash', 'unit', 'person', 'primaryperson', 'charges']:
+      # this construct is useful to have the docker image spin while you run a process manually
+      #container_tmpdir = run_docker_image(extract, image, ['sleep', '3000'])
+
       container_tmpdir = run_docker_image(extract, image, ['/app/process_hasura_import.py', table])
       container_tmpdirs.append(container_tmpdir)
   cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
