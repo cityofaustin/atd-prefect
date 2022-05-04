@@ -416,7 +416,7 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/parking/parking_data_reconciliation.py",
-        ref="Testing-CH",  # The branch name
+        ref="testing-CH",  # The branch name
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow

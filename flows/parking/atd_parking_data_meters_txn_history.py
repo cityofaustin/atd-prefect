@@ -215,7 +215,7 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/parking/atd_parking_data_meters_txn_history.py",
-        ref="Testing-CH",  # The branch name, staging is not being used here
+        ref="testing-CH",  # The branch name, staging is not being used here
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
