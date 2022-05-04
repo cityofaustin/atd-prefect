@@ -30,7 +30,7 @@ from prefect.utilities.notifications import slack_notifier
 current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 
 # Set up slack fail handler
-handler = slack_notifier(only_states=[Failed])
+# handler = slack_notifier(only_states=[Failed])
 
 # Logger instance
 logger = prefect.context.get("logger")
@@ -40,6 +40,8 @@ s3_env = "prod"
 
 # Select the appropriate tag for the Docker Image
 docker_env = "production"
+
+docker_env = "test"
 docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
 
 # KV Store in Prefect
@@ -78,12 +80,12 @@ start_date = get_start_date(prev_execution_date_success)
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
 )
 def pull_docker_image():
     client = docker.from_env()
     client.images.pull("atddocker/atd-parking-data-meters", all_tags=True)
-
+    logger.info(docker_image)
     return
 
 
@@ -93,7 +95,7 @@ def pull_docker_image():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
 )
 def parking_transaction_history_to_s3():
     response = (
@@ -120,7 +122,7 @@ def parking_transaction_history_to_s3():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def parking_payment_history_to_s3():
@@ -148,7 +150,7 @@ def parking_payment_history_to_s3():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def pard_payment_history_to_s3():
@@ -176,7 +178,7 @@ def pard_payment_history_to_s3():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def app_txn_history_to_s3():
@@ -213,7 +215,7 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/parking/atd_parking_data_meters_txn_history.py",
-        ref="production",  # The branch name, staging is not being used here
+        ref="Testing-CH",  # The branch name, staging is not being used here
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
