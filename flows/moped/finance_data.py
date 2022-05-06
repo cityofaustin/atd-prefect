@@ -89,7 +89,9 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/moped/finance_data.py",
-        ref="production",  # The branch name
+        ref=current_environment.replace(
+            "staging", "atd-finance-prod"
+        ),  # The branch name
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
