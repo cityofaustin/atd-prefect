@@ -25,18 +25,20 @@ from prefect.triggers import all_successful
 
 from prefect.utilities.notifications import slack_notifier
 
-# First, we must always define the current environment, and default to staging:
+# Will be production or staging
 current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
-current_environment = "test"
 
 # Set up slack fail handler
-# handler = slack_notifier(only_states=[Failed])
+handler = slack_notifier(only_states=[Failed])
 
 # Logger instance
 logger = prefect.context.get("logger")
 
-# Notice how test_kv is an object that contains our data as a dictionary:
-docker_image = f"atddocker/atd-finance-data:{current_environment}"
+# Docker settings
+docker_env = "production"
+docker_image = f"atddocker/atd-finance-data:{docker_env}"
+
+# Environment Variables from KV Store in Prefect
 environment_variables = get_key_value(key=f"atd_finance_data")
 
 
@@ -45,12 +47,12 @@ environment_variables = get_key_value(key=f"atd_finance_data")
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
 )
 def pull_docker_image():
     client = docker.from_env()
     client.images.pull("atddocker/atd-finance-data", all_tags=True)
-
+    logger.info(docker_image)
     return
 
 
@@ -59,7 +61,7 @@ def pull_docker_image():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
 )
 def s3_to_socrata():
     response = (
@@ -80,8 +82,6 @@ def s3_to_socrata():
     return response
 
 
-# Next, we define the flow (equivalent to a DAG).
-# Notice we use the label "test" to match this flow to an agent.
 with Flow(
     # Postfix the name of the flow with the environment it belongs to
     f"atd_finance_{current_environment}",
@@ -89,8 +89,7 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/moped/finance_data.py",
-        ref="atd-finance-data",
-        # ref=current_environment.replace("staging", "main"),  # The branch name
+        ref="production",  # The branch name
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
