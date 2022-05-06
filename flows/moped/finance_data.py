@@ -98,4 +98,5 @@ with Flow(
 ) as flow:
     flow.chain(pull_docker_image, s3_to_socrata)
 
-flow.run()
+if __name__ == "__main__":
+    flow.run()
