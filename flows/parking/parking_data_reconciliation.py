@@ -3,7 +3,7 @@
 """
 Name: Parking Data Reconciliation Flows
 Description: Parse Fiserv emails then upsert the CSVs to a postgres DB.
-    Grab the payment data retrived from flowbird and upsert tha to a postgres DB.
+    Grab the payment data retrived from flowbird and upsert that to a postgres DB.
     Then, compare them before uploading the data to Socrata.
 Schedule: "30 5 * * *"
 Labels: atd-data02, parking
