@@ -10,9 +10,12 @@ import tempfile
 import docker
 import sysrsync
 from git import Repo
+import prefect
 from prefect import task, Flow
 from prefect.schedules import Schedule
+from prefect.schedules import IntervalSchedule
 from prefect.schedules.clocks import CronClock
+
 from prefect.run_configs import UniversalRun
 from prefect.utilities.debug import is_serializable
 from colorama import init, Fore, Style
@@ -33,7 +36,9 @@ pp = pprint.PrettyPrinter(indent=2)
 
 @task
 def pull_from_github():
-    print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+    logger = prefect.context.get("logger")
+    logger.info(sys._getframe().f_code.co_name + "()")
+    #print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     repo = Repo(PWD)
     origin = repo.remotes[0]
     pull_result = origin.pull()
@@ -47,7 +52,9 @@ def pull_from_github():
 
 @task
 def download_extract_archives():
-    print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+    logger = prefect.context.get("logger")
+    logger.info(sys._getframe().f_code.co_name + "()")
+    #print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     zip_tmpdir = tempfile.mkdtemp()
     sysrsync.run(
         verbose=True,
@@ -57,16 +64,18 @@ def download_extract_archives():
         sync_source_contents=False,
         destination=zip_tmpdir,
     )
-    print("Temp Directory:", zip_tmpdir)
+    logger.info("Temp Directory: " + zip_tmpdir)
     return zip_tmpdir
 
 
 @task(nout=1)
 def unzip_archives(archives_directory):
-    print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+    logger = prefect.context.get("logger")
+    logger.info(sys._getframe().f_code.co_name + "()")
+    #print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     extracted_csv_directories = []
     for filename in os.listdir(archives_directory):
-        print("File:", filename)
+        logger.info("File: " + filename)
         extract_tmpdir = tempfile.mkdtemp()
         unzip_command = f'7za -y -p{ZIP_PASSWORD} -o"{extract_tmpdir}" x "{archives_directory}/{filename}"'
         os.system(unzip_command)
@@ -76,7 +85,9 @@ def unzip_archives(archives_directory):
 
 @task
 def build_docker_image(extracts):
-    print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+    logger = prefect.context.get("logger")
+    logger.info(sys._getframe().f_code.co_name + "()")
+    #print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     build_result = docker_client.images.build(
         path="./atd-vz-data/atd-etl", tag="vz-etl"
     )
@@ -85,7 +96,9 @@ def build_docker_image(extracts):
 
 @task
 def run_docker_image(extracted_data, vz_etl_image, command):
-    print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+    logger = prefect.context.get("logger")
+    logger.info(sys._getframe().f_code.co_name + "()")
+    #print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
 
     docker_tmpdir = tempfile.mkdtemp()
     #return docker_tmpdir  # this is short circuiting out the rest of this routine (for speed of dev)
@@ -103,13 +116,15 @@ def run_docker_image(extracted_data, vz_etl_image, command):
         remove=True,
         environment=RAW_AIRFLOW_CONFIG,
     )
-    print(log)
+    logger.info(log)
     return docker_tmpdir
 
 
 @task
 def cleanup_temporary_directories(single, list, container_tmpdirs):
-    print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+    logger = prefect.context.get("logger")
+    logger.info(sys._getframe().f_code.co_name + "()")
+    #print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     shutil.rmtree(single)
     for directory in list:
         shutil.rmtree(directory)
@@ -120,8 +135,11 @@ def cleanup_temporary_directories(single, list, container_tmpdirs):
 
 project_name = "Vision Zero Crash Import"
 
+schedule = IntervalSchedule(interval = datetime.timedelta(minutes=1))
+
 with Flow(
     project_name,
+    schedule=schedule,
     #schedule=Schedule(clocks=[CronClock("* * * * *")]),
     #run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
 ) as flow:
@@ -144,7 +162,7 @@ with Flow(
     cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
 
 result = is_serializable(flow)
-print(result)
+print("Is Serializable:", result)
 
 # flow.register(project_name=project_name)
 flow.run()
