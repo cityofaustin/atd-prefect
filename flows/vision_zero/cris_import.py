@@ -133,12 +133,10 @@ def cleanup_temporary_directories(single, list, container_tmpdirs):
     return None
 
 
-project_name = "Vision Zero Crash Import"
-
 schedule = IntervalSchedule(interval = datetime.timedelta(minutes=1))
 
 with Flow(
-    project_name,
+    "CRIS Crash Import",
     #schedule=schedule,
     #schedule=Schedule(clocks=[CronClock("* * * * *")]),
     #run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
@@ -153,8 +151,6 @@ with Flow(
     container_tmpdirs = []
     for extract in extracts:
         for table in ["crash", "unit", "person", "primaryperson", "charges"]:
-            # this construct is useful to have the docker image spin while you run a process manually
-            # container_tmpdir = run_docker_image(extract, image, ['sleep', '3000'])
             container_tmpdir = run_docker_image(
                 extract, image, ["/app/process_hasura_import.py", table]
             )
@@ -164,5 +160,5 @@ with Flow(
 #result = is_serializable(flow)
 #print("Is Serializable:", result)
 
-flow.register(project_name=project_name)
+flow.register(project_name="vision-zero")
 #flow.run()
