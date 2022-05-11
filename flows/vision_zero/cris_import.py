@@ -14,6 +14,7 @@ import prefect
 from prefect import task, Flow
 from prefect.schedules import Schedule
 from prefect.schedules import IntervalSchedule
+from prefect.backend.artifacts import create_markdown_artifact
 from prefect.schedules.clocks import CronClock
 
 from prefect.run_configs import UniversalRun
@@ -49,7 +50,12 @@ def pull_from_github():
     return repo
 
 
-@task(max_retries=3, retry_delay=datetime.timedelta(minutes=2))
+@task(
+    name="Download archive from SFTP Endpoint",
+    slug="get-zips",
+    max_retries=3,
+    retry_delay=datetime.timedelta(minutes=2),
+)
 def download_extract_archives():
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
@@ -67,7 +73,13 @@ def download_extract_archives():
     return zip_tmpdir
 
 
-@task(nout=1)
+@task(
+    name="Decrypt & extract zip archives",
+    slug="decompress-zips",
+    max_retries=3,
+    retry_delay=datetime.timedelta(minutes=2),
+    nout=1,
+)
 def unzip_archives(archives_directory):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
@@ -82,7 +94,11 @@ def unzip_archives(archives_directory):
     return extracted_csv_directories
 
 
-@task(checkpoint=False)
+@task(
+    name="Build VZ ETL Docker image (if updated)",
+    slug="docker-build",
+    checkpoint=False,
+)
 def build_docker_image(extracts):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
@@ -95,11 +111,14 @@ def build_docker_image(extracts):
     return build_result[0]
 
 
-@task
+@task(
+    name="Run VZ ETL Docker Image",
+)
 def run_docker_image(extracted_data, vz_etl_image, command):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
     # print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+
 
     docker_tmpdir = tempfile.mkdtemp()
     # return docker_tmpdir  # this is short circuiting out the rest of this routine (for speed of dev)
@@ -119,10 +138,19 @@ def run_docker_image(extracted_data, vz_etl_image, command):
         environment=RAW_AIRFLOW_CONFIG,
     )
     logger.info(log)
+
+    artifact = f"""
+    # Imported {command[1]}
+
+    ## Objects operated on
+    ## TODO make docker container emit log as a JSON blob, parse it and then emit an artifact
+    """    
+    create_markdown_artifact(artifact)
+
     return docker_tmpdir
 
 
-@task
+@task(name="Cleanup temporary directories", slug="cleanup-temporary-directories")
 def cleanup_temporary_directories(single, list, container_tmpdirs):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
