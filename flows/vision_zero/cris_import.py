@@ -82,7 +82,7 @@ def unzip_archives(archives_directory):
     return extracted_csv_directories
 
 
-@task
+@task(checkpoint=False)
 def build_docker_image(extracts):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
@@ -139,7 +139,7 @@ schedule = IntervalSchedule(interval = datetime.timedelta(minutes=1))
 
 with Flow(
     project_name,
-    schedule=schedule,
+    #schedule=schedule,
     #schedule=Schedule(clocks=[CronClock("* * * * *")]),
     #run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
 ) as flow:
@@ -161,8 +161,8 @@ with Flow(
             container_tmpdirs.append(container_tmpdir)
     cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
 
-result = is_serializable(flow)
-print("Is Serializable:", result)
+#result = is_serializable(flow)
+#print("Is Serializable:", result)
 
 flow.register(project_name=project_name)
 #flow.run()
