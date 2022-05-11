@@ -20,7 +20,7 @@ from prefect.run_configs import UniversalRun
 from prefect.utilities.debug import is_serializable
 from colorama import init, Fore, Style
 
-init() # init colorama for ANSI color codes
+init()  # init colorama for ANSI color codes
 
 
 PWD = os.getenv("PWD")
@@ -37,7 +37,7 @@ pp = pprint.PrettyPrinter(indent=2)
 def pull_from_github():
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
-    #print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+    # print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     repo = Repo(PWD)
     origin = repo.remotes[0]
     pull_result = origin.pull()
@@ -49,11 +49,11 @@ def pull_from_github():
     return repo
 
 
-@task
+@task(max_retries=3, retry_delay=datetime.timedelta(minutes=2))
 def download_extract_archives():
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
-    #print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+    # print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     zip_tmpdir = tempfile.mkdtemp()
     sysrsync.run(
         verbose=True,
@@ -71,7 +71,7 @@ def download_extract_archives():
 def unzip_archives(archives_directory):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
-    #print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+    # print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     extracted_csv_directories = []
     for filename in os.listdir(archives_directory):
         logger.info("File: " + filename)
@@ -86,10 +86,12 @@ def unzip_archives(archives_directory):
 def build_docker_image(extracts):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
-    #print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+    # print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     docker_client = docker.from_env()
-    build_result = docker_client.images.build(path="./atd-vz-data/atd-etl", tag="vz-etl")
-    #return true
+    build_result = docker_client.images.build(
+        path="./atd-vz-data/atd-etl", tag="vz-etl"
+    )
+    # return true
     return build_result[0]
 
 
@@ -97,10 +99,10 @@ def build_docker_image(extracts):
 def run_docker_image(extracted_data, vz_etl_image, command):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
-    #print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+    # print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
 
     docker_tmpdir = tempfile.mkdtemp()
-    #return docker_tmpdir  # this is short circuiting out the rest of this routine (for speed of dev)
+    # return docker_tmpdir  # this is short circuiting out the rest of this routine (for speed of dev)
     volumes = {
         docker_tmpdir: {"bind": "/app/tmp", "mode": "rw"},
         extracted_data: {"bind": "/data", "mode": "rw"},
@@ -124,7 +126,7 @@ def run_docker_image(extracted_data, vz_etl_image, command):
 def cleanup_temporary_directories(single, list, container_tmpdirs):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
-    #print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
+    # print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     shutil.rmtree(single)
     for directory in list:
         shutil.rmtree(directory)
@@ -133,13 +135,12 @@ def cleanup_temporary_directories(single, list, container_tmpdirs):
     return None
 
 
-schedule = IntervalSchedule(interval = datetime.timedelta(minutes=1))
+schedule = IntervalSchedule(interval=datetime.timedelta(minutes=1))
 
 with Flow(
     "CRIS Crash Import",
-    #schedule=schedule,
-    #schedule=Schedule(clocks=[CronClock("* * * * *")]),
-    #run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
+    # schedule=Schedule(clocks=[CronClock("* * * * *")]),
+    run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
 ) as flow:
 
     # repo = pull_from_github()
@@ -157,8 +158,8 @@ with Flow(
             container_tmpdirs.append(container_tmpdir)
     cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
 
-#result = is_serializable(flow)
-#print("Is Serializable:", result)
+# result = is_serializable(flow)
+# print("Is Serializable:", result)
 
 flow.register(project_name="vision-zero")
-#flow.run()
+# flow.run()
