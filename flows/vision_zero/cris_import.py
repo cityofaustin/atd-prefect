@@ -22,7 +22,6 @@ from colorama import init, Fore, Style
 
 init() # init colorama for ANSI color codes
 
-docker_client = docker.from_env()
 
 PWD = os.getenv("PWD")
 SFTP_ENDPOINT = os.getenv("SFTP_ENDPOINT")
@@ -88,9 +87,9 @@ def build_docker_image(extracts):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
     #print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
-    build_result = docker_client.images.build(
-        path="./atd-vz-data/atd-etl", tag="vz-etl"
-    )
+    docker_client = docker.from_env()
+    build_result = docker_client.images.build(path="./atd-vz-data/atd-etl", tag="vz-etl")
+    #return true
     return build_result[0]
 
 
@@ -107,6 +106,7 @@ def run_docker_image(extracted_data, vz_etl_image, command):
         extracted_data: {"bind": "/data", "mode": "rw"},
     }
 
+    docker_client = docker.from_env()
     log = docker_client.containers.run(
         image=vz_etl_image,
         name="vz_etl",
@@ -164,5 +164,5 @@ with Flow(
 result = is_serializable(flow)
 print("Is Serializable:", result)
 
-# flow.register(project_name=project_name)
-flow.run()
+flow.register(project_name=project_name)
+#flow.run()
