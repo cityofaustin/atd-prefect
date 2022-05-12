@@ -4,3 +4,4 @@ RUN apt upgrade -y
 RUN apt install -y magic-wormhole aptitude
 RUN apt install -y python3-pip
 RUN pip install prefect
+RUN apt install -y docker.io

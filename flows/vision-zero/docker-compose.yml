@@ -6,5 +6,6 @@ services:
     build: .
     volumes:
       - ./prefect_bootstrap:/root/agent
+      - /var/run/docker.sock:/var/run/docker.sock
     env_file:
       - ./prefect_agent_environment_variables.env
