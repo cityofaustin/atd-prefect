@@ -95,7 +95,7 @@ with Flow(
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
-    run_config=UniversalRun(labels=["test", "atd-data02"]),
+    run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
     schedule=Schedule(clocks=[CronClock("30 12 * * *")]),
 ) as flow:
     flow.chain(pull_docker_image, s3_to_socrata)
