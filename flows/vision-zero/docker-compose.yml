@@ -2,9 +2,9 @@ version: '3.7'
 services:
   prefect-agent:
     container_name: prefect-agent
-    command: ["tail", "-f", "/dev/null"]
+    command: ["/root/agent/start_agent.sh"]
     build: .
-    #volumes:
-      #- ./app:/root/app
-    #env_file:
-      #- development.env
+    volumes:
+      - ./prefect_bootstrap:/root/agent
+    env_file:
+      - ./prefect_agent_environment_variables.env
