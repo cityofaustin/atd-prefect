@@ -5,6 +5,7 @@ services:
     command: ["/root/agent/start_agent.sh"]
     build: .
     volumes:
+      - /tmp:/tmp
       - ./prefect_bootstrap:/root/agent
       - ./cris_import:/root/cris_import
       - /var/run/docker.sock:/var/run/docker.sock
