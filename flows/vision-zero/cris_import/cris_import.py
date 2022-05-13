@@ -190,5 +190,5 @@ with Flow(
 # result = is_serializable(flow)
 # print("Is Serializable:", result)
 
-#flow.register(project_name="vision-zero")
-flow.run()
+flow.register(project_name="vision-zero")
+#flow.run()
