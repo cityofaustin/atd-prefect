@@ -1,5 +1,6 @@
 FROM ubuntu:22.04
 ENV TZ="America/Chicago"
+COPY ./prefect_bootstrap/ssh_config /etc/ssh/config
 RUN apt update
 RUN apt-get update && \
     apt-get install -yq tzdata && \
