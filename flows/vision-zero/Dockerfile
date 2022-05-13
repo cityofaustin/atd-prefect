@@ -6,7 +6,7 @@ RUN apt-get update && \
     ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata
 RUN apt upgrade -y
-RUN apt install -y vim magic-wormhole aptitude python3-pip docker.io
+RUN apt install -y vim magic-wormhole aptitude python3-pip docker.io rsync
 RUN pip install prefect
 RUN pip install sysrsync GitPython
 WORKDIR /root/
