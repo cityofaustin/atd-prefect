@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 RUN apt update
 RUN apt upgrade -y
-RUN apt install -y magic-wormhole aptitude
-RUN apt install -y python3-pip
+RUN apt install -y vim magic-wormhole aptitude python3-pip docker.io
 RUN pip install prefect
-RUN apt install -y docker.io
+RUN pip install sysrsync GitPython
+WORKDIR /root/
