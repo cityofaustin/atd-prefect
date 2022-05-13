@@ -108,9 +108,8 @@ def build_docker_image(extracts):
     # print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
     docker_client = docker.from_env()
     build_result = docker_client.images.build(
-        path="./atd-vz-data/atd-etl", tag="vz-etl"
+        path=VZ_ETL_LOCATION, tag="vz-etl"
     )
-    # return true
     return build_result[0]
 
 
@@ -121,7 +120,6 @@ def run_docker_image(extracted_data, vz_etl_image, command):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
     # print(Fore.GREEN + sys._getframe().f_code.co_name + "()", Style.RESET_ALL)
-
 
     docker_tmpdir = tempfile.mkdtemp()
     # return docker_tmpdir  # this is short circuiting out the rest of this routine (for speed of dev)
@@ -192,5 +190,5 @@ with Flow(
 # result = is_serializable(flow)
 # print("Is Serializable:", result)
 
-flow.register(project_name="vision-zero")
-# flow.run()
+#flow.register(project_name="vision-zero")
+flow.run()
