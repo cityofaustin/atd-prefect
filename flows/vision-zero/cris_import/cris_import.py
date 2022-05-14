@@ -83,9 +83,10 @@ def unzip_archives(archives_directory):
     logger.info(sys._getframe().f_code.co_name + "()")
     extracted_csv_directories = []
     for filename in os.listdir(archives_directory):
-        logger.info("File: " + filename)
+        logger.info("About to unzip: " + filename + 'with the command ...')
         extract_tmpdir = tempfile.mkdtemp()
         unzip_command = f'7za -y -p{ZIP_PASSWORD} -o"{extract_tmpdir}" x "{archives_directory}/{filename}"'
+        logger.info(unzip_command)
         os.system(unzip_command)
         extracted_csv_directories.append(extract_tmpdir)
     return extracted_csv_directories
