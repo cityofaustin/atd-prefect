@@ -162,7 +162,6 @@ with Flow(
     # schedule=Schedule(clocks=[CronClock("* * * * *")]),
     run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
 ) as flow:
-
     # repo = pull_from_github()
     # zip_location = download_extract_archives(repo)
 
@@ -178,10 +177,11 @@ with Flow(
     image = build_docker_image(extracts)
 
     # Prefect is deep-magic. ✨
-      # This array becomes first-class task, as it's an interable that
+      # This array becomes a first-class task, as it's an interable that
       # controls flow by accumulating return values from other tasks.
       # Think of it like a Promise.all().
     container_tmpdirs = [] 
+
     for extract in extracts:
         for table in ["crash", "unit", "person", "primaryperson", "charges"]:
             # spin up the VZ ETL processor, per set of zips, per object type
