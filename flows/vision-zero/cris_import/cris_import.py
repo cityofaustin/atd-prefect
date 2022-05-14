@@ -185,7 +185,7 @@ with Flow(
     for extract in extracts:
         for table in ["crash", "unit", "person", "primaryperson", "charges"]:
             # spin up the VZ ETL processor, per set of zips, per object type
-            container_tmpdir = run_docker_image(
+            container_tmpdir = run_docker_image( # ← @task
                 extract, image, ["/app/process_hasura_import.py", table]
             )
             container_tmpdirs.append(container_tmpdir)
