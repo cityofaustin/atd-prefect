@@ -166,20 +166,30 @@ with Flow(
     # repo = pull_from_github()
     # zip_location = download_extract_archives(repo)
 
+    # get a location on disk which contains the zips from the sftp endpoint
     zip_location = download_extract_archives()
+
+    # iterate over the zips in that location and unarchive them into
+    # a list of temporary directories containtain the files of each
     extracts = unzip_archives(zip_location)
+
+    # make sure we have the docker image we want to use to process these built
     image = build_docker_image(extracts)
+
     # Prefect is deep-magic. ✨
-      # This array becomes a task, as it's an interable that
-      # controls flow by accumulating return values from a task.
+      # This array becomes first-class task, as it's an interable that
+      # controls flow by accumulating return values from other tasks.
       # Think of it like a Promise.all().
     container_tmpdirs = [] 
     for extract in extracts:
         for table in ["crash", "unit", "person", "primaryperson", "charges"]:
+            # spin up the VZ ETL processor, per set of zips, per object type
             container_tmpdir = run_docker_image(
                 extract, image, ["/app/process_hasura_import.py", table]
             )
             container_tmpdirs.append(container_tmpdir)
+
+    # remove all these workspaces we've made
     cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
 
 # result = is_serializable(flow)
