@@ -169,7 +169,11 @@ with Flow(
     zip_location = download_extract_archives()
     extracts = unzip_archives(zip_location)
     image = build_docker_image(extracts)
-    container_tmpdirs = []
+    # Prefect is deep-magic. ✨
+      # This array becomes a task, as it's an interable that
+      # controls flow by accumulating return values from a task.
+      # Think of it like a Promise.all().
+    container_tmpdirs = [] 
     for extract in extracts:
         for table in ["crash", "unit", "person", "primaryperson", "charges"]:
             container_tmpdir = run_docker_image(
