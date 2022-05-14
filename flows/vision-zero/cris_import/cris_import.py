@@ -173,7 +173,8 @@ with Flow(
     # a list of temporary directories containtain the files of each
     extracts = unzip_archives(zip_location)
 
-    # make sure we have the docker image we want to use to process these built
+    # make sure we have the docker image we want to use to process these built.
+    # NB: the extracts argument is thrown away. it's here to serialize the process
     image = build_docker_image(extracts)
 
     # Prefect is deep-magic. ✨
