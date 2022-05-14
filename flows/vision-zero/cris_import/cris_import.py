@@ -20,7 +20,6 @@ from prefect.backend.artifacts import create_markdown_artifact
 from prefect.schedules.clocks import CronClock
 
 from prefect.run_configs import UniversalRun
-from prefect.utilities.debug import is_serializable
 
 
 PWD = os.getenv("PWD")
@@ -194,8 +193,7 @@ with Flow(
     # remove all these workspaces we've made
     cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
 
-# result = is_serializable(flow)
-# print("Is Serializable:", result)
-
+# i'm not sure how to make this not self-label by the hostname of the registering computer.
+# here, one only gets a docker container ID, so no harm, no foul, but it's noisy.
 flow.register(project_name="vision-zero")
 #flow.run()
