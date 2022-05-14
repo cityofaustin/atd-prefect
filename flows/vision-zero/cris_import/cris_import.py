@@ -136,6 +136,7 @@ def run_docker_image(extracted_data, vz_etl_image, command):
     # Imported {command[1]}
 
     ## Objects operated on
+    {log}
     ## TODO make docker container emit log as a JSON blob, parse it and then emit an artifact
     """    
     create_markdown_artifact(artifact)
@@ -153,6 +154,10 @@ def cleanup_temporary_directories(single, list, container_tmpdirs):
     for directory in container_tmpdirs:
         shutil.rmtree(directory)
     return None
+
+@task(name="Upload archive to S3",)
+def upload_archive_to_s3():
+    print("hm")
 
 
 schedule = IntervalSchedule(interval=datetime.timedelta(minutes=1))
@@ -177,11 +182,13 @@ with Flow(
     image = build_docker_image(extracts)
 
     # Prefect is deep-magic. ✨
-      # This array becomes a first-class task, as it's an interable that
+      # This array becomes a first-class task ("List"), as it's an interable that
       # controls flow by accumulating return values from other tasks.
       # Think of it like a Promise.all().
     container_tmpdirs = [] 
 
+    # TODO: construct this that it runs "crash" first, and then the 
+    # next four object types in parallel.
     for extract in extracts:
         for table in ["crash", "unit", "person", "primaryperson", "charges"]:
             # spin up the VZ ETL processor, per set of zips, per object type
@@ -194,6 +201,6 @@ with Flow(
     cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
 
 # i'm not sure how to make this not self-label by the hostname of the registering computer.
-# here, one only gets a docker container ID, so no harm, no foul, but it's noisy.
+# here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
 flow.register(project_name="vision-zero")
 #flow.run()
