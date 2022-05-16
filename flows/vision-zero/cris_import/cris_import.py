@@ -4,7 +4,6 @@ import os
 import sys
 import json
 import shutil
-import pprint
 import time
 import datetime
 import tempfile
@@ -40,7 +39,6 @@ AWS_CSV_ARCHIVE_BUCKET_NAME = os.getenv("AWS_CSV_ARCHIVE_BUCKET_NAME")
 AWS_CSV_ARCHIVE_PATH_PRODUCTION = os.getenv("AWS_CSV_ARCHIVE_PATH_PRODUCTION")
 AWS_CSV_ARCHIVE_PATH_STAGING = os.getenv("AWS_CSV_ARCHIVE_PATH_STAGING")
 
-pp = pprint.PrettyPrinter(indent=2)
 
 def skip_if_running_handler(obj, old_state, new_state):
     if new_state.is_running():
