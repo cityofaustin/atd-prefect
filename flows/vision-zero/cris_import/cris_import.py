@@ -8,6 +8,7 @@ import pprint
 import time
 import datetime
 import tempfile
+from subprocess import Popen, PIPE
 
 import boto3
 import docker
@@ -212,6 +213,22 @@ def upload_csv_files_to_s3(extracts):
                 extract_directory + '/' + filename,
                 destination_path  + '/' + filename,
                 )
+    return True
+
+# TODO this task really needs actual success checking on upstream tasks; part of move to functional API:w
+@task(name="Remove archive from SFTP Endpoint")
+def remove_archives_from_sftp_endpoint(zip_location, uploaded_token):
+    logger = prefect.context.get("logger")
+    logger.info(sys._getframe().f_code.co_name + "()")
+    logger.info(zip_location)
+    for archive in os.listdir(zip_location):
+        logger.info(archive)
+        command = f'ssh {SFTP_ENDPOINT} rm -v /home/txdot/{archive}'
+        logger.info(command)
+        cmd = command.split()
+        rm_result = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE).stdout.read()
+        logger.info(rm_result)
+
 
 
 schedule = IntervalSchedule(interval=datetime.timedelta(minutes=1))
@@ -220,7 +237,7 @@ with Flow(
     "CRIS Crash Import",
     # schedule=Schedule(clocks=[CronClock("* * * * *")]),
     run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
-    state_handlers=[skip_if_running_handler],
+    #state_handlers=[skip_if_running_handler],
 ) as flow:
     # repo = pull_from_github()
     # zip_location = download_extract_archives(repo)
@@ -233,7 +250,10 @@ with Flow(
     extracts = unzip_archives(zip_location)
 
     # push up the archives to s3 for archival
-    upload_csv_files_to_s3(extracts)
+    uploaded_token = upload_csv_files_to_s3(extracts)
+
+    # remove archives from SFTP endpoint
+    remove_archives_from_sftp_endpoint(zip_location, uploaded_token) # this fake arguments is too messy now; switch to functional API
 
     # make sure we have the docker image we want to use to process these built.
     # NB: the extracts argument is thrown away. it's here to serialize the process
