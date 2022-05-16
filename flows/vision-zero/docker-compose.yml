@@ -1,9 +1,10 @@
 version: '3.7'
 services:
   prefect-agent:
-    container_name: prefect-agent
+    container_name: prefect-agent-vz
     command: ["/root/agent/start_agent.sh"]
     build: .
+    restart: always
     volumes:
       - /tmp:/tmp
       - ./prefect_bootstrap:/root/agent
