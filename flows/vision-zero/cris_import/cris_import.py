@@ -18,6 +18,8 @@ from prefect import task, Flow
 from prefect.schedules import Schedule
 from prefect.schedules import IntervalSchedule
 from prefect.backend.artifacts import create_markdown_artifact
+from prefect.client import Client
+from prefect.engine.state import Skipped
 from prefect.schedules.clocks import CronClock
 
 from prefect.run_configs import UniversalRun
@@ -33,8 +35,9 @@ RAW_AIRFLOW_CONFIG = json.loads(RAW_AIRFLOW_CONFIG_JSON)
 AWS_DEFAULT_REGION = os.getenv("AWS_DEFAULT_REGION")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
-AWS_BUCKET_NAME_STAGING = os.getenv("AWS_BUCKET_NAME_STAGING")
+AWS_CSV_ARCHIVE_BUCKET_NAME = os.getenv("AWS_CSV_ARCHIVE_BUCKET_NAME")
+AWS_CSV_ARCHIVE_PATH_PRODUCTION = os.getenv("AWS_CSV_ARCHIVE_PATH_PRODUCTION")
+AWS_CSV_ARCHIVE_PATH_STAGING = os.getenv("AWS_CSV_ARCHIVE_PATH_STAGING")
 
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -149,7 +152,7 @@ def run_docker_image(extracted_data, vz_etl_image, command):
     logger.info(sys._getframe().f_code.co_name + "()")
 
     docker_tmpdir = tempfile.mkdtemp()
-    # return docker_tmpdir  # this is short circuiting out the rest of this routine (for speed of dev)
+    #return docker_tmpdir  # this is short circuiting out the rest of this routine (for speed of dev)
     volumes = {
         docker_tmpdir: {"bind": "/app/tmp", "mode": "rw"},
         extracted_data: {"bind": "/data", "mode": "rw"},
@@ -190,24 +193,25 @@ def cleanup_temporary_directories(single, list, container_tmpdirs):
         shutil.rmtree(directory)
     return None
 
-@task(name="Upload archive to S3",)
-def upload_archive_to_s3(archives_directory):
+@task(name="Upload CSV files on s3 for archival")
+def upload_csv_files_to_s3(extracts):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
-
+    
     session = boto3.Session(
         aws_access_key_id=AWS_ACCESS_KEY_ID,
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
         )
     s3 = session.resource('s3')
 
-    print("location: ", archives_directory)
-    create_markdown_artifact("location: " + archives_directory)
-
-    for filename in os.listdir(archives_directory):
-        logger.info("About to upload to s3: " + filename)
-        fq_filename = archives_directory + '/' + filename
-        s3.Bucket(AWS_BUCKET_NAME_STAGING).upload_file(fq_filename, filename)
+    for extract_directory in extracts:
+        for filename in os.listdir(extract_directory):
+            logger.info("About to upload to s3: " + filename)
+            destination_path = AWS_CSV_ARCHIVE_PATH_STAGING + '/' + str(datetime.date.today())
+            s3.Bucket(AWS_CSV_ARCHIVE_BUCKET_NAME).upload_file(
+                extract_directory + '/' + filename,
+                destination_path  + '/' + filename,
+                )
 
 
 schedule = IntervalSchedule(interval=datetime.timedelta(minutes=1))
@@ -216,6 +220,7 @@ with Flow(
     "CRIS Crash Import",
     # schedule=Schedule(clocks=[CronClock("* * * * *")]),
     run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
+    state_handlers=[skip_if_running_handler],
 ) as flow:
     # repo = pull_from_github()
     # zip_location = download_extract_archives(repo)
@@ -223,12 +228,12 @@ with Flow(
     # get a location on disk which contains the zips from the sftp endpoint
     zip_location = download_extract_archives()
 
-    # push up the archives to s3 for archival
-    upload_archive_to_s3(zip_location)
-
     # iterate over the zips in that location and unarchive them into
     # a list of temporary directories containtain the files of each
     extracts = unzip_archives(zip_location)
+
+    # push up the archives to s3 for archival
+    upload_csv_files_to_s3(extracts)
 
     # make sure we have the docker image we want to use to process these built.
     # NB: the extracts argument is thrown away. it's here to serialize the process
