@@ -38,6 +38,35 @@ AWS_BUCKET_NAME_STAGING = os.getenv("AWS_BUCKET_NAME_STAGING")
 
 pp = pprint.PrettyPrinter(indent=2)
 
+def skip_if_running_handler(obj, old_state, new_state):
+    if new_state.is_running():
+        client = Client()
+        query = """
+            query($flow_id: uuid) {
+              flow_run(
+                where: {_and: [{flow_id: {_eq: $flow_id}},
+                {state: {_eq: "Running"}}]}
+                limit: 1
+                offset: 1
+              ) {
+                name
+                state
+                start_time
+              }
+            }
+        """
+        response = client.graphql(
+            query=query, variables=dict(flow_id=prefect.context.flow_id)
+        )
+        active_flow_runs = response["data"]["flow_run"]
+        if active_flow_runs:
+            logger = prefect.context.get("logger")
+            message = "Skipping this flow run since there are already some flow runs in progress"
+            logger.info(message)
+            return Skipped(message) # or returned Cancelled state if you prefer this state in this use case
+    return new_state
+
+
 
 @task
 def pull_from_github():
