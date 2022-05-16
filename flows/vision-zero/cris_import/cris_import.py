@@ -14,7 +14,7 @@ import docker
 import sysrsync
 from git import Repo
 import prefect
-from prefect import task, Flow
+from prefect import task, Task, Flow, unmapped
 from prefect.schedules import Schedule
 from prefect.schedules import IntervalSchedule
 from prefect.backend.artifacts import create_markdown_artifact
@@ -117,7 +117,7 @@ def unzip_archives(archives_directory):
     slug="docker-build",
     checkpoint=False,
 )
-def build_docker_image(extracts):
+def build_docker_image():
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
     docker_client = docker.from_env()
@@ -144,7 +144,6 @@ def run_docker_image(extracted_data, vz_etl_image, command):
     docker_client = docker.from_env()
     log = docker_client.containers.run(
         image=vz_etl_image,
-        name="vz_etl",
         command=command,
         volumes=volumes,
         network_mode="host",  # This should be doable in bridged network mode. TODO: Investigate
@@ -170,18 +169,33 @@ def run_docker_image(extracted_data, vz_etl_image, command):
 
 
 @task(name="Cleanup temporary directories", slug="cleanup-temporary-directories")
-def cleanup_temporary_directories(single, list, container_tmpdirs):
+#def cleanup_temporary_directories(single, list, container_tmpdirs):
+def cleanup_temporary_directories(zip_location, extracted_archives, crash_import_tmpdirs, unit_import_tmpdirs, person_import_tmpdirs, primaryperson_import_tmpdirs, charges_import_tmpdirs):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
-    shutil.rmtree(single)
-    for directory in list:
+
+
+    #for thing in clean_up_list:
+        #logger.info(type(thing))
+    shutil.rmtree(zip_location)
+    for directory in extracted_archives:
         shutil.rmtree(directory)
-    for directory in container_tmpdirs:
+    for directory in crash_import_tmpdirs:
         shutil.rmtree(directory)
+    for directory in unit_import_tmpdirs:
+        shutil.rmtree(directory)
+    for directory in person_import_tmpdirs:
+        shutil.rmtree(directory)
+    for directory in primaryperson_import_tmpdirs:
+        shutil.rmtree(directory)
+    for directory in charges_import_tmpdirs:
+        shutil.rmtree(directory)
+
     return None
 
 @task(name="Upload CSV files on s3 for archival")
-def upload_csv_files_to_s3(extracts):
+#def upload_csv_files_to_s3(extracts):
+def upload_csv_files_to_s3(extract_directory):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
     
@@ -191,19 +205,19 @@ def upload_csv_files_to_s3(extracts):
         )
     s3 = session.resource('s3')
 
-    for extract_directory in extracts:
-        for filename in os.listdir(extract_directory):
-            logger.info("About to upload to s3: " + filename)
-            destination_path = AWS_CSV_ARCHIVE_PATH_STAGING + '/' + str(datetime.date.today())
-            s3.Bucket(AWS_CSV_ARCHIVE_BUCKET_NAME).upload_file(
-                extract_directory + '/' + filename,
-                destination_path  + '/' + filename,
-                )
-    return True
+    #for extract_directory in extracts:
+    for filename in os.listdir(extract_directory):
+        logger.info("About to upload to s3: " + filename)
+        destination_path = AWS_CSV_ARCHIVE_PATH_STAGING + '/' + str(datetime.date.today())
+        s3.Bucket(AWS_CSV_ARCHIVE_BUCKET_NAME).upload_file(
+            extract_directory + '/' + filename,
+            destination_path  + '/' + filename,
+            )
+    return extract_directory
 
 # TODO this task really needs actual success checking on upstream tasks; part of move to functional API:w
 @task(name="Remove archive from SFTP Endpoint")
-def remove_archives_from_sftp_endpoint(zip_location, uploaded_token):
+def remove_archives_from_sftp_endpoint(zip_location):
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
     logger.info(zip_location)
@@ -226,45 +240,76 @@ with Flow(
     #state_handlers=[skip_if_running_handler],
 ) as flow:
 
-
-
-
+    # make sure we have the docker image we want to use to process these built.
+    image = build_docker_image()
 
     # get a location on disk which contains the zips from the sftp endpoint
     zip_location = download_extract_archives()
 
     # iterate over the zips in that location and unarchive them into
     # a list of temporary directories containtain the files of each
-    extracts = unzip_archives(zip_location)
+    extracted_archives = unzip_archives(zip_location)
 
     # push up the archives to s3 for archival
-    uploaded_token = upload_csv_files_to_s3(extracts)
+    uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
 
+    #def run_docker_image(extracted_data, vz_etl_image, command):
+    crash_import_tmpdirs = run_docker_image.map(extracted_data=uploaded_archives_csvs, vz_etl_image=unmapped(image), command=unmapped(["/app/process_hasura_import.py", "crash"]))
+
+    # the next four set of task calls; i want them to be in parallel, but this won't work without a dask setup, i think
+    unit_import_tmpdirs = run_docker_image.map(extracted_data=uploaded_archives_csvs, vz_etl_image=unmapped(image), command=unmapped(["/app/process_hasura_import.py", "unit"]))
+    unit_import_tmpdirs.set_upstream(crash_import_tmpdirs)
+
+    person_import_tmpdirs = run_docker_image.map(extracted_data=uploaded_archives_csvs, vz_etl_image=unmapped(image), command=unmapped(["/app/process_hasura_import.py", "person"]))
+    person_import_tmpdirs.set_upstream(crash_import_tmpdirs)
+
+    primaryperson_import_tmpdirs = run_docker_image.map(extracted_data=uploaded_archives_csvs, vz_etl_image=unmapped(image), command=unmapped(["/app/process_hasura_import.py", "primaryperson"]))
+    primaryperson_import_tmpdirs.set_upstream(crash_import_tmpdirs)
+
+    charges_import_tmpdirs = run_docker_image.map(extracted_data=uploaded_archives_csvs, vz_etl_image=unmapped(image), command=unmapped(["/app/process_hasura_import.py", "charges"]))
+    charges_import_tmpdirs.set_upstream(crash_import_tmpdirs)
+    
     # remove archives from SFTP endpoint
-    remove_archives_from_sftp_endpoint(zip_location, uploaded_token) # this fake arguments is too messy now; switch to functional API
+    removal_token = remove_archives_from_sftp_endpoint(zip_location)
+    removal_token.set_upstream(crash_import_tmpdirs)
+    removal_token.set_upstream(unit_import_tmpdirs)
+    removal_token.set_upstream(person_import_tmpdirs)
+    removal_token.set_upstream(primaryperson_import_tmpdirs)
+    removal_token.set_upstream(charges_import_tmpdirs)
 
-    # make sure we have the docker image we want to use to process these built.
-    # NB: the extracts argument is thrown away. it's here to serialize the process
-    image = build_docker_image(extracts)
+    cleanup = cleanup_temporary_directories(zip_location, extracted_archives, crash_import_tmpdirs, unit_import_tmpdirs, person_import_tmpdirs, primaryperson_import_tmpdirs, charges_import_tmpdirs)
+    cleanup.set_upstream(removal_token)
+
+    #cleanup_token = cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
+
+
+    #something = run_docker_image( # ← @task
+                #extract, image, ["/app/process_hasura_import.py", "crash"]
+            #)
 
     # Prefect is deep-magic. ✨
       # This array becomes a first-class task ("List"), as it's an interable that
       # controls flow by accumulating return values from other tasks.
       # Think of it like a Promise.all().
-    container_tmpdirs = [] 
+    #container_tmpdirs = [] 
 
     # TODO: construct this that it runs "crash" first, and then the 
     # next four object types in parallel.
-    for extract in extracts:
-        for table in ["crash", "unit", "person", "primaryperson", "charges"]:
-            # spin up the VZ ETL processor, per set of zips, per object type
-            container_tmpdir = run_docker_image( # ← @task
-                extract, image, ["/app/process_hasura_import.py", table]
-            )
-            container_tmpdirs.append(container_tmpdir)
+    #for extract in extracts:
+        #for table in ["crash", "unit", "person", "primaryperson", "charges"]:
+            ## spin up the VZ ETL processor, per set of zips, per object type
+            #container_tmpdir = run_docker_image( # ← @task
+                #extract, image, ["/app/process_hasura_import.py", table]
+            #)
+            #container_tmpdirs.append(container_tmpdir)
 
     # remove all these workspaces we've made
-    cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
+    #cleanup_token = cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
+
+    #flow.set_dependencies(
+        #task=cleanup_token,
+        #upstream_tasks=[container_tmpdirs, upload_csv_files_to_s3(extracts)],
+    #)
 
 # i'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
