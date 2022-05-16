@@ -69,22 +69,6 @@ def skip_if_running_handler(obj, old_state, new_state):
     return new_state
 
 
-
-@task
-def pull_from_github():
-    logger = prefect.context.get("logger")
-    logger.info(sys._getframe().f_code.co_name + "()")
-    repo = Repo(PWD)
-    origin = repo.remotes[0]
-    pull_result = origin.pull()
-
-    # sms = repo.submodules
-    # for sm in sms:
-    # print(sm.remotes)
-
-    return repo
-
-
 @task(
     name="Download archive from SFTP Endpoint",
     slug="get-zips",
@@ -170,11 +154,15 @@ def run_docker_image(extracted_data, vz_etl_image, command):
     logger.info(log)
 
     artifact = f"""
+
     # Imported {command[1]}
 
     ## Objects operated on
+
     {log}
+
     ## TODO make docker container emit log as a JSON blob, parse it and then emit an artifact
+
     """    
     create_markdown_artifact(artifact)
 
@@ -237,8 +225,10 @@ with Flow(
     run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
     #state_handlers=[skip_if_running_handler],
 ) as flow:
-    # repo = pull_from_github()
-    # zip_location = download_extract_archives(repo)
+
+
+
+
 
     # get a location on disk which contains the zips from the sftp endpoint
     zip_location = download_extract_archives()
