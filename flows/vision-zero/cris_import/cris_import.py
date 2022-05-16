@@ -9,6 +9,7 @@ import time
 import datetime
 import tempfile
 
+import boto3
 import docker
 import sysrsync
 from git import Repo
@@ -161,8 +162,23 @@ def cleanup_temporary_directories(single, list, container_tmpdirs):
     return None
 
 @task(name="Upload archive to S3",)
-def upload_archive_to_s3():
-    print("hm")
+def upload_archive_to_s3(archives_directory):
+    logger = prefect.context.get("logger")
+    logger.info(sys._getframe().f_code.co_name + "()")
+
+    session = boto3.Session(
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        )
+    s3 = session.resource('s3')
+
+    print("location: ", archives_directory)
+    create_markdown_artifact("location: " + archives_directory)
+
+    for filename in os.listdir(archives_directory):
+        logger.info("About to upload to s3: " + filename)
+        fq_filename = archives_directory + '/' + filename
+        s3.Bucket(AWS_BUCKET_NAME_STAGING).upload_file(fq_filename, filename)
 
 
 schedule = IntervalSchedule(interval=datetime.timedelta(minutes=1))
