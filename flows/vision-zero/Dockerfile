@@ -8,7 +8,7 @@ RUN apt-get update && \
 RUN apt upgrade -y
 RUN apt install -y vim magic-wormhole aptitude python3-pip docker.io rsync p7zip-full
 RUN pip install prefect
-RUN pip install sysrsync GitPython
+RUN pip install sysrsync GitPython boto3
 COPY ./prefect_bootstrap/ssh_config /root/.ssh/config
 COPY ./prefect_bootstrap/id_rsa /root/.ssh/id_rsa
 COPY ./prefect_bootstrap/id_rsa.pub /root/.ssh/id_rsa.pub
