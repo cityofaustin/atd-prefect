@@ -29,6 +29,11 @@ RAW_AIRFLOW_CONFIG_JSON = os.getenv("RAW_AIRFLOW_CONFIG")
 VZ_ETL_LOCATION = os.getenv("VZ_ETL_LOCATION")
 RAW_AIRFLOW_CONFIG = json.loads(RAW_AIRFLOW_CONFIG_JSON)
 
+AWS_DEFAULT_REGION = os.getenv("AWS_DEFAULT_REGION")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
+AWS_BUCKET_NAME_STAGING = os.getenv("AWS_BUCKET_NAME_STAGING")
 
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -172,6 +177,9 @@ with Flow(
 
     # get a location on disk which contains the zips from the sftp endpoint
     zip_location = download_extract_archives()
+
+    # push up the archives to s3 for archival
+    upload_archive_to_s3(zip_location)
 
     # iterate over the zips in that location and unarchive them into
     # a list of temporary directories containtain the files of each
