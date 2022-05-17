@@ -34,4 +34,13 @@ $ docker exec -it prefect-agent-vz bash
 
 Environment variables are defined via an environemnt file that is passed to docker when the container is started and which is specificed in the `docker-compose.yml` file. Ultimately, these need to be refactored into a single JSON blob and defined for each deployment phase in the application life cycle (dev, staging, production). This work should be done in conjunction with deploying this code once the group is in agreement over the methods used in this flow/agent setup.
 
+## Non-checked-in files
 
+### Environment variable file, discussed above
+
+* `atd-prefect/flows/vision-zero/prefect_agent_environment_variables.env`
+
+### Public / private key defining SSH identity and client configuration used to auth to SFTP endpoint
+* `atd-prefect/flows/vision-zero/prefect_bootstrap/id_rsa`
+* `atd-prefect/flows/vision-zero/prefect_bootstrap/id_rsa.pub`
+* `atd-prefect/flows/vision-zero/prefect_bootstrap/ssh_config`
