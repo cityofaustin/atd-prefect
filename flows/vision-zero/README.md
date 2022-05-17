@@ -28,5 +28,10 @@ The same docker image is used to develop the flows. Because the image is built t
 ```
 # you can connect to the agent / flow development container 
 $ docker exec -it prefect-agent-vz bash
+```
+
+## Environment Configuration
+
+Environment variables are defined via an environemnt file that is passed to docker when the container is started and which is specificed in the `docker-compose.yml` file. Ultimately, these need to be refactored into a single JSON blob and defined for each deployment phase in the application life cycle (dev, staging, production). This work should be done in conjunction with deploying this code once the group is in agreement over the methods used in this flow/agent setup.
 
 
