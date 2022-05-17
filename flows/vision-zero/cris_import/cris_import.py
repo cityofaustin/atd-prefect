@@ -153,7 +153,13 @@ def run_docker_image(extracted_data, vz_etl_image, command):
         remove=True,
         environment=RAW_AIRFLOW_CONFIG,
     )
-    logger.info(log)
+    
+
+    logger.info("Log Type: " + str(type(log)))
+
+    #logger.info(log)
+    #log.replace('\n', "\n")
+    #logger.info(log)
 
     artifact = f"""
 
@@ -240,7 +246,7 @@ with Flow(
     "CRIS Crash Import",
     # schedule=Schedule(clocks=[CronClock("* * * * *")]),
     run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
-    #state_handlers=[skip_if_running_handler],
+    state_handlers=[skip_if_running_handler],
 ) as flow:
 
     # make sure we have the docker image we want to use to process these built.
