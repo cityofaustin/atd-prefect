@@ -79,7 +79,7 @@ def download_extract_archives():
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
     zip_tmpdir = tempfile.mkdtemp()
-    sysrsync.run(
+    rsync = sysrsync.run(
         verbose=True,
         options=["-a"],
         source_ssh=SFTP_ENDPOINT,
@@ -87,6 +87,9 @@ def download_extract_archives():
         sync_source_contents=False,
         destination=zip_tmpdir,
     )
+    logger.info("Rsync return code: " + str(rsync.returncode))
+    if (rsync.returncode != 0):
+        return false
     logger.info("Temp Directory: " + zip_tmpdir)
     return zip_tmpdir
 
