@@ -113,7 +113,7 @@ with Flow(
         path="flows/knack/knack_banner.py",
         ref="main"  # The branch name
     ),
-    run_config=UniversalRun(labels=["test", "atd-data02"]),
+    run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
 ) as send_email_flow:
     get_data_flow_run_id = create_flow_run(flow_name=get_data_flow.name)
     script_result = get_task_run_result(
