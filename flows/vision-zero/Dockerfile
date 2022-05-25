@@ -6,7 +6,7 @@ RUN apt-get update && \
     ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata
 RUN apt upgrade -y
-RUN apt install -y vim magic-wormhole aptitude python3-pip docker.io rsync p7zip-full
+RUN apt install -y vim magic-wormhole aptitude python3-pip docker.io rsync p7zip-full black
 RUN pip install prefect
 RUN pip install sysrsync GitPython boto3
 COPY ./prefect_bootstrap/ssh_config /root/.ssh/config
