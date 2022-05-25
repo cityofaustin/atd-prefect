@@ -43,6 +43,12 @@ AWS_CSV_ARCHIVE_PATH_PRODUCTION = kv_dictionary["AWS_CSV_ARCHIVE_PATH_PRODUCTION
 AWS_CSV_ARCHIVE_PATH_STAGING = kv_dictionary["AWS_CSV_ARCHIVE_PATH_STAGING"]
 
 def skip_if_running_handler(obj, old_state, new_state):
+    """
+    State management function to prevent a flow executing if it's already running
+
+    See: https://github.com/PrefectHQ/prefect/discussions/5373#discussioncomment-2054536
+    """
+
     if new_state.is_running():
         client = Client()
         query = """
@@ -78,6 +84,13 @@ def skip_if_running_handler(obj, old_state, new_state):
     retry_delay=datetime.timedelta(minutes=2),
 )
 def download_extract_archives():
+    """
+    Connect to the SFTP endpoint which receives archives from CRIS and 
+    download them into a temporary directory.
+
+    Returns path of temporary directory as a string
+    """
+
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
     zip_tmpdir = tempfile.mkdtemp()
@@ -104,6 +117,15 @@ def download_extract_archives():
     nout=1,
 )
 def unzip_archives(archives_directory):
+    """
+    Unzips (and decrypts) archives received from CRIS
+
+    Arguments: A path to a directory containing archives as a string
+
+    Returns: A list of strings, each denoting a path to a folder
+    containing an archive's contents
+    """
+    
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
     extracted_csv_directories = []
@@ -123,6 +145,12 @@ def unzip_archives(archives_directory):
     checkpoint=False,
 )
 def build_docker_image():
+    """
+    Builds (or updates) the VZ ETL. 
+    Almost always, this will be a non-op and return almost instantly.
+
+    Returns: Docker object representing the built image; used later to start a containr
+    """
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
     docker_client = docker.from_env()
@@ -136,6 +164,14 @@ def build_docker_image():
     name="Run VZ ETL Docker Image",
 )
 def run_docker_image(extracted_data, vz_etl_image, command):
+    """
+    Execute the VZ ETL Tool which runs in a docker container. 
+
+    Arguments: 
+        extracted_data: A string denoting a path of a folder containing an unarchived extract
+        vz_etl_image: A docker object referencing an image to run
+        command: The particular command that will be used as the container entrypoint
+    """
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
 
@@ -180,14 +216,25 @@ def run_docker_image(extracted_data, vz_etl_image, command):
 
 
 @task(name="Cleanup temporary directories", slug="cleanup-temporary-directories")
-#def cleanup_temporary_directories(single, list, container_tmpdirs):
 def cleanup_temporary_directories(zip_location, extracted_archives, crash_import_tmpdirs, unit_import_tmpdirs, person_import_tmpdirs, primaryperson_import_tmpdirs, charges_import_tmpdirs):
+    """
+    Remove directories that have accumulated during the flow's execution
+
+    Arguments:
+        zip_location: A string containing a path to a temporary directory
+        extracted_archives: A list of strings each containing a path to a temporary directory
+        crash_import_tmpdirs: A list of strings each containing a path to a temporary directory
+        unit_import_tmpdirs: A list of strings each containing a path to a temporary directory
+        person_import_tmpdirs: A list of strings each containing a path to a temporary directory
+        primaryperson_import_tmpdirs: A list of strings each containing a path to a temporary directory
+        charges_import_tmpdirs: A list of strings each containing a path to a temporary directory
+
+    Returns: None
+    """
+
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
 
-
-    #for thing in clean_up_list:
-        #logger.info(type(thing))
     shutil.rmtree(zip_location)
     for directory in extracted_archives:
         shutil.rmtree(directory)
@@ -205,8 +252,17 @@ def cleanup_temporary_directories(zip_location, extracted_archives, crash_import
     return None
 
 @task(name="Upload CSV files on s3 for archival")
-#def upload_csv_files_to_s3(extracts):
 def upload_csv_files_to_s3(extract_directory):
+    """
+    Upload CSV files which came from CRIS exports up to S3 for archival
+
+    Arguments:
+        extract_directory: String denoting the full path of a directory containing extracted CSV files
+
+    Returns:
+        extract_directory: String denoting the full path of a directory containing extracted CSV files
+            NB: The in-and-out unchanged data in this function is more about serializing prefect tasks and less about inter-functional communication
+    """
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
     
@@ -226,9 +282,16 @@ def upload_csv_files_to_s3(extract_directory):
             )
     return extract_directory
 
-# TODO this task really needs actual success checking on upstream tasks; part of move to functional API:w
 @task(name="Remove archive from SFTP Endpoint")
 def remove_archives_from_sftp_endpoint(zip_location):
+    """
+    Delete the archives which have been processed from the SFTP endpoint
+
+    Arguments:
+        zip_location: Stringing containing path of a directory containing the zip files downloaded from SFTP endpoint
+
+    Returns: None
+    """
     logger = prefect.context.get("logger")
     logger.info(sys._getframe().f_code.co_name + "()")
     logger.info(zip_location)
@@ -240,7 +303,7 @@ def remove_archives_from_sftp_endpoint(zip_location):
         rm_result = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE).stdout.read()
         logger.info(rm_result)
 
-
+    return None
 
 
 with Flow(
@@ -249,7 +312,6 @@ with Flow(
     run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
     state_handlers=[skip_if_running_handler],
 ) as flow:
-
     # make sure we have the docker image we want to use to process these built.
     image = build_docker_image()
 
@@ -290,7 +352,7 @@ with Flow(
     cleanup = cleanup_temporary_directories(zip_location, extracted_archives, crash_import_tmpdirs, unit_import_tmpdirs, person_import_tmpdirs, primaryperson_import_tmpdirs, charges_import_tmpdirs)
     cleanup.set_upstream(removal_token)
 
-# i'm not sure how to make this not self-label by the hostname of the registering computer.
+# I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
 flow.register(project_name="vision-zero")
 #flow.run()
