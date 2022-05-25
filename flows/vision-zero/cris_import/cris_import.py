@@ -21,9 +21,11 @@ from prefect.backend.artifacts import create_markdown_artifact
 from prefect.client import Client
 from prefect.engine.state import Skipped
 from prefect.schedules.clocks import CronClock
+from prefect.backend import get_key_value
 
 from prefect.run_configs import UniversalRun
 
+kv_store = get_key_value('Vision Zero Development')
 
 PWD = os.getenv("PWD")
 SFTP_ENDPOINT = os.getenv("SFTP_ENDPOINT")

@@ -23,4 +23,4 @@ kv_store = {
 
 json = json.dumps(kv_store)
 
-key_value_uuid = set_key_value(key='VZ_Dev', value=json)
+key_value_uuid = set_key_value(key='Vision Zero Development', value=json)
