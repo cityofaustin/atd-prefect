@@ -21,14 +21,13 @@ from prefect.client import Client
 from prefect.engine.state import Skipped
 from prefect.backend import get_key_value
 from prefect.backend.artifacts import create_markdown_artifact
-from prefect.schedules import Schedule, IntervalSchedule
+from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
 
 from prefect.run_configs import UniversalRun
 
 kv_store = get_key_value('Vision Zero Development')
 kv_dictionary = json.loads(kv_store)
-
 
 SFTP_ENDPOINT = kv_dictionary["SFTP_ENDPOINT"]
 ZIP_PASSWORD = kv_dictionary["ZIP_PASSWORD"]
@@ -43,7 +42,6 @@ AWS_SECRET_ACCESS_KEY = kv_dictionary["AWS_SECRET_ACCESS_KEY"]
 AWS_CSV_ARCHIVE_BUCKET_NAME = kv_dictionary["AWS_CSV_ARCHIVE_BUCKET_NAME"]
 AWS_CSV_ARCHIVE_PATH_PRODUCTION = kv_dictionary["AWS_CSV_ARCHIVE_PATH_PRODUCTION"]
 AWS_CSV_ARCHIVE_PATH_STAGING = kv_dictionary["AWS_CSV_ARCHIVE_PATH_STAGING"]
-
 
 def skip_if_running_handler(obj, old_state, new_state):
     if new_state.is_running():
@@ -245,7 +243,6 @@ def remove_archives_from_sftp_endpoint(zip_location):
 
 
 
-schedule = IntervalSchedule(interval=datetime.timedelta(minutes=1))
 
 with Flow(
     "CRIS Crash Import",
