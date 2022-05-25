@@ -293,37 +293,6 @@ with Flow(
     cleanup = cleanup_temporary_directories(zip_location, extracted_archives, crash_import_tmpdirs, unit_import_tmpdirs, person_import_tmpdirs, primaryperson_import_tmpdirs, charges_import_tmpdirs)
     cleanup.set_upstream(removal_token)
 
-    #cleanup_token = cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
-
-
-    #something = run_docker_image( # ← @task
-                #extract, image, ["/app/process_hasura_import.py", "crash"]
-            #)
-
-    # Prefect is deep-magic. ✨
-      # This array becomes a first-class task ("List"), as it's an interable that
-      # controls flow by accumulating return values from other tasks.
-      # Think of it like a Promise.all().
-    #container_tmpdirs = [] 
-
-    # TODO: construct this that it runs "crash" first, and then the 
-    # next four object types in parallel.
-    #for extract in extracts:
-        #for table in ["crash", "unit", "person", "primaryperson", "charges"]:
-            ## spin up the VZ ETL processor, per set of zips, per object type
-            #container_tmpdir = run_docker_image( # ← @task
-                #extract, image, ["/app/process_hasura_import.py", table]
-            #)
-            #container_tmpdirs.append(container_tmpdir)
-
-    # remove all these workspaces we've made
-    #cleanup_token = cleanup_temporary_directories(zip_location, extracts, container_tmpdirs)
-
-    #flow.set_dependencies(
-        #task=cleanup_token,
-        #upstream_tasks=[container_tmpdirs, upload_csv_files_to_s3(extracts)],
-    #)
-
 # i'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
 flow.register(project_name="vision-zero")
