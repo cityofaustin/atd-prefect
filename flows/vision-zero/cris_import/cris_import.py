@@ -20,7 +20,6 @@ from prefect import task, Flow, unmapped
 from prefect.client import Client
 from prefect.engine.state import Skipped
 from prefect.backend import get_key_value
-from prefect.backend.artifacts import create_markdown_artifact
 from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
 from prefect.run_configs import UniversalRun
