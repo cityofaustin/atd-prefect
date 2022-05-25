@@ -192,26 +192,6 @@ def run_docker_image(extracted_data, vz_etl_image, command):
         environment=RAW_AIRFLOW_CONFIG,
     )
     
-
-    logger.info("Log Type: " + str(type(log)))
-
-    #logger.info(log)
-    #log.replace('\n', "\n")
-    #logger.info(log)
-
-    artifact = f"""
-
-    # Imported {command[1]}
-
-    ## Objects operated on
-
-    {log}
-
-    ## TODO make docker container emit log as a JSON blob, parse it and then emit an artifact
-
-    """    
-    create_markdown_artifact(artifact)
-
     return docker_tmpdir
 
 
