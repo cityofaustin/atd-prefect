@@ -33,7 +33,7 @@ from prefect.utilities.notifications import slack_notifier
 current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
 
 # Set up slack fail handler
-handler = slack_notifier(only_states=[Failed])
+# handler = slack_notifier(only_states=[Failed])
 
 # Logger instance
 logger = prefect.context.get("logger")
@@ -84,7 +84,7 @@ prev_month = decide_prev_month(prev_execution_date_success)
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
 )
 def pull_docker_image():
     client = docker.from_env()
@@ -99,7 +99,7 @@ def pull_docker_image():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
 )
 def fiserv_email_parse():
     response = (
@@ -126,7 +126,7 @@ def fiserv_email_parse():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # tate_handlers=[handler],
     trigger=all_successful,
 )
 def fiserv_emails_to_db():
@@ -154,7 +154,7 @@ def fiserv_emails_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def payment_csv_to_db():
@@ -182,7 +182,7 @@ def payment_csv_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def pard_payment_csv_to_db():
@@ -210,7 +210,7 @@ def pard_payment_csv_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def pard_payment_csv_to_db():
@@ -233,31 +233,31 @@ def pard_payment_csv_to_db():
 
 
 # Upload the Passport app data CSVs to postgres
-@task(
-    name="app_data_to_db",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
-    trigger=all_successful,
-)
-def app_data_to_db():
-    response = (
-        docker.from_env()
-        .containers.run(
-            image=docker_image,
-            working_dir=None,
-            command=f"python passport_DB.py --lastmonth {prev_month}",
-            environment=environment_variables,
-            volumes=None,
-            remove=True,
-            detach=False,
-            stdout=True,
-        )
-        .decode("utf-8")
-    )
-    logger.info(response)
-    return response
+# @task(
+#     name="app_data_to_db",
+#     max_retries=1,
+#     timeout=timedelta(minutes=60),
+#     retry_delay=timedelta(minutes=5),
+#     state_handlers=[handler],
+#     trigger=all_successful,
+# )
+# def app_data_to_db():
+#     response = (
+#         docker.from_env()
+#         .containers.run(
+#             image=docker_image,
+#             working_dir=None,
+#             command=f"python passport_DB.py --lastmonth {prev_month}",
+#             environment=environment_variables,
+#             volumes=None,
+#             remove=True,
+#             detach=False,
+#             stdout=True,
+#         )
+#         .decode("utf-8")
+#     )
+#     logger.info(response)
+#     return response
 
 
 # Upload the smartfolio transactions CSVs to postgres
@@ -266,7 +266,7 @@ def app_data_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def smartfolio_csv_to_db():
@@ -294,7 +294,7 @@ def smartfolio_csv_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def matching_transactions():
@@ -322,7 +322,7 @@ def matching_transactions():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def payments_to_socrata():
@@ -350,7 +350,7 @@ def payments_to_socrata():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def fiserv_to_socrata():
@@ -378,7 +378,7 @@ def fiserv_to_socrata():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     trigger=all_successful,
 )
 def transactions_to_socrata():
@@ -428,7 +428,7 @@ with Flow(
         fiserv_emails_to_db,
         payment_csv_to_db,
         pard_payment_csv_to_db,
-        app_data_to_db,
+        # app_data_to_db,
         matching_transactions,
         smartfolio_csv_to_db,
         payments_to_socrata,
