@@ -103,6 +103,10 @@ def download_extract_archives():
         destination=zip_tmpdir,
     )
     logger.info("Rsync return code: " + str(rsync.returncode))
+    # check for a OS level return code of anything non-zero, which
+    # would indicate to us that the child proc we kicked off didn't
+    # complete successfully. 
+    # see: https://www.gnu.org/software/libc/manual/html_node/Exit-Status.html
     if rsync.returncode != 0:
         return false
     logger.info("Temp Directory: " + zip_tmpdir)
