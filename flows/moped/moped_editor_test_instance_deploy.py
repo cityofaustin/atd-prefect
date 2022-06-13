@@ -16,17 +16,25 @@ from prefect import Flow, task
 # Logger instance
 logger = prefect.context.get("logger")
 
-# Questions
-# 1. What S3 bucket does current moped-test use for file uploads?
-# 2.
+# Frontend:
+# 1. When feature PR is opened, a deploy preview spins up and is linked in PR
+# 2. Env vars are available to introspect PR # and context (CONTEXT = deploy-preview)
+#    https://docs.netlify.com/configure-builds/environment-variables/?utm_campaign=devex-tzm&utm_source=blog&utm_medium=blog&utm_content=env-vars&_gl=1%2agvssna%2a_gcl_aw%2aR0NMLjE2NTQ1NDAxNzcuQ2p3S0NBand5X2FVQmhBQ0Vpd0EySUhIUUFud3NXc1ltbXJybGs5SnVfWTJlazlkUF9hVmM4WVZuTjR5Zk5QR0Y2U2ZOLTMycl93ekFCb0M2Y0lRQXZEX0J3RQ..&_ga=2.210432213.1131530997.1654540177-2032963523.1654540177&_gac=1.123937528.1654540177.CjwKCAjwy_aUBhACEiwA2IHHQAnwsWsYmmrrlk9Ju_Y2ek9dP_aVc8YVnN4yfNPGF6SfN-32r_wzABoC6cIQAvD_BwE#read-only-variables
 
-# Database tasks
+# Considerations:
+# 1. Auth (use staging user pool) needs a callback URL set in the user pool. How does this work
+#    for the deploy previews? (I know that we can't use SSO)
+#    - Just do whatever deploy previews do for auth
+
+# Questions:
+# 1. What S3 bucket does current moped-test use for file uploads?
+
+# Database and GraphQL engine tasks
 @task
 def create_database():
     # Use psycopg2 to connect to RDS
     # Need to think about how to prevent staging or prod DBs from being touched
     # Create ephemeral DB with name tied to PR # so it is easy to identify later
-    # Run migrations
     # Stretch goal: replicate prod data
     logger.info("creating database")
     return True
@@ -38,6 +46,20 @@ def remove_database():
     # Remove ephemeral DB
     # When PR is closed? When inactive for certain amount of time?
     logger.info("removing database")
+    return True
+
+
+@task
+def create_graphql_engine():
+    # Deploy ECS cluster
+    logger.info("creating ECS cluster")
+    return True
+
+
+@task
+def remove_graphql_engine():
+    # Remove ECS cluster
+    logger.info("removing ECS cluster")
     return True
 
 
@@ -78,13 +100,13 @@ def remove_activity_log_lambda():
 @task
 def create_moped_api():
     # Deploy moped API using Zappa or the CloudFormation template that it generates
-    logger.info("creating Moped API Lam")
+    logger.info("creating Moped API Lambda")
     return True
 
 
 @task
 def remove_moped_api():
-    # Remove CloudFormation stack that create_moped_api deployed
+    # Remove CloudFormation stack that create_moped_api deployed with boto3
     return True
 
 
