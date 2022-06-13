@@ -41,7 +41,7 @@ current_environment = "test"
 logger = prefect.context.get("logger")
 
 # Select the appropriate tag for the Docker Image
-docker_env = "production"
+docker_env = "test"
 docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
 
 environment_variables = get_key_value(key=f"atd_parking_data_meters")
