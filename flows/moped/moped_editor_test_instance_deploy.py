@@ -28,6 +28,7 @@ logger = prefect.context.get("logger")
 
 # Questions:
 # 1. What S3 bucket does current moped-test use for file uploads?
+#    - Extend directories in S3 bucket to keep files for each preview app
 
 # Database and GraphQL engine tasks
 @task
@@ -36,6 +37,10 @@ def create_database():
     # Need to think about how to prevent staging or prod DBs from being touched
     # Create ephemeral DB with name tied to PR # so it is easy to identify later
     # Stretch goal: replicate prod data
+    # Via Frank:
+    # 1. Populate with seed data
+    # 2. OR populate with prod data
+
     logger.info("creating database")
     return True
 
