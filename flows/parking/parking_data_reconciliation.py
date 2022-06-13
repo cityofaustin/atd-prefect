@@ -30,7 +30,9 @@ from prefect.tasks.docker import PullImage
 from prefect.utilities.notifications import slack_notifier
 
 # First, we must always define the current environment, and default to staging:
-current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
+# current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
+
+current_environment = "test"
 
 # Set up slack fail handler
 # handler = slack_notifier(only_states=[Failed])
@@ -419,7 +421,8 @@ with Flow(
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
-    run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
+    # run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
+    run_config=UniversalRun(labels=["pre-prod", "atd-data02"]),
     schedule=Schedule(clocks=[CronClock("00 5 * * *")]),
 ) as flow:
     flow.chain(
