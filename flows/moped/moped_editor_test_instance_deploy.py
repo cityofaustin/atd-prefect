@@ -8,6 +8,7 @@ Schedule: TBD
 Labels: TBD
 """
 
+import boto3
 import prefect
 
 # Prefect
