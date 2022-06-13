@@ -111,9 +111,13 @@ def remove_moped_api():
 
 
 # Next, we define the flow (equivalent to a DAG).
-with Flow as flow:
+with Flow(
+    "Create Moped Environment"
+  ) as flow:
     # Calls tasks
     logger.info("Calling tasks")
+
+    create_graphql_engine()
 
 
 if __name__ == "__main__":
