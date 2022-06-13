@@ -8,11 +8,17 @@ Schedule: TBD
 Labels: TBD
 """
 
+import os
 import boto3
 import prefect
 
 # Prefect
 from prefect import Flow, task
+
+
+AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
+AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
+
 
 # Logger instance
 logger = prefect.context.get("logger")
@@ -54,6 +60,14 @@ def remove_database():
 def create_graphql_engine():
     # Deploy ECS cluster
     logger.info("creating ECS cluster")
+
+    session = boto3.Session(
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    )
+
+    print(session)
+
     return True
 
 
