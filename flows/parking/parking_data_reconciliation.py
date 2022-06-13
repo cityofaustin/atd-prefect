@@ -91,7 +91,7 @@ prev_month = decide_prev_month(prev_execution_date_success)
 def pull_docker_image():
     client = docker.from_env()
     client.images.pull("atddocker/atd-parking-data-meters", all_tags=True)
-
+    logger.info(docker_env)
     return
 
 
