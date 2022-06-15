@@ -235,31 +235,31 @@ def pard_payment_csv_to_db():
 
 
 # Upload the Passport app data CSVs to postgres
-# @task(
-#     name="app_data_to_db",
-#     max_retries=1,
-#     timeout=timedelta(minutes=60),
-#     retry_delay=timedelta(minutes=5),
-#     state_handlers=[handler],
-#     trigger=all_successful,
-# )
-# def app_data_to_db():
-#     response = (
-#         docker.from_env()
-#         .containers.run(
-#             image=docker_image,
-#             working_dir=None,
-#             command=f"python passport_DB.py --lastmonth {prev_month}",
-#             environment=environment_variables,
-#             volumes=None,
-#             remove=True,
-#             detach=False,
-#             stdout=True,
-#         )
-#         .decode("utf-8")
-#     )
-#     logger.info(response)
-#     return response
+@task(
+    name="app_data_to_db",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+    trigger=all_successful,
+)
+def app_data_to_db():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python passport_DB.py --lastmonth {prev_month}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
 
 
 # Upload the smartfolio transactions CSVs to postgres
@@ -430,7 +430,7 @@ with Flow(
         fiserv_emails_to_db,
         payment_csv_to_db,
         pard_payment_csv_to_db,
-        # app_data_to_db,
+        app_data_to_db,
         matching_transactions,
         smartfolio_csv_to_db,
         payments_to_socrata,
