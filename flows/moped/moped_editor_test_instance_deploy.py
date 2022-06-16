@@ -9,6 +9,9 @@ Labels: TBD
 """
 
 import prefect
+import sys, os
+import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 # Prefect
 from prefect import Flow, task
@@ -32,7 +35,7 @@ logger = prefect.context.get("logger")
 
 # Database and GraphQL engine tasks
 @task
-def create_database():
+def create_database(database_name):
     # Use psycopg2 to connect to RDS
     # Need to think about how to prevent staging or prod DBs from being touched
     # Create ephemeral DB with name tied to PR # so it is easy to identify later
@@ -40,17 +43,42 @@ def create_database():
     # Via Frank:
     # 1. Populate with seed data
     # 2. OR populate with prod data
+    host = os.getenv("MOPED_TEST_HOSTNAME")
+    user = os.getenv("MOPED_TEST_USER")
+    password = os.getenv("MOPED_TEST_PASSWORD")
+
+    pg = psycopg2.connect(host=host, user=user, password=password)
+    pg.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cursor = pg.cursor()
+
+    create_database_sql = f"CREATE DATABASE {database_name}".format(database_name)
+    print(create_database_sql)
+    cursor.execute(create_database_sql)
 
     logger.info("creating database")
     return True
 
 
 @task
-def remove_database():
+def remove_database(database_name):
     # Use psycopg2 to connect to RDS
     # Remove ephemeral DB
     # When PR is closed? When inactive for certain amount of time?
     logger.info("removing database")
+    host = os.getenv("MOPED_TEST_HOSTNAME")
+    user = os.getenv("MOPED_TEST_USER")
+    password = os.getenv("MOPED_TEST_PASSWORD")
+
+    pg = psycopg2.connect(host=host, user=user, password=password)
+    pg.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cursor = pg.cursor()
+
+    create_database_sql = f"DROP DATABASE IF EXISTS {database_name}".format(
+        database_name
+    )
+    print(create_database_sql)
+    cursor.execute(create_database_sql)
+
     return True
 
 
@@ -119,6 +147,10 @@ def remove_moped_api():
 with Flow as flow:
     # Calls tasks
     logger.info("Calling tasks")
+
+    # Env var from GitHub action?
+    database_name = "pr-1234"
+    create_database(database_name)
 
 
 if __name__ == "__main__":
