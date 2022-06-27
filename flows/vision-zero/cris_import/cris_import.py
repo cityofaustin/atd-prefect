@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import os
-import sys
 import json
 import shutil
 import time
@@ -94,7 +93,6 @@ def download_extract_archives():
     """
 
     logger = prefect.context.get("logger")
-    logger.info(sys._getframe().f_code.co_name + "()")
     zip_tmpdir = tempfile.mkdtemp()
     rsync = sysrsync.run(
         verbose=True,
@@ -105,6 +103,10 @@ def download_extract_archives():
         destination=zip_tmpdir,
     )
     logger.info("Rsync return code: " + str(rsync.returncode))
+    # check for a OS level return code of anything non-zero, which
+    # would indicate to us that the child proc we kicked off didn't
+    # complete successfully. 
+    # see: https://www.gnu.org/software/libc/manual/html_node/Exit-Status.html
     if rsync.returncode != 0:
         return false
     logger.info("Temp Directory: " + zip_tmpdir)
@@ -129,7 +131,6 @@ def unzip_archives(archives_directory):
     """
 
     logger = prefect.context.get("logger")
-    logger.info(sys._getframe().f_code.co_name + "()")
     extracted_csv_directories = []
     for filename in os.listdir(archives_directory):
         logger.info("About to unzip: " + filename + "with the command ...")
@@ -154,7 +155,6 @@ def build_docker_image():
     Returns: Docker object representing the built image; used later to start a containr
     """
     logger = prefect.context.get("logger")
-    logger.info(sys._getframe().f_code.co_name + "()")
     docker_client = docker.from_env()
     build_result = docker_client.images.build(path=VZ_ETL_LOCATION, tag="vz-etl")
     return build_result[0]
@@ -173,7 +173,6 @@ def run_docker_image(extracted_data, vz_etl_image, command):
         command: The particular command that will be used as the container entrypoint
     """
     logger = prefect.context.get("logger")
-    logger.info(sys._getframe().f_code.co_name + "()")
 
     docker_tmpdir = tempfile.mkdtemp()
     # return docker_tmpdir  # this is short circuiting out the rest of this routine (for speed of dev)
@@ -221,7 +220,6 @@ def cleanup_temporary_directories(
     """
 
     logger = prefect.context.get("logger")
-    logger.info(sys._getframe().f_code.co_name + "()")
 
     shutil.rmtree(zip_location)
     for directory in extracted_archives:
@@ -253,7 +251,6 @@ def upload_csv_files_to_s3(extract_directory):
             NB: The in-and-out unchanged data in this function is more about serializing prefect tasks and less about inter-functional communication
     """
     logger = prefect.context.get("logger")
-    logger.info(sys._getframe().f_code.co_name + "()")
 
     session = boto3.Session(
         aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -285,7 +282,6 @@ def remove_archives_from_sftp_endpoint(zip_location):
     Returns: None
     """
     logger = prefect.context.get("logger")
-    logger.info(sys._getframe().f_code.co_name + "()")
     logger.info(zip_location)
     for archive in os.listdir(zip_location):
         logger.info(archive)
