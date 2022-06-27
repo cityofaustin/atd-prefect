@@ -97,7 +97,7 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/knack/knack_banner.py",
-        ref=current_environment.replace("staging", "main")
+        ref="main"
     ),
     run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
     result=PrefectResult(),
@@ -110,10 +110,10 @@ with Flow(
     f"send_hr_email_{current_environment}",
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
-        path="flows/test/knack_banner.py",
-        ref=current_environment.replace("staging", "main"),  # The branch name
+        path="flows/knack/knack_banner.py",
+        ref="main"  # The branch name
     ),
-    run_config=UniversalRun(labels=["test", "atd-data02"]),
+    run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
 ) as send_email_flow:
     get_data_flow_run_id = create_flow_run(flow_name=get_data_flow.name)
     script_result = get_task_run_result(
