@@ -5,8 +5,8 @@ RUN apt-get update && \
     apt-get install -yq tzdata && \
     ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata
-RUN apt upgrade -y
-RUN apt install -y vim magic-wormhole aptitude python3-pip docker.io rsync p7zip-full black
+RUN apt-get upgrade -y
+RUN apt-get install -y vim magic-wormhole aptitude python3-pip docker.io rsync p7zip-full black poppler-utils tesseract-ocr
 RUN pip install prefect
 RUN pip install sysrsync GitPython boto3
 RUN pip install pdf2image pytesseract
