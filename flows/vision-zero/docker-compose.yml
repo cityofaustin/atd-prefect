@@ -10,6 +10,7 @@ services:
       - ./prefect_bootstrap:/root/agent
       - ./cris_import:/root/cris_import
       - ./cr3_ocr_narrative_extract_diagram:/root/cr3_ocr_narrative_extract_diagram
+      - ./output:/root/output
       - /var/run/docker.sock:/var/run/docker.sock
     env_file:
       - ./prefect_agent_environment_variables.env
