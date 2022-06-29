@@ -27,8 +27,13 @@ OCR_DIAGRAM_TARGET_PATH = kv_dictionary["OCR_DIAGRAM_TARGET_PATH"]
 OCR_BATCH_SIZE = kv_dictionary["OCR_BATCH_SIZE"]
 OCR_SINGLE_CRASH = kv_dictionary["OCR_SINGLE_CRASH"]
 
-env = { 'HASURA_ENDPOINT': HASURA_ENDPOINT, 'HASURA_ADMIN_KEY': HASURA_ADMIN_KEY,
-        'AWS_DEFAULT_REGION': AWS_DEFAULT_REGION, 'AWS_ACCESS_KEY_ID': AWS_ACCESS_KEY_ID, 'AWS_SECRET_ACCESS_KEY': AWS_SECRET_ACCESS_KEY, }
+env = {
+    "HASURA_ENDPOINT": HASURA_ENDPOINT,
+    "HASURA_ADMIN_KEY": HASURA_ADMIN_KEY,
+    "AWS_DEFAULT_REGION": AWS_DEFAULT_REGION,
+    "AWS_ACCESS_KEY_ID": AWS_ACCESS_KEY_ID,
+    "AWS_SECRET_ACCESS_KEY": AWS_SECRET_ACCESS_KEY,
+}
 
 task = ShellTask(return_all=True, log_stderr=True, env=env)
 
@@ -41,13 +46,19 @@ with Flow(
 
     # see https://github.com/cityofaustin/atd-airflow/blob/master/dags/python_scripts/cr3_extract_diagram_ocr_narrative.py#L15-L25
 
-    op_mode = f'--crash-id {OCR_SINGLE_CRASH} ' if OCR_SINGLE_CRASH else f'--batch {OCR_BATCH_SIZE} '
-    command = f'/usr/bin/python3 \
-        /root/cr3_ocr_narrative_extract_diagram/atd-airflow/dags/python_scripts/cr3_extract_diagram_ocr_narrative.py ' + \
-        op_mode + \
-        f'-vd --update-narrative --update-timestamp \
+    op_mode = (
+        f"--crash-id {OCR_SINGLE_CRASH} "
+        if OCR_SINGLE_CRASH
+        else f"--batch {OCR_BATCH_SIZE} "
+    )
+    command = (
+        f"/usr/bin/python3 \
+        /root/cr3_ocr_narrative_extract_diagram/atd-airflow/dags/python_scripts/cr3_extract_diagram_ocr_narrative.py "
+        + op_mode
+        + f"-vd --update-narrative --update-timestamp \
         --cr3-source {OCR_CR3_SOURCE_BUCKET} {OCR_CR3_SOURCE_PATH} \
-        --save-diagram-s3 {OCR_DIAGRAM_TARGET_BUCKET} {OCR_DIAGRAM_TARGET_PATH}'
+        --save-diagram-s3 {OCR_DIAGRAM_TARGET_BUCKET} {OCR_DIAGRAM_TARGET_PATH}"
+    )
 
     stream = task.run(command=command)
 
