@@ -4,7 +4,6 @@ import os
 import json
 from subprocess import Popen, PIPE
 
-# Import various prefect packages and helper methods
 import prefect
 from prefect import Flow
 from prefect.backend import get_key_value
