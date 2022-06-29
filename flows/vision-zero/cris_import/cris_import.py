@@ -23,7 +23,7 @@ from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
 from prefect.run_configs import UniversalRun
 
-kv_store = get_key_value("Vision Zero Development")
+kv_store = get_key_value("Vision Zero")
 kv_dictionary = json.loads(kv_store)
 
 SFTP_ENDPOINT = kv_dictionary["SFTP_ENDPOINT"]
