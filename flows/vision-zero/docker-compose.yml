@@ -8,6 +8,7 @@ services:
     volumes:
       - /tmp:/tmp
       - ./prefect_bootstrap:/root/agent
+      - ./make_kv_store.py:/root/make_kv_store.py
       - ./cris_import:/root/cris_import
       - /var/run/docker.sock:/var/run/docker.sock
     env_file:
