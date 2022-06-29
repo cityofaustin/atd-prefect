@@ -35,7 +35,7 @@ env = {
     "AWS_SECRET_ACCESS_KEY": AWS_SECRET_ACCESS_KEY,
 }
 
-task = ShellTask(return_all=True, log_stderr=True, env=env)
+task = ShellTask(return_all=True, log_stderr=True, stream_output=True, env=env)
 
 with Flow(
     "CR3 Narrative OCR and Diagram Extraction",
@@ -60,8 +60,9 @@ with Flow(
         --save-diagram-s3 {OCR_DIAGRAM_TARGET_BUCKET} {OCR_DIAGRAM_TARGET_PATH}"
     )
 
-    stream = task.run(command=command)
+    stream = task(command=command)
 
-    logger.info("\n".join(stream))
+    logger.info(stream)
 
-flow.run()
+#flow.run()
+flow.register(project_name="vision-zero")
