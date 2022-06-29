@@ -11,7 +11,7 @@ from prefect.schedules.clocks import CronClock
 from prefect.run_configs import UniversalRun
 from prefect.tasks.shell import ShellTask
 
-kv_store = get_key_value("Vision Zero Development")
+kv_store = get_key_value("Vision Zero")
 kv_dictionary = json.loads(kv_store)
 
 HASURA_ENDPOINT = kv_dictionary["PRODUCTION_GRAPHQL_ENDPOINT"]
