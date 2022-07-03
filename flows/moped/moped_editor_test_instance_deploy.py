@@ -10,11 +10,15 @@ Labels: TBD
 
 import prefect
 import sys, os
-import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # Prefect
 from prefect import Flow, task
+
+import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 # Logger instance
 logger = prefect.context.get("logger")
@@ -52,10 +56,15 @@ def create_database(database_name):
     cursor = pg.cursor()
 
     create_database_sql = f"CREATE DATABASE {database_name}".format(database_name)
-    print(create_database_sql)
+    
+    # Disable JIT compilation
+    # See https://github.com/cityofaustin/atd-moped/pull/648
+    # disable_jit_sql = f"ALTER DATABASE {database_name} SET jit=off".format(database_name)
+  
     cursor.execute(create_database_sql)
+    # cursor.execute(disable_jit_sql)
 
-    logger.info("creating database")
+    logger.info(f"Creating database {database_name}".format(database_name))
     return True
 
 
@@ -144,13 +153,14 @@ def remove_moped_api():
 
 
 # Next, we define the flow (equivalent to a DAG).
-with Flow as flow:
+with Flow("test flow") as flow:
     # Calls tasks
     logger.info("Calling tasks")
 
     # Env var from GitHub action?
-    database_name = "pr-1234"
-    create_database(database_name)
+    database_name = os.getenv("DATABASE_NAME")
+    # create_database(database_name)
+    remove_database(database_name)
 
 
 if __name__ == "__main__":
