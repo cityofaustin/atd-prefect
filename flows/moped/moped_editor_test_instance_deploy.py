@@ -40,13 +40,14 @@ logger = prefect.context.get("logger")
 # Database and GraphQL engine tasks
 @task
 def create_database(database_name):
+    logger.info(f"Creating database {database_name}".format(database_name))
     # Use psycopg2 to connect to RDS
     # Need to think about how to prevent staging or prod DBs from being touched
     # Create ephemeral DB with name tied to PR # so it is easy to identify later
-    # Stretch goal: replicate prod data
+    # Stretch goal: replicate staging data
     # Via Frank:
     # 1. Populate with seed data
-    # 2. OR populate with prod data
+    # 2. OR populate with staging data
     host = os.getenv("MOPED_TEST_HOSTNAME")
     user = os.getenv("MOPED_TEST_USER")
     password = os.getenv("MOPED_TEST_PASSWORD")
@@ -59,17 +60,17 @@ def create_database(database_name):
     
     # Disable JIT compilation
     # See https://github.com/cityofaustin/atd-moped/pull/648
-    # disable_jit_sql = f"ALTER DATABASE {database_name} SET jit=off".format(database_name)
+    disable_jit_sql = f"ALTER DATABASE {database_name} SET jit=off".format(database_name)
   
     cursor.execute(create_database_sql)
-    # cursor.execute(disable_jit_sql)
+    cursor.execute(disable_jit_sql)
 
-    logger.info(f"Creating database {database_name}".format(database_name))
     return True
 
 
 @task
 def remove_database(database_name):
+    logger.info(f"Removing database {database_name}".format(database_name))
     # Use psycopg2 to connect to RDS
     # Remove ephemeral DB
     # When PR is closed? When inactive for certain amount of time?
@@ -85,7 +86,7 @@ def remove_database(database_name):
     create_database_sql = f"DROP DATABASE IF EXISTS {database_name}".format(
         database_name
     )
-    print(create_database_sql)
+
     cursor.execute(create_database_sql)
 
     return True
@@ -159,7 +160,7 @@ with Flow("test flow") as flow:
 
     # Env var from GitHub action?
     database_name = os.getenv("DATABASE_NAME")
-    # create_database(database_name)
+    create_database(database_name)
     remove_database(database_name)
 
 
