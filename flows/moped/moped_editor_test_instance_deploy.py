@@ -56,19 +56,11 @@ def remove_database():
     logger.info("removing database")
     return True
 
-def get_session():
-    session = boto3.Session(
-        aws_access_key_id=AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    )
-    return session
-
 @task
 def create_ecs_cluster(basename):
     # Deploy ECS cluster
     logger.info("Creating ECS cluster")
 
-    session = get_session() 
     ecs = boto3.client("ecs", region_name="us-east-1")
     create_cluster_result = ecs.create_cluster(clusterName=basename)
 
@@ -82,11 +74,17 @@ def remove_ecs_cluster(cluster):
     # Remove ECS cluster
     logger.info("removing ECS cluster")
 
-    session = get_session() 
     ecs = boto3.client("ecs", region_name="us-east-1")
     delete_cluster_result = ecs.delete_cluster(cluster=cluster["cluster"]["clusterName"])
 
     return delete_cluster_result
+
+@task
+def create_load_balancer(basename):
+
+    logger.info("Creating Load Balancer")
+    elb = boto3.client('elb')
+
 
 
 # Activity log (SQS & Lambda) tasks
