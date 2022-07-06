@@ -38,25 +38,27 @@ logger = prefect.context.get("logger")
 # 1. What S3 bucket does current moped-test use for file uploads?
 #    - Extend directories in S3 bucket to keep files for each preview app
 
-# Database and GraphQL engine tasks
-@task
-def create_database(database_name):
-    logger.info(f"Creating database {database_name}".format(database_name))
-    # Use psycopg2 to connect to RDS
-    # Need to think about how to prevent staging or prod DBs from being touched
-    # Create ephemeral DB with name tied to PR # so it is easy to identify later
-    # Stretch goal: replicate staging data
-    # Via Frank:
-    # 1. Populate with seed data
-    # 2. OR populate with staging data
+# Connect to database server and return psycopg2 connection and cursor
+def connect_to_db_server():
     host = os.getenv("MOPED_TEST_HOSTNAME")
     user = os.getenv("MOPED_TEST_USER")
     password = os.getenv("MOPED_TEST_PASSWORD")
 
-    # Connect to DB server and create new DB
     pg = psycopg2.connect(host=host, user=user, password=password)
     pg.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cursor = pg.cursor()
+
+    return (pg, cursor);
+
+# Database and GraphQL engine tasks
+@task
+def create_database(database_name):
+    logger.info(f"Creating database {database_name}".format(database_name))
+    # Stretch goal: replicate staging data
+    # Via Frank:
+    # 1. Populate with seed data
+    # 2. OR populate with staging data
+    (pg, cursor) = connect_to_db_server()
 
     create_database_sql = f"CREATE DATABASE {database_name}".format(database_name)
     cursor.execute(create_database_sql)
@@ -66,53 +68,41 @@ def create_database(database_name):
     cursor.close()
     pg.close()
 
-    # Connect again so we can update the new DB
+    host = os.getenv("MOPED_TEST_HOSTNAME")
+    user = os.getenv("MOPED_TEST_USER")
+    password = os.getenv("MOPED_TEST_PASSWORD")
+
+    # Connect to the new DB so we can update it
     db_pg = psycopg2.connect(host=host, user=user, password=password, database=database_name)
     db_cursor = db_pg.cursor()
-
-    # Disable JIT compilation
-    # See https://github.com/cityofaustin/atd-moped/pull/648
-    disable_jit_sql = f"ALTER DATABASE {database_name} SET jit=off".format(database_name)
 
     # Add Postgis extension
     create_postgis_extension_sql = "CREATE EXTENSION postgis"
   
-    db_cursor.execute(disable_jit_sql)
+    # db_cursor.execute(disable_jit_sql)
     db_cursor.execute(create_postgis_extension_sql)
 
     # Commit changes and close connections
     db_pg.commit()
     db_cursor.close()
     db_pg.close()
-    return True
 
-
+# Need to set when database is removed
 @task
 def remove_database(database_name):
     logger.info(f"Removing database {database_name}".format(database_name))
-    # Use psycopg2 to connect to RDS
-    # Remove ephemeral DB
-    # When PR is closed? When inactive for certain amount of time?
-    logger.info("removing database")
-    host = os.getenv("MOPED_TEST_HOSTNAME")
-    user = os.getenv("MOPED_TEST_USER")
-    password = os.getenv("MOPED_TEST_PASSWORD")
-
-    pg = psycopg2.connect(host=host, user=user, password=password)
-    pg.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-    cursor = pg.cursor()
+    
+    (pg, cursor) = connect_to_db_server()
 
     create_database_sql = f"DROP DATABASE IF EXISTS {database_name}".format(
         database_name
     )
-
     cursor.execute(create_database_sql)
 
     # Commit changes and close connections
     pg.commit()
     cursor.close()
     pg.close()
-    return True
 
 
 @task
