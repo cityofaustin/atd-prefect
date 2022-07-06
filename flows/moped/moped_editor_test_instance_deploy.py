@@ -9,6 +9,7 @@ Labels: TBD
 """
 
 import os
+import json
 import boto3
 import prefect
 
@@ -55,20 +56,25 @@ def remove_database():
     logger.info("removing database")
     return True
 
-
-@task
-def create_graphql_engine():
-    # Deploy ECS cluster
-    logger.info("creating ECS cluster")
-
+def get_session():
     session = boto3.Session(
         aws_access_key_id=AWS_ACCESS_KEY_ID,
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
     )
+    return session
 
-    print(session)
+@task
+def create_ecs_cluster(basename):
+    # Deploy ECS cluster
+    logger.info("Creating ECS cluster")
 
-    return True
+    session = get_session() 
+    ecs = boto3.client("ecs", region_name="us-east-1")
+    create_cluster_result = ecs.create_cluster(clusterName=basename)
+
+    logger.info("Cluster ARN: " + create_cluster_result["cluster"]["clusterArn"])
+
+    return create_cluster_result
 
 
 @task
@@ -132,7 +138,9 @@ with Flow(
     # Calls tasks
     logger.info("Calling tasks")
 
-    create_graphql_engine()
+    basename = 'test-ecs-cluster'
+
+    cluster = create_ecs_cluster(basename=basename)
 
 
 if __name__ == "__main__":
