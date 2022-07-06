@@ -78,10 +78,15 @@ def create_ecs_cluster(basename):
 
 
 @task
-def remove_graphql_engine():
+def remove_ecs_cluster(cluster):
     # Remove ECS cluster
     logger.info("removing ECS cluster")
-    return True
+
+    session = get_session() 
+    ecs = boto3.client("ecs", region_name="us-east-1")
+    delete_cluster_result = ecs.delete_cluster(cluster=cluster["cluster"]["clusterName"])
+
+    return delete_cluster_result
 
 
 # Activity log (SQS & Lambda) tasks
@@ -141,6 +146,7 @@ with Flow(
     basename = 'test-ecs-cluster'
 
     cluster = create_ecs_cluster(basename=basename)
+    remove_ecs_cluster(cluster)
 
 
 if __name__ == "__main__":
