@@ -53,13 +53,23 @@ def create_database(database_name):
     user = os.getenv("MOPED_TEST_USER")
     password = os.getenv("MOPED_TEST_PASSWORD")
 
+    # Connect to DB server and create new DB
     pg = psycopg2.connect(host=host, user=user, password=password)
     pg.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cursor = pg.cursor()
-    pg.close()
 
     create_database_sql = f"CREATE DATABASE {database_name}".format(database_name)
-    
+    cursor.execute(create_database_sql)
+
+    # Commit changes and close connections
+    pg.commit()
+    cursor.close()
+    pg.close()
+
+    # Connect again so we can update the new DB
+    db_pg = psycopg2.connect(host=host, user=user, password=password, database=database_name)
+    db_cursor = db_pg.cursor()
+
     # Disable JIT compilation
     # See https://github.com/cityofaustin/atd-moped/pull/648
     disable_jit_sql = f"ALTER DATABASE {database_name} SET jit=off".format(database_name)
@@ -67,11 +77,13 @@ def create_database(database_name):
     # Add Postgis extension
     create_postgis_extension_sql = "CREATE EXTENSION postgis"
   
-    cursor.execute(create_database_sql)
-    cursor.execute(disable_jit_sql)
-    cursor.execute(create_postgis_extension_sql)
+    db_cursor.execute(disable_jit_sql)
+    db_cursor.execute(create_postgis_extension_sql)
 
-    cursor.close()
+    # Commit changes and close connections
+    db_pg.commit()
+    db_cursor.close()
+    db_pg.close()
     return True
 
 
@@ -96,6 +108,9 @@ def remove_database(database_name):
 
     cursor.execute(create_database_sql)
 
+    # Commit changes and close connections
+    pg.commit()
+    cursor.close()
     pg.close()
     return True
 
