@@ -8,6 +8,7 @@ Schedule: TBD
 Labels: TBD
 """
 
+from venv import create
 import prefect
 import sys, os
 
@@ -55,16 +56,22 @@ def create_database(database_name):
     pg = psycopg2.connect(host=host, user=user, password=password)
     pg.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cursor = pg.cursor()
+    pg.close()
 
     create_database_sql = f"CREATE DATABASE {database_name}".format(database_name)
     
     # Disable JIT compilation
     # See https://github.com/cityofaustin/atd-moped/pull/648
     disable_jit_sql = f"ALTER DATABASE {database_name} SET jit=off".format(database_name)
+
+    # Add Postgis extension
+    create_postgis_extension_sql = "CREATE EXTENSION postgis"
   
     cursor.execute(create_database_sql)
     cursor.execute(disable_jit_sql)
+    cursor.execute(create_postgis_extension_sql)
 
+    cursor.close()
     return True
 
 
@@ -89,6 +96,7 @@ def remove_database(database_name):
 
     cursor.execute(create_database_sql)
 
+    pg.close()
     return True
 
 
@@ -161,7 +169,7 @@ with Flow("test flow") as flow:
     # Env var from GitHub action?
     database_name = os.getenv("DATABASE_NAME")
     create_database(database_name)
-    remove_database(database_name)
+    # remove_database(database_name)
 
 
 if __name__ == "__main__":
