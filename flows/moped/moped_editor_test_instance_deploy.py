@@ -19,6 +19,9 @@ from prefect import Flow, task
 
 AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
 AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
+VPC_SUBNET_A = os.environ["VPC_SUBNET_A"]
+VPC_SUBNET_B = os.environ["VPC_SUBNET_B"]
+ELB_SECURITY_GROUP = os.environ["ELB_SECURITY_GROUP"]
 
 
 # Logger instance
@@ -83,9 +86,24 @@ def remove_ecs_cluster(cluster):
 def create_load_balancer(basename):
 
     logger.info("Creating Load Balancer")
-    elb = boto3.client('elb')
+    elb = boto3.client('elbv2')
 
+    create_elb_result = elb.create_load_balancer(
+        Name = basename,
+        Subnets = [ VPC_SUBNET_A, VPC_SUBNET_B ],
+        SecurityGroups = [ ELB_SECURITY_GROUP ],
+        Scheme = 'internet-facing',
+        Tags = [
+            {
+                'Key': 'name',
+                'Value': basename,
+            },
+        ],
+        Type='application',
+        IpAddressType='ipv4',
+        )
 
+    return create_elb_result
 
 # Activity log (SQS & Lambda) tasks
 
@@ -143,8 +161,12 @@ with Flow(
 
     basename = 'test-ecs-cluster'
 
-    cluster = create_ecs_cluster(basename=basename)
+    cluster = {'cluster': {'clusterName': basename}}
     remove_ecs_cluster(cluster)
+
+    cluster = create_ecs_cluster(basename=basename)
+    create_load_balancer(basename=basename)
+    #remove_ecs_cluster(cluster)
 
 
 if __name__ == "__main__":
