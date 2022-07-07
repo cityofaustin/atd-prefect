@@ -105,6 +105,18 @@ def create_load_balancer(basename):
 
     return create_elb_result
 
+@task
+def remove_load_balancer(load_balancer):
+    logger.info("removing Load Balancer")
+
+    
+    elb = boto3.client('elbv2')
+    delete_elb_result = elb.delete_load_balancer(
+        LoadBalancerArn = load_balancer["LoadBalancers"][0]["LoadBalancerArn"]
+        )
+
+    return delete_elb_result
+
 # Activity log (SQS & Lambda) tasks
 
 
@@ -161,12 +173,14 @@ with Flow(
 
     basename = 'test-ecs-cluster'
 
-    cluster = {'cluster': {'clusterName': basename}}
-    remove_ecs_cluster(cluster)
+    #cluster = {'cluster': {'clusterName': basename}}
+    #remove_ecs_cluster(cluster)
 
     cluster = create_ecs_cluster(basename=basename)
-    create_load_balancer(basename=basename)
-    #remove_ecs_cluster(cluster)
+    load_balancer = create_load_balancer(basename=basename)
+
+    remove_load_balancer(load_balancer)
+    remove_ecs_cluster(cluster)
 
 
 if __name__ == "__main__":
