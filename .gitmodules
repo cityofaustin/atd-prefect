@@ -1,3 +1,7 @@
 [submodule "flows/vision_zero/atd-vz-data"]
 	path = flows/vision-zero/cris_import/atd-vz-data
 	url = https://github.com/cityofaustin/atd-vz-data
+[submodule "flows/moped/test_instance_deployment/atd-moped"]
+	path = flows/moped/test_instance_deployment/atd-moped
+	url = https://github.com/cityofaustin/atd-moped.git
+	branch = md_moped_test_create_flow
