@@ -10,5 +10,6 @@ services:
       - ./prefect_bootstrap:/root/agent
       - ./make_kv_store.py:/root/make_kv_store.py
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./test_instance_deployment:/root/test_instance_deployment
     env_file:
       - ./prefect_agent_environment_variables.env
