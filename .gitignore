@@ -5,3 +5,8 @@ venv
 # Files
 *.md5sum
 *.env
+
+id_rsa*
+ssh_config
+
+settings.json
