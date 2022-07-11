@@ -238,8 +238,8 @@ with Flow(
     load_balancer = create_load_balancer(basename=basename)
     task_definition = create_task_definition(basename=basename)
 
-    remove_task_definition = remove_task_definition(task_definition)
-
+    #TODO: These removal tasks should each be modified to take either the response object or the name of the resource
+    #remove_task_definition = remove_task_definition(task_definition)
     #remove_load_balancer(load_balancer)
     #remove_ecs_cluster(cluster)
 
