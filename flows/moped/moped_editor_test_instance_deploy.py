@@ -163,6 +163,10 @@ def create_task_definition(basename):
 
     return response
 
+@task
+def remove_task_definition(task_definition):
+    logger.info("removing task definition")
+    return True
 
 # Activity log (SQS & Lambda) tasks
 
@@ -213,7 +217,6 @@ def remove_moped_api():
     return True
 
 
-# Next, we define the flow (equivalent to a DAG).
 with Flow(
     "Create Moped Environment"
   ) as flow:
@@ -228,6 +231,8 @@ with Flow(
     cluster = create_ecs_cluster(basename=basename)
     load_balancer = create_load_balancer(basename=basename)
     task_definition = create_task_definition(basename=basename)
+
+    remove_task_definition = remove_task_definition(task_definition)
 
     #remove_load_balancer(load_balancer)
     #remove_ecs_cluster(cluster)
