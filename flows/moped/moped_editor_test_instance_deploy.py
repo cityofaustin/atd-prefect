@@ -166,7 +166,13 @@ def create_task_definition(basename):
 @task
 def remove_task_definition(task_definition):
     logger.info("removing task definition")
-    return True
+
+    ecs = boto3.client("ecs", region_name="us-east-1")
+    response = ecs.deregister_task_definition(
+        taskDefinition=task_definition["taskDefinition"]["taskDefinitionArn"]
+        )
+
+    return response
 
 # Activity log (SQS & Lambda) tasks
 
