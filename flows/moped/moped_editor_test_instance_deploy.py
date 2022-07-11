@@ -108,7 +108,6 @@ def create_load_balancer(basename):
 @task
 def remove_load_balancer(load_balancer):
     logger.info("removing Load Balancer")
-
     
     elb = boto3.client('elbv2')
     delete_elb_result = elb.delete_load_balancer(
@@ -116,6 +115,54 @@ def remove_load_balancer(load_balancer):
         )
 
     return delete_elb_result
+
+@task
+def create_task_definition(basename):
+    logger.info("Adding task definition")
+    ecs = boto3.client("ecs", region_name="us-east-1")
+
+    response = ecs.register_task_definition(
+        family='moped-graphql-endpoint-' + basename,
+        taskRoleArn='arn:aws:iam::969346816767:role/ecsTaskExecutionRole',
+        networkMode='awsvpc',
+        containerDefinitions=[
+            {
+                'name': 'graphql-engine',
+                'image': 'hasura/graphql-engine:latest',
+                'cpu': 256,
+                'memory': 512,
+                'portMappings': [
+                    {
+                        'containerPort': 8080,
+                        'hostPort': 8080,
+                        'protocol': 'tcp'
+                    },
+                ],
+                'essential': True,
+                'environment': [
+                    {
+                        'name': 'HASURA_GRAPHQL_ENABLE_CONSOLE',
+                        'value': 'true',
+                    },
+                    {
+                        'name': 'HASURA_GRAPHQL_ENABLE_TELEMETRY',
+                        'value': 'false',
+                    },
+                ],
+                #'logConfiguration': {
+                    #'logDriver': 'awslogs',
+                    #'options': {
+                        #'awslogs-group': 'moped-editor-test-instance',
+                        #'awslogs-region': 'us-east-1',
+                        #'awslogs-stream-prefix': 'moped-editor-test-instance',
+                    #},
+                #},
+            },
+        ],
+        )
+
+    return response
+
 
 # Activity log (SQS & Lambda) tasks
 
@@ -148,6 +195,8 @@ def remove_activity_log_lambda():
     return True
 
 
+
+
 # Moped API tasks
 
 
@@ -178,9 +227,10 @@ with Flow(
 
     cluster = create_ecs_cluster(basename=basename)
     load_balancer = create_load_balancer(basename=basename)
+    task_definition = create_task_definition(basename=basename)
 
-    remove_load_balancer(load_balancer)
-    remove_ecs_cluster(cluster)
+    #remove_load_balancer(load_balancer)
+    #remove_ecs_cluster(cluster)
 
 
 if __name__ == "__main__":
