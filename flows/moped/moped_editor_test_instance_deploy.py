@@ -22,6 +22,7 @@ AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
 VPC_SUBNET_A = os.environ["VPC_SUBNET_A"]
 VPC_SUBNET_B = os.environ["VPC_SUBNET_B"]
 ELB_SECURITY_GROUP = os.environ["ELB_SECURITY_GROUP"]
+TASK_ROLE_ARN = os.environ["TASK_ROLE_ARN"]
 
 
 # Logger instance
@@ -123,8 +124,11 @@ def create_task_definition(basename):
 
     response = ecs.register_task_definition(
         family='moped-graphql-endpoint-' + basename,
-        taskRoleArn='arn:aws:iam::969346816767:role/ecsTaskExecutionRole',
+        executionRoleArn=TASK_ROLE_ARN,
         networkMode='awsvpc',
+        requiresCompatibilities=['FARGATE'],
+        cpu='256',
+        memory='1024',
         containerDefinitions=[
             {
                 'name': 'graphql-engine',
@@ -176,6 +180,47 @@ def remove_task_definition(task_definition):
 
 # Activity log (SQS & Lambda) tasks
 
+@task
+def create_service(basename, load_balancer):
+    # Create ECS service
+    logger.info("Creating ECS service")
+
+    ecs = boto3.client("ecs", region_name="us-east-1")
+    create_service_result = ecs.create_service(
+        cluster=basename,
+        serviceName=basename,
+        taskDefinition=basename,
+        desiredCount=1,
+        placementStrategy=[
+            {
+                'type': 'spread',
+                'field': 'attribute:ecs.availability-zone',
+            },
+        ],
+        loadBalancers=[
+            {
+                'targetGroupArn': 'arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/' + basename + '/1a2b3c4d5e6f7g',
+                'containerName': 'graphql-engine',
+                'containerPort': 8080,
+            },
+        ],
+        healthCheckGroup={
+            'healthCheckGroupName': basename,
+            'healthCheckType': 'ECS',
+            'interval': '30',
+            'timeout': '5',
+            'unhealthyThreshold': '3',
+            'healthyThreshold': '5',
+        },
+        tags=[
+            {
+                'Key': 'name',
+                'Value': basename,
+            },
+        ],
+        )
+
+    return create_service_result
 
 @task
 def create_activity_log_sqs():
@@ -237,6 +282,7 @@ with Flow(
     cluster = create_ecs_cluster(basename=basename)
     load_balancer = create_load_balancer(basename=basename)
     task_definition = create_task_definition(basename=basename)
+    service = create_service(basename=basename)
 
     #TODO: These removal tasks should each be modified to take either the response object or the name of the resource
     #remove_task_definition = remove_task_definition(task_definition)
