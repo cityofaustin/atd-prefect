@@ -149,14 +149,14 @@ def create_task_definition(basename):
                         'value': 'false',
                     },
                 ],
-                #'logConfiguration': {
-                    #'logDriver': 'awslogs',
-                    #'options': {
-                        #'awslogs-group': 'moped-editor-test-instance',
-                        #'awslogs-region': 'us-east-1',
-                        #'awslogs-stream-prefix': 'moped-editor-test-instance',
-                    #},
-                #},
+                'logConfiguration': {
+                    'logDriver': 'awslogs',
+                    'options': {
+                        'awslogs-group': 'moped-test',
+                        'awslogs-region': 'us-east-1',
+                        'awslogs-stream-prefix': basename,
+                    },
+                },
             },
         ],
         )
