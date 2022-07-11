@@ -11,8 +11,10 @@ Labels: TBD
 from venv import create
 import prefect
 import sys, os
+import subprocess
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # Prefect
@@ -45,10 +47,12 @@ def connect_to_db_server():
     password = os.getenv("MOPED_TEST_PASSWORD")
 
     pg = psycopg2.connect(host=host, user=user, password=password)
+    # see https://stackoverflow.com/questions/34484066/create-a-postgres-database-using-python
     pg.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cursor = pg.cursor()
 
-    return (pg, cursor);
+    return (pg, cursor)
+
 
 # Database and GraphQL engine tasks
 @task
@@ -73,12 +77,14 @@ def create_database(database_name):
     password = os.getenv("MOPED_TEST_PASSWORD")
 
     # Connect to the new DB so we can update it
-    db_pg = psycopg2.connect(host=host, user=user, password=password, database=database_name)
+    db_pg = psycopg2.connect(
+        host=host, user=user, password=password, database=database_name
+    )
     db_cursor = db_pg.cursor()
 
     # Add Postgis extension
     create_postgis_extension_sql = "CREATE EXTENSION postgis"
-  
+
     # db_cursor.execute(disable_jit_sql)
     db_cursor.execute(create_postgis_extension_sql)
 
@@ -87,11 +93,12 @@ def create_database(database_name):
     db_cursor.close()
     db_pg.close()
 
+
 # Need to set when database is removed
 @task
 def remove_database(database_name):
     logger.info(f"Removing database {database_name}".format(database_name))
-    
+
     (pg, cursor) = connect_to_db_server()
 
     create_database_sql = f"DROP DATABASE IF EXISTS {database_name}".format(
@@ -103,6 +110,16 @@ def remove_database(database_name):
     pg.commit()
     cursor.close()
     pg.close()
+
+
+# pg_dump command
+# pg_restore command
+# Use Shell task, docker pg image and run psql
+@task
+def populate_database_with_production_data(database_name):
+    logger.info(
+        f"Populating {database_name} with production data".format(database_name)
+    )
 
 
 @task
