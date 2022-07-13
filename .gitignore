@@ -5,3 +5,5 @@ venv
 # Files
 *.md5sum
 *.env
+
+.vscode/settings.json
