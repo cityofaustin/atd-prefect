@@ -11,4 +11,5 @@ RUN pip install prefect
 RUN pip install boto3
 RUN pip install python-dotenv
 RUN pip install psycopg2-binary
+RUN pip install zappa
 WORKDIR /root/
