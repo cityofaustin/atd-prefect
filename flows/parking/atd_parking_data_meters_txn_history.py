@@ -26,8 +26,8 @@ from prefect.tasks.docker import PullImage
 
 from prefect.utilities.notifications import slack_notifier
 
-# First, we must always define the current environment, and default to staging:
-current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
+# Define current environment
+current_environment = "production"
 
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed])
@@ -87,7 +87,7 @@ def pull_docker_image():
     return
 
 
-# Retrieve the provider's data
+# Retrieve smartfolio transaction data
 @task(
     name="parking_transaction_history_to_s3",
     max_retries=1,
@@ -114,7 +114,7 @@ def parking_transaction_history_to_s3():
     return response
 
 
-# Sync the data with the database
+# Sync the smartfolio data with the database
 @task(
     name="parking_payment_history_to_s3",
     max_retries=1,
@@ -142,7 +142,7 @@ def parking_payment_history_to_s3():
     return response
 
 
-# Get pool pass data
+# Get smartfolio pool pass data
 @task(
     name="pard_payment_history_to_s3",
     max_retries=1,
@@ -197,17 +197,16 @@ def app_txn_history_to_s3():
     logger.info(response)
     return response
 
-
+# Update last exec key value
 @task(trigger=all_successful)
 def update_last_exec_time():
     new_date = datetime.today().strftime("%Y-%m-%d")
     set_key_value(key=prev_execution_key, value=new_date)
 
 
-# Next, we define the flow (equivalent to a DAG).
-# Notice we use the label "test" to match this flow to an agent.
+# Flow definition
 with Flow(
-    # Postfix the name of the flow with the environment it belongs to
+    # Name of flow
     f"atd_parking_data_txn_history_{current_environment}",
     # Let's configure the agents to download the file from this repo
     storage=GitHub(

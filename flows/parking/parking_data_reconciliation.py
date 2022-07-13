@@ -29,19 +29,17 @@ from prefect.tasks.docker import PullImage
 
 from prefect.utilities.notifications import slack_notifier
 
-# First, we must always define the current environment, and default to staging:
-# current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
-
-current_environment = "test"
+# Define current environment
+current_environment = "production"
 
 # Set up slack fail handler
-# handler = slack_notifier(only_states=[Failed])
+handler = slack_notifier(only_states=[Failed])
 
 # Logger instance
 logger = prefect.context.get("logger")
 
 # Select the appropriate tag for the Docker Image
-docker_env = "test"
+docker_env = "production"
 docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
 
 environment_variables = get_key_value(key=f"atd_parking_data_meters")
@@ -86,7 +84,7 @@ prev_month = decide_prev_month(prev_execution_date_success)
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
 )
 def pull_docker_image():
     client = docker.from_env()
@@ -95,13 +93,13 @@ def pull_docker_image():
     return
 
 
-# First, process the latest emails from Fiserv
+# First, process the latest emails from Fiserv in S3
 @task(
     name="fiserv_email_parse",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
 )
 def fiserv_email_parse():
     response = (
@@ -128,7 +126,7 @@ def fiserv_email_parse():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # tate_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def fiserv_emails_to_db():
@@ -156,7 +154,7 @@ def fiserv_emails_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def payment_csv_to_db():
@@ -177,42 +175,13 @@ def payment_csv_to_db():
     logger.info(response)
     return response
 
-
 # Upload the PARD payment CSVs to postgres
 @task(
     name="pard_payment_csv_to_db",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
-    trigger=all_successful,
-)
-def pard_payment_csv_to_db():
-    response = (
-        docker.from_env()
-        .containers.run(
-            image=docker_image,
-            working_dir=None,
-            command=f"python payments_s3.py --lastmonth {prev_month} --user pard",
-            environment=environment_variables,
-            volumes=None,
-            remove=True,
-            detach=False,
-            stdout=True,
-        )
-        .decode("utf-8")
-    )
-    logger.info(response)
-    return response
-
-
-# Upload the PARD payment CSVs to postgres
-@task(
-    name="pard_payment_csv_to_db",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def pard_payment_csv_to_db():
@@ -240,7 +209,7 @@ def pard_payment_csv_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def app_data_to_db():
@@ -268,7 +237,7 @@ def app_data_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def smartfolio_csv_to_db():
@@ -296,7 +265,7 @@ def smartfolio_csv_to_db():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def matching_transactions():
@@ -324,7 +293,7 @@ def matching_transactions():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def payments_to_socrata():
@@ -352,7 +321,7 @@ def payments_to_socrata():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def fiserv_to_socrata():
@@ -380,7 +349,7 @@ def fiserv_to_socrata():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     trigger=all_successful,
 )
 def transactions_to_socrata():
@@ -417,7 +386,7 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/parking/parking_data_reconciliation.py",
-        ref="pre-prod",  # The branch name
+        ref="production",  # The branch name
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
