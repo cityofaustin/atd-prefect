@@ -79,6 +79,7 @@ start_date = get_start_date(prev_execution_date_success)
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
+    log_stdout=True
 )
 def pull_docker_image():
     client = docker.from_env()
@@ -94,6 +95,7 @@ def pull_docker_image():
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
+    log_stdout=True
 )
 def parking_transaction_history_to_s3():
     response = (
@@ -122,6 +124,7 @@ def parking_transaction_history_to_s3():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def parking_payment_history_to_s3():
     response = (
@@ -150,6 +153,7 @@ def parking_payment_history_to_s3():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def pard_payment_history_to_s3():
     response = (
@@ -178,6 +182,7 @@ def pard_payment_history_to_s3():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def app_txn_history_to_s3():
     response = (

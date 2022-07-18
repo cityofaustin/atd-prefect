@@ -85,6 +85,7 @@ prev_month = decide_prev_month(prev_execution_date_success)
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
+    log_stdout=True
 )
 def pull_docker_image():
     client = docker.from_env()
@@ -100,6 +101,7 @@ def pull_docker_image():
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
+    log_stdout=True
 )
 def fiserv_email_parse():
     response = (
@@ -128,6 +130,7 @@ def fiserv_email_parse():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def fiserv_emails_to_db():
     response = (
@@ -156,6 +159,7 @@ def fiserv_emails_to_db():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def payment_csv_to_db():
     response = (
@@ -183,6 +187,7 @@ def payment_csv_to_db():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def pard_payment_csv_to_db():
     response = (
@@ -211,6 +216,7 @@ def pard_payment_csv_to_db():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def app_data_to_db():
     response = (
@@ -239,6 +245,7 @@ def app_data_to_db():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def smartfolio_csv_to_db():
     response = (
@@ -267,6 +274,7 @@ def smartfolio_csv_to_db():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def matching_transactions():
     response = (
@@ -295,6 +303,7 @@ def matching_transactions():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def payments_to_socrata():
     response = (
@@ -323,6 +332,7 @@ def payments_to_socrata():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def fiserv_to_socrata():
     response = (
@@ -351,6 +361,7 @@ def fiserv_to_socrata():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def transactions_to_socrata():
     response = (
