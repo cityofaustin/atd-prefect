@@ -3,6 +3,8 @@ from prefect.run_configs import UniversalRun
 from prefect.storage import Docker, GitHub
 from prefect.tasks.docker import PullImage
 
+ENV = "test"
+
 @task(
     name="pull_docker_image",
 )
