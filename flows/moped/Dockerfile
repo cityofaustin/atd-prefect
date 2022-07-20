@@ -1,6 +1,6 @@
 FROM ubuntu:20.04
 ENV TZ="America/Chicago"
-RUN apt update
+RUN apt-get update
 RUN apt-get update && \
     apt-get install -yq tzdata && \
     ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
