@@ -106,11 +106,17 @@ with Flow(
     df = download_report.map(ids, unmapped(conn))
     report_to_s3.map(df, names, unmapped(s3))
 
+#flow.storage = Docker(
+#    #registry_url="https://registry.hub.docker.com",
+#    image_name="atddocker/atd-microstrategy",
+#    image_tag="test",
+#    dockerfile="Dockerfile"
+#)
+
 flow.storage = Docker(
-    #registry_url="https://registry.hub.docker.com",
+    python_dependencies= ["mstrio-py","pandas","boto3"],
     image_name="atddocker/atd-microstrategy",
     image_tag="test",
-    dockerfile="Dockerfile"
 )
 
 flow.run(parameters={"report_ids": report_ids, "report_names": report_names})
