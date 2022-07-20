@@ -1,4 +1,5 @@
 import docker
+import prefect
 
 from prefect import task, Flow, Parameter, unmapped
 from prefect.run_configs import UniversalRun
