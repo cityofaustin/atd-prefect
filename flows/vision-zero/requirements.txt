@@ -1,0 +1,6 @@
+prefect==1.*
+sysrsync==1.1.*
+GitPython==3.1.*
+boto3==1.24.*
+pdf2image==1.16.*
+pytesseract==0.3.*
