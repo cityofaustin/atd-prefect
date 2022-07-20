@@ -7,7 +7,6 @@ RUN apt-get update && \
     dpkg-reconfigure -f noninteractive tzdata
 RUN apt-get upgrade -y
 RUN apt-get install -y vim magic-wormhole aptitude python3-pip docker.io black libpq-dev
-RUN pip install prefect
-RUN pip install boto3
-RUN pip install psycopg2-binary
+COPY ./requirements.txt /root/requirements.txt
+RUN pip install -r /root/requirements.txt
 WORKDIR /root/
