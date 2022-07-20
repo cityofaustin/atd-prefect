@@ -16,7 +16,7 @@ logger = prefect.context.get("logger")
 def pull_docker_image(image):
     client = docker.from_env()
     client.images.pull(image, all_tags=True)
-    logger.info(docker_env)
+    logger.info(f" Pulled docker image: {image}")
     return
 
 with Flow(
