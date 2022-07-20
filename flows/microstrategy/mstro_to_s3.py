@@ -91,11 +91,16 @@ with Flow(
     schedule=None,
     # run_config=UniversalRun(labels=[ENV, "par-7473353-t1.coacd.org"]),
     run_config=UniversalRun(labels=[ENV, "atd-data02"]),
-    storage=GitHub(
-        repo="cityofaustin/atd-prefect",
-        path="flows/microstrategy/mstro_to_s3.py",
-        ref="microstrategy-reports",  # The branch name
+    storage=Docker(
+        registry_url="https://registry.hub.docker.com",
+        image_name="atddocker/atd-microstrategy",
+        image_tag="test",
     ),
+    # storage=GitHub(
+    #     repo="cityofaustin/atd-prefect",
+    #     path="flows/microstrategy/mstro_to_s3.py",
+    #     ref="microstrategy-reports",  # The branch name
+    # ),
 ) as flow:
     ids = Parameter("report_ids", default=report_ids, required=True)
 
@@ -108,10 +113,10 @@ with Flow(
     report_to_s3.map(df, names, unmapped(s3))
 
 if __name__ == "__main__":
-    flow.storage = Docker(
-        registry_url="https://registry.hub.docker.com",
-        image_name="atddocker/atd-microstrategy",
-        image_tag="test",
-    )
+    # flow.storage = Docker(
+    #     registry_url="https://registry.hub.docker.com",
+    #     image_name="atddocker/atd-microstrategy",
+    #     image_tag="test",
+    # )
 
     flow.run(parameters={"report_ids": report_ids, "report_names": report_names})
