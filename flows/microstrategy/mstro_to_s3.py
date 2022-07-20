@@ -13,7 +13,6 @@ from prefect.run_configs import UniversalRun
 from prefect.backend import set_key_value, get_key_value
 from prefect.storage import Docker, GitHub
 
-
 ENV = "test"
 
 # Microstrategy Credentials
@@ -91,11 +90,6 @@ with Flow(
     schedule=None,
     # run_config=UniversalRun(labels=[ENV, "par-7473353-t1.coacd.org"]),
     run_config=UniversalRun(labels=[ENV, "atd-data02"]),
-    storage=Docker(
-        registry_url="https://registry.hub.docker.com",
-        image_name="atddocker/atd-microstrategy",
-        image_tag="test",
-    ),
     # storage=GitHub(
     #     repo="cityofaustin/atd-prefect",
     #     path="flows/microstrategy/mstro_to_s3.py",
@@ -112,11 +106,11 @@ with Flow(
     df = download_report.map(ids, unmapped(conn))
     report_to_s3.map(df, names, unmapped(s3))
 
-if __name__ == "__main__":
-    # flow.storage = Docker(
-    #     registry_url="https://registry.hub.docker.com",
-    #     image_name="atddocker/atd-microstrategy",
-    #     image_tag="test",
-    # )
+flow.storage = Docker(
+    #registry_url="https://registry.hub.docker.com",
+    image_name="atddocker/atd-microstrategy",
+    image_tag="test",
+    dockerfile="Dockerfile"
+)
 
-    flow.run(parameters={"report_ids": report_ids, "report_names": report_names})
+flow.run(parameters={"report_ids": report_ids, "report_names": report_names})

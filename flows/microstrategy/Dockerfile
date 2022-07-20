@@ -1,6 +1,5 @@
-FROM python:3.8-slim
-WORKDIR /app
-COPY . /app
-RUN chmod -R 755 /app/*
-RUN cd /app && apt-get update && \
-    pip install -r requirements.txt
+FROM prefecthq/prefect:1.2.4-python3.8
+
+ADD . /
+
+RUN pip install -r requirements.txt
