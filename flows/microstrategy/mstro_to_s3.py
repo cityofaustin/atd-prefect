@@ -11,7 +11,7 @@ from prefect import task, Flow, Parameter, unmapped
 from prefect.schedules import IntervalSchedule
 from prefect.run_configs import UniversalRun
 from prefect.backend import set_key_value, get_key_value
-from prefect.storage import Docker
+from prefect.storage import Docker, Github
 
 
 ENV = "test"
@@ -91,6 +91,11 @@ with Flow(
     schedule=None,
     # run_config=UniversalRun(labels=[ENV, "par-7473353-t1.coacd.org"]),
     run_config=UniversalRun(labels=[ENV, "atd-data02"]),
+    storage=GitHub(
+        repo="cityofaustin/atd-prefect",
+        path="flows/microstrategy/mstro_to_s3.py",
+        ref="microstrategy-reports",  # The branch name
+    ),
 ) as flow:
     ids = Parameter("report_ids", default=report_ids, required=True)
 
