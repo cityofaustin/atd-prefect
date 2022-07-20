@@ -20,7 +20,7 @@ with Flow(
     run_config=UniversalRun(labels=[ENV, "atd-data02"]),
      storage=GitHub(
          repo="cityofaustin/atd-prefect",
-         path="flows/microstrategy/mstro_to_s3.py",
+         path="flows/microstrategy/pull_docker_images.py",
          ref="microstrategy-reports",  # The branch name
      ),
     ) as flow:
