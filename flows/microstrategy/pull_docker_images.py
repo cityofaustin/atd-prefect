@@ -7,6 +7,8 @@ from prefect.tasks.docker import PullImage
 
 ENV = "test"
 
+logger = prefect.context.get("logger")
+
 @task(
     name="pull_docker_image",
 )
