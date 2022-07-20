@@ -11,7 +11,7 @@ from prefect import task, Flow, Parameter, unmapped
 from prefect.schedules import IntervalSchedule
 from prefect.run_configs import UniversalRun
 from prefect.backend import set_key_value, get_key_value
-from prefect.storage import Docker, Github
+from prefect.storage import Docker, GitHub
 
 
 ENV = "test"
