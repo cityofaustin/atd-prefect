@@ -3,13 +3,9 @@ from io import StringIO
 import os
 
 # Related third party imports
-import boto3
-from mstrio.connection import Connection
-from mstrio.project_objects import Report
-import pandas as pd
 from prefect import task, Flow, Parameter, unmapped
 from prefect.schedules import IntervalSchedule
-from prefect.run_configs import UniversalRun
+from prefect.run_configs import UniversalRun, DockerRun
 from prefect.backend import set_key_value, get_key_value
 from prefect.storage import Docker, GitHub
 
@@ -62,6 +58,8 @@ def connect_to_mstro():
 
 @task
 def connect_to_AWS():
+    import boto3
+
     session = boto3.Session(
         aws_access_key_id=AWS_ACCESS_ID, aws_secret_access_key=AWS_PASS,
     )
@@ -72,6 +70,9 @@ def connect_to_AWS():
 
 @task()
 def download_report(report_id, conn):
+    from mstrio.connection import Connection
+    from mstrio.project_objects import Report
+
     my_report = Report(connection=conn, id=report_id, parallel=False)
     my_report_df = my_report.to_dataframe()
     return my_report_df
@@ -79,6 +80,9 @@ def download_report(report_id, conn):
 
 @task
 def report_to_s3(df, report_name, s3):
+    import boto3
+    import pandas as pd
+
     csv_buffer = StringIO()
     df.to_csv(csv_buffer, index=False)
     file_name = f"{report_name}.csv"
@@ -88,13 +92,14 @@ def report_to_s3(df, report_name, s3):
 with Flow(
     f"microstrategy_to_s3_{ENV}",
     schedule=None,
-    # run_config=UniversalRun(labels=[ENV, "par-7473353-t1.coacd.org"]),
-    run_config=UniversalRun(labels=[ENV, "atd-data02"]),
-    # storage=GitHub(
-    #     repo="cityofaustin/atd-prefect",
-    #     path="flows/microstrategy/mstro_to_s3.py",
-    #     ref="microstrategy-reports",  # The branch name
-    # ),
+    #run_config=UniversalRun(labels=[ENV, "Charlies-MBP.attlocal.net"]),
+    #run_config=UniversalRun(labels=[ENV, "atd-data02"]),
+    run_config=DockerRun(image="atddocker/atd-microstrategy", labels=[ENV, "atd-data02"]),
+    storage=GitHub(
+         repo="cityofaustin/atd-prefect",
+         path="flows/microstrategy/mstro_to_s3.py",
+         ref="microstrategy-reports",  # The branch name
+    ),
 ) as flow:
     ids = Parameter("report_ids", default=report_ids, required=True)
 
@@ -107,16 +112,16 @@ with Flow(
     report_to_s3.map(df, names, unmapped(s3))
 
 #flow.storage = Docker(
-#    #registry_url="https://registry.hub.docker.com",
-#    image_name="atddocker/atd-microstrategy",
-#    image_tag="test",
+#   #registry_url="https://registry.hub.docker.com",
+#   #image_name="atddocker/atd-microstrategy",
+#    #image_tag="test",
 #    dockerfile="Dockerfile"
 #)
 
-flow.storage = Docker(
-    python_dependencies= ["mstrio-py","pandas","boto3"],
-    image_name="atddocker/atd-microstrategy",
-    image_tag="test",
-)
+#flow.storage = Docker(
+#    python_dependencies= ["mstrio-py","pandas","boto3"],
+#    image_name="atddocker/atd-microstrategy",
+#    image_tag="test",
+#)
 
 flow.run(parameters={"report_ids": report_ids, "report_names": report_names})
