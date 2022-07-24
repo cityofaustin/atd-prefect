@@ -1,0 +1,4 @@
+prefect==1.*
+psycopg2-binary==2.9.*
+boto3==1.24.*
+zappa==0.54.1
