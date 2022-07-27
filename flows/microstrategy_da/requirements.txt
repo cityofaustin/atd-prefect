@@ -1,0 +1,4 @@
+prefect==1.*
+boto3==1.24.*
+mstrio-py==11.3.*
+pandas==1.4.*
