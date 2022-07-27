@@ -122,7 +122,7 @@ with Flow(
     # 1. Get microstrategy connection
     conn = connect_to_mstro()
 
-    # 2. Conenct to S3
+    # 2. Connect using boto3 to our S3
     s3 = connect_to_AWS()
 
     # 3. Download report to df (for each report_id)
