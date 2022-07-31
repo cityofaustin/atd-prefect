@@ -481,10 +481,8 @@ def update_record(source, target, table, key_sql):
                 target_value = target_value.replace("\r", "")
 
             if not source_value == target_value:
-                # CRIS is putting a \r in this field. This is cruel.
-                print("Key: " + key_sql)
-                print("Source Type: " + str(type(source_value)))
-                print("Target Type: " + str(type(target_value)))
+                print("Source Type: " + str(type(source_value).__name__))
+                print("Source Type: " + str(type(source_value).__name__))
                 print(f"They differ! {source_value} != {target_value}")
 
                 #sql = f"update {table} set {key} = {source[key]} where true {key_sql}"
