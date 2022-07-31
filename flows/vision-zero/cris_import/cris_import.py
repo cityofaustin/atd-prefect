@@ -77,6 +77,7 @@ def skip_if_running_handler(obj, old_state, new_state):
             )  # or returned Cancelled state if you prefer this state in this use case
     return new_state
 
+
 @task(
     name="Specify where archive can be found",
     slug="locate-zips",
@@ -116,7 +117,7 @@ def download_extract_archives():
     logger.info("Rsync return code: " + str(rsync.returncode))
     # check for a OS level return code of anything non-zero, which
     # would indicate to us that the child proc we kicked off didn't
-    # complete successfully. 
+    # complete successfully.
     # see: https://www.gnu.org/software/libc/manual/html_node/Exit-Status.html
     if rsync.returncode != 0:
         return false
@@ -308,33 +309,31 @@ def remove_archives_from_sftp_endpoint(zip_location):
 with Flow(
     "CRIS Crash Import",
     run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
-    #state_handlers=[skip_if_running_handler],
+    # state_handlers=[skip_if_running_handler],
 ) as flow:
     # get a location on disk which contains the zips from the sftp endpoint
-    #zip_location = download_extract_archives()
-    zip_location = specify_extract_location('/root/cris_import/data/jan1_jul24_2022.zip')
+    # zip_location = download_extract_archives()
+    zip_location = specify_extract_location(
+        "/root/cris_import/data/jan1_jul24_2022.zip"
+    )
 
     # iterate over the zips in that location and unarchive them into
     # a list of temporary directories containing the files of each
     extracted_archives = unzip_archives(zip_location)
 
     # push up the archives to s3 for archival
-    #uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
-
-
-
-
+    # uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
 
     # remove archives from SFTP endpoint
-    #removal_token = remove_archives_from_sftp_endpoint(zip_location)
+    # removal_token = remove_archives_from_sftp_endpoint(zip_location)
 
-    #cleanup = cleanup_temporary_directories(
-        #zip_location,
-        #extracted_archives,
-    #)
-    #cleanup.set_upstream(removal_token)
+    # cleanup = cleanup_temporary_directories(
+    # zip_location,
+    # extracted_archives,
+    # )
+    # cleanup.set_upstream(removal_token)
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
-#flow.register(project_name="vision-zero")
+# flow.register(project_name="vision-zero")
 flow.run()
