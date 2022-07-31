@@ -361,16 +361,12 @@ def align_db_typing(futter_token):
     imported_tables = cursor.fetchall()
     table_mappings = mappings.get_table_map()
     for input_table in imported_tables:
-        output = table_mappings.get(input_table["table_name"])
-        if not output:
+        output_table = table_mappings.get(input_table["table_name"])
+        if not output_table:
             continue
 
-
-
-        cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
         # This is a subtle SQL injection attack vector.
-        # Beware the f-string.
+        # Beware the f-string. But I trust CRIS.
         sql = f"""
         SELECT
             column_name,
@@ -381,14 +377,53 @@ def align_db_typing(futter_token):
             information_schema.columns
         WHERE true
             AND table_schema = 'public'
-            AND table_name = '{output}'
+            AND table_name = '{output_table}'
         """
+
+        cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute(sql)
         output_column_types = cursor.fetchall()
 
         print("")
-        print(output)
-        print(output_column_types)
+        print(output_table)
+        for column in output_column_types:
+            sql = f"""
+            SELECT
+                column_name,
+                data_type,
+                character_maximum_length AS max_length,
+                character_octet_length AS octet_length
+            FROM
+                information_schema.columns
+            WHERE true
+                AND table_schema = 'import'
+                AND table_name = '{input_table["table_name"]}'
+                AND column_name = '{column["column_name"]}'
+            """
+
+            cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cursor.execute(sql)
+            input_column_type = cursor.fetchall()
+            # skip columns we don't have in our db...
+            if not input_column_type:
+                continue
+
+            # print(input_column_type)
+
+            # print(column["column_name"] + ":" + column["data_type"])
+
+            # the `USING` hackery is due to the reality of the CSV null vs "" confusion
+            sql = f"""
+            ALTER TABLE import.{input_table["table_name"]}
+            ALTER COLUMN {column["column_name"]} SET DATA TYPE {column["data_type"]}
+            USING case when {column["column_name"]} = \'\' then null else {column["column_name"]}::{column["data_type"]} end
+            """
+
+            # print(sql)
+
+            cursor = pg.cursor()
+            cursor.execute(sql)
+            pg.commit()
 
     return None
 
