@@ -404,13 +404,10 @@ def align_db_typing(futter_token):
             cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cursor.execute(sql)
             input_column_type = cursor.fetchall()
+
             # skip columns we don't have in our db...
             if not input_column_type:
                 continue
-
-            # print(input_column_type)
-
-            # print(column["column_name"] + ":" + column["data_type"])
 
             # the `USING` hackery is due to the reality of the CSV null vs "" confusion
             sql = f"""
@@ -418,8 +415,6 @@ def align_db_typing(futter_token):
             ALTER COLUMN {column["column_name"]} SET DATA TYPE {column["data_type"]}
             USING case when {column["column_name"]} = \'\' then null else {column["column_name"]}::{column["data_type"]} end
             """
-
-            # print(sql)
 
             cursor = pg.cursor()
             cursor.execute(sql)
