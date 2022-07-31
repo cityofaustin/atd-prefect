@@ -19,5 +19,7 @@ RUN wget -O pgfutter_arm https://github.com/lukasmartinelli/pgfutter/releases/do
 RUN wget -O pgfutter_x64 https://github.com/lukasmartinelli/pgfutter/releases/download/v1.2/pgfutter_linux_amd64
 RUN chmod a+x /root/pgfutter_arm
 RUN chmod a+x /root/pgfutter_x64
+
+# Remove these 2 lines prior to going production; they slow the build but are handy for dev
 RUN apt-get install -y man-db
 RUN yes | unminimize
