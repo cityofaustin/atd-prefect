@@ -77,6 +77,17 @@ def skip_if_running_handler(obj, old_state, new_state):
             )  # or returned Cancelled state if you prefer this state in this use case
     return new_state
 
+@task(
+    name="Specify where archive can be found",
+    slug="locate-zips",
+    max_retries=3,
+    retry_delay=datetime.timedelta(minutes=2),
+)
+def specify_extract_location(file):
+    zip_tmpdir = tempfile.mkdtemp()
+    shutil.copy(file, zip_tmpdir)
+    return zip_tmpdir
+
 
 @task(
     name="Download archive from SFTP Endpoint",
@@ -296,12 +307,12 @@ def remove_archives_from_sftp_endpoint(zip_location):
 
 with Flow(
     "CRIS Crash Import",
-    # schedule=Schedule(clocks=[CronClock("* * * * *")]),
     run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
-    state_handlers=[skip_if_running_handler],
+    #state_handlers=[skip_if_running_handler],
 ) as flow:
     # get a location on disk which contains the zips from the sftp endpoint
-    zip_location = download_extract_archives()
+    #zip_location = download_extract_archives()
+    zip_location = specify_extract_location('/root/cris_import/data/jan1_jul24_2022.zip')
 
     # iterate over the zips in that location and unarchive them into
     # a list of temporary directories containing the files of each
@@ -315,15 +326,15 @@ with Flow(
 
 
     # remove archives from SFTP endpoint
-    removal_token = remove_archives_from_sftp_endpoint(zip_location)
+    #removal_token = remove_archives_from_sftp_endpoint(zip_location)
 
-    cleanup = cleanup_temporary_directories(
-        zip_location,
-        extracted_archives,
-    )
-    cleanup.set_upstream(removal_token)
+    #cleanup = cleanup_temporary_directories(
+        #zip_location,
+        #extracted_archives,
+    #)
+    #cleanup.set_upstream(removal_token)
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
-flow.register(project_name="vision-zero")
-# flow.run()
+#flow.register(project_name="vision-zero")
+flow.run()
