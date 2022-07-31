@@ -14,6 +14,10 @@ import docker
 import sysrsync
 from git import Repo
 
+import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+import psycopg2.extras
+
 # Import various prefect packages and helper methods
 import prefect
 from prefect import task, Flow, unmapped
@@ -346,6 +350,49 @@ def futter_csvs_into_database(directory):
                 os.system(cmd)
 
 
+@task(name="Align DB Types")
+def align_db_typing(futter_token):
+
+    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
+    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    sql = "SELECT * FROM information_schema.tables WHERE table_schema = 'import';"
+    cursor.execute(sql)
+    imported_tables = cursor.fetchall()
+    table_mappings = mappings.get_table_map()
+    for input_table in imported_tables:
+        output = table_mappings.get(input_table["table_name"])
+        if not output:
+            continue
+
+
+
+        cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        # This is a subtle SQL injection attack vector.
+        # Beware the f-string.
+        sql = f"""
+        SELECT
+            column_name,
+            data_type,
+            character_maximum_length AS max_length,
+            character_octet_length AS octet_length
+        FROM
+            information_schema.columns
+        WHERE true
+            AND table_schema = 'public'
+            AND table_name = '{output}'
+        """
+        cursor.execute(sql)
+        output_column_types = cursor.fetchall()
+
+        print("")
+        print(output)
+        print(output_column_types)
+
+    return None
+
+
 with Flow(
     "CRIS Crash Import",
     run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
@@ -367,15 +414,13 @@ with Flow(
 
     futter_token = futter_csvs_into_database.map(extracted_archives)
 
+    typed_token = align_db_typing(futter_token=futter_token)
+
     # push up the archives to s3 for archival
     # uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
 
     # remove archives from SFTP endpoint
     # removal_token = remove_archives_from_sftp_endpoint(zip_location)
-
-
-
-
 
     # cleanup = cleanup_temporary_directories(
     # zip_location,
