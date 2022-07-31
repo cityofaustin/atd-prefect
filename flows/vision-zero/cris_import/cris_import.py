@@ -316,10 +316,10 @@ def remove_archives_from_sftp_endpoint(zip_location):
 def get_pgfutter_path():
     uname = os.uname()
     print(uname.machine)
-    if uname.machine == "x86_64":
-        return "/root/pgfutter_x64"
     if uname.machine == "aarch64":
         return "/root/pgfutter_arm"
+    else:
+        return "/root/pgfutter_x64"
     return None
 
 
