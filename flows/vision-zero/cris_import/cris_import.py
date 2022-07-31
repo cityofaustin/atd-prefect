@@ -421,8 +421,8 @@ def align_db_typing(futter_token):
     return True
 
 
-@task(name="Find updated records")
-def find_updated_records(typed_token):
+@task(name="Find existing/missing records")
+def align_records(typed_token):
     pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
 
     print("Finding updated records")
@@ -444,23 +444,53 @@ def find_updated_records(typed_token):
         imported_records = cursor.fetchall()
 
         # print(imported_records)
-        for input in imported_records:
+        for source in imported_records:
 
             sql = f"""
             select * 
             from public.{output_map[table]}
             where true
-"""
+            """
+            key_sql = ""
             for key in table_keys[output_map[table]]:
-                sql += f"                and {key} = {input[key]}\n"
+                key_sql += f" and {key} = {source[key]}"
             cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cursor.execute(sql)
+            cursor.execute(sql + key_sql)
             target = cursor.fetchone()
 
             if target:
-                print("Found an update possible?")
+                update_record(source, target, table, key_sql)
             else:
                 print("This needs to be inserted")
+
+
+def update_record(source, target, table, key_sql):
+    print("\nUpdating record")
+    print(f"Table: {table}")
+    for key in source.keys():
+        # print(f"Source key: {key}")
+        if key in target:
+            print(f"We have {key} in both the source and target.")
+            source_value = source[key]
+            target_value = target[key]
+
+            # Who puts carriage returns in your strings anyway?
+            if type(source_value) == str:
+                source_value = source_value.replace("\r", "")
+            if type(target_value) == str:
+                target_value = target_value.replace("\r", "")
+
+            if not source_value == target_value:
+                # CRIS is putting a \r in this field. This is cruel.
+                print("Key: " + key_sql)
+                print("Source Type: " + str(type(source_value)))
+                print("Target Type: " + str(type(target_value)))
+                print(f"They differ! {source_value} != {target_value}")
+
+                #sql = f"update {table} set {key} = {source[key]} where true {key_sql}"
+                #print(sql)
+        # else:
+        # print(f"We're missing this column {key} in {table}.")
 
 
 with Flow(
@@ -486,7 +516,7 @@ with Flow(
 
     typed_token = align_db_typing(futter_token=futter_token)
 
-    find_updated_records(typed_token=typed_token)
+    align_records(typed_token=typed_token)
 
     # push up the archives to s3 for archival
     # uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
