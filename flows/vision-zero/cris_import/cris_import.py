@@ -354,9 +354,9 @@ def futter_csvs_into_database(directory):
 def align_db_typing(futter_token):
 
     pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
-    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     sql = "SELECT * FROM information_schema.tables WHERE table_schema = 'import';"
+    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute(sql)
     imported_tables = cursor.fetchall()
     table_mappings = mappings.get_table_map()
@@ -384,8 +384,6 @@ def align_db_typing(futter_token):
         cursor.execute(sql)
         output_column_types = cursor.fetchall()
 
-        print("")
-        print(output_table)
         for column in output_column_types:
             sql = f"""
             SELECT
@@ -420,7 +418,49 @@ def align_db_typing(futter_token):
             cursor.execute(sql)
             pg.commit()
 
-    return None
+    return True
+
+
+@task(name="Find updated records")
+def find_updated_records(typed_token):
+    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
+
+    print("Finding updated records")
+
+    output_map = mappings.get_table_map()
+    input_tables = {v: k for k, v in output_map.items()}
+    output_tables = list(output_map.values())
+
+    table_keys = mappings.get_key_columns()
+
+    for table in output_map.keys():
+        # if not table == "crash":
+        # continue
+        sql = "select * from import." + table
+        print(sql)
+
+        cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute(sql)
+        imported_records = cursor.fetchall()
+
+        # print(imported_records)
+        for input in imported_records:
+
+            sql = f"""
+            select * 
+            from public.{output_map[table]}
+            where true
+"""
+            for key in table_keys[output_map[table]]:
+                sql += f"                and {key} = {input[key]}\n"
+            cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cursor.execute(sql)
+            target = cursor.fetchone()
+
+            if target:
+                print("Found an update possible?")
+            else:
+                print("This needs to be inserted")
 
 
 with Flow(
@@ -445,6 +485,8 @@ with Flow(
     futter_token = futter_csvs_into_database.map(extracted_archives)
 
     typed_token = align_db_typing(futter_token=futter_token)
+
+    find_updated_records(typed_token=typed_token)
 
     # push up the archives to s3 for archival
     # uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)

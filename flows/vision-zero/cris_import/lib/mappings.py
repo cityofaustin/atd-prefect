@@ -7,3 +7,12 @@ def get_table_map():
         'primaryperson': 'atd_txdot_primaryperson',
         'charges': 'atd_txdot_charges',
         }
+
+def get_key_columns():
+    return {
+        'atd_txdot_crashes': ['crash_id'],
+        'atd_txdot_units': ['crash_id', 'unit_nbr'],
+        'atd_txdot_person': ['crash_id', 'prsn_nbr'],
+        'atd_txdot_primaryperson': ['crash_id', 'prsn_nbr'],
+        'atd_txdot_charges': ['crash_id', 'prsn_nbr', 'unit_nbr'],
+    }
