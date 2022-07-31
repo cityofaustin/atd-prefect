@@ -3,6 +3,7 @@
 import os
 import json
 import shutil
+import re
 import time
 import datetime
 import tempfile
@@ -39,6 +40,12 @@ AWS_SECRET_ACCESS_KEY = kv_dictionary["AWS_SECRET_ACCESS_KEY"]
 AWS_CSV_ARCHIVE_BUCKET_NAME = kv_dictionary["AWS_CSV_ARCHIVE_BUCKET_NAME"]
 AWS_CSV_ARCHIVE_PATH_PRODUCTION = kv_dictionary["AWS_CSV_ARCHIVE_PATH_PRODUCTION"]
 AWS_CSV_ARCHIVE_PATH_STAGING = kv_dictionary["AWS_CSV_ARCHIVE_PATH_STAGING"]
+
+DB_HOST = os.environ.get("DB_HOST")
+DB_USER = os.environ.get("DB_USER")
+DB_PASS = os.environ.get("DB_PASS")
+DB_NAME = os.environ.get("DB_NAME")
+DB_IMPORT_SCHEMA = os.environ.get("DB_IMPORT_SCHEMA")
 
 
 def skip_if_running_handler(obj, old_state, new_state):
@@ -306,26 +313,69 @@ def remove_archives_from_sftp_endpoint(zip_location):
     return None
 
 
+def get_pgfutter_path():
+    uname = os.uname()
+    print(uname.machine)
+    if uname.machine == "x86_64":
+        return "/root/pgfutter_x64"
+    if uname.machine == "aarch64":
+        return "/root/pgfutter_arm"
+    return None
+
+
+@task(name="Futter CSV into DB")
+def futter_csvs_into_database(directory):
+    print("Futtering: " + directory)
+    futter = get_pgfutter_path()
+    print(futter)
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            if filename.endswith(".csv"):
+                table = re.search("extract_[\d_]+(.*)_[\d].*\.csv", filename).group(1)
+                cmd = f'echo "drop table {DB_IMPORT_SCHEMA}.{table};" | PGPASSWORD={DB_PASS} psql -h {DB_HOST} -U {DB_USER} {DB_NAME}'
+                os.system(cmd)
+                cmd = (
+                    f"{futter} --host {DB_HOST} --username {DB_USER} --pw {DB_PASS} --dbname {DB_NAME} --schema {DB_IMPORT_SCHEMA} --table "
+                    + table
+                    + " csv "
+                    + directory
+                    + "/"
+                    + filename
+                )
+                print(cmd)
+                os.system(cmd)
+
+
 with Flow(
     "CRIS Crash Import",
     run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
     # state_handlers=[skip_if_running_handler],
 ) as flow:
+
     # get a location on disk which contains the zips from the sftp endpoint
     # zip_location = download_extract_archives()
+    
+    # OR
+
     zip_location = specify_extract_location(
-        "/root/cris_import/data/jan1_jul24_2022.zip"
+        "/root/cris_import/data/july_01-july-08.zip"
     )
 
     # iterate over the zips in that location and unarchive them into
     # a list of temporary directories containing the files of each
     extracted_archives = unzip_archives(zip_location)
 
+    futter_token = futter_csvs_into_database.map(extracted_archives)
+
     # push up the archives to s3 for archival
     # uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
 
     # remove archives from SFTP endpoint
     # removal_token = remove_archives_from_sftp_endpoint(zip_location)
+
+
+
+
 
     # cleanup = cleanup_temporary_directories(
     # zip_location,
