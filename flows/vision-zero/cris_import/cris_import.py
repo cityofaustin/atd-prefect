@@ -329,7 +329,6 @@ def get_pgfutter_path():
 def futter_csvs_into_database(directory):
     print("Futtering: " + directory)
     futter = get_pgfutter_path()
-    print(futter)
     for root, dirs, files in os.walk(directory):
         for filename in files:
             if filename.endswith(".csv"):
@@ -344,7 +343,6 @@ def futter_csvs_into_database(directory):
                     + "/"
                     + filename
                 )
-                print(cmd)
                 os.system(cmd)
 
 
@@ -356,7 +354,7 @@ with Flow(
 
     # get a location on disk which contains the zips from the sftp endpoint
     # zip_location = download_extract_archives()
-    
+
     # OR
 
     zip_location = specify_extract_location(
