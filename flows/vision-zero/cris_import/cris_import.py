@@ -460,17 +460,20 @@ def align_records(typed_token):
 
             if target:
                 update_record(source, target, table, key_sql)
-            else:
-                print("This needs to be inserted")
+            # else:
+            # FIXME implement this
+            # print("This needs to be inserted")
 
 
 def update_record(source, target, table, key_sql):
-    print("\nUpdating record")
-    print(f"Table: {table}")
     for key in source.keys():
+        if table == "charges" and key in {"citation_nbr", "charge_cat_id"}:
+            continue
+        # we have a are not supporting null in our DB here
+        # continue
         # print(f"Source key: {key}")
         if key in target:
-            print(f"We have {key} in both the source and target.")
+            # print(f"We have {key} in both the source and target.")
             source_value = source[key]
             target_value = target[key]
 
@@ -481,12 +484,29 @@ def update_record(source, target, table, key_sql):
                 target_value = target_value.replace("\r", "")
 
             if not source_value == target_value:
+                print("\nProcess diff:")
+                print(f"Table: {table}")
+                print("SQL qualifier: " + key_sql)
+                print("Field: " + key)
                 print("Source Type: " + str(type(source_value).__name__))
-                print("Source Type: " + str(type(source_value).__name__))
+                print("Target Type: " + str(type(target_value).__name__))
                 print(f"They differ! {source_value} != {target_value}")
 
-                #sql = f"update {table} set {key} = {source[key]} where true {key_sql}"
-                #print(sql)
+                source_type = str(type(source_value).__name__)
+
+                print("Source Type: " + source_type)
+
+                if target_type == "str":
+                    sql_update_snip = f"set {key} = '{source_value}'"
+                elif target_type == "int":
+                    sql_update_snip = f"set {key} = {source_value}"
+                else:
+                    raise Exception(f"Unhandled type: {target_type}")
+
+                print(sql_update_snip)
+
+                # sql = f"update {table} set {key} = {source[key]} where true {key_sql}"
+                # print(sql)
         # else:
         # print(f"We're missing this column {key} in {table}.")
 
