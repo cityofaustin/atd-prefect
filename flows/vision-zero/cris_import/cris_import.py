@@ -300,71 +300,26 @@ with Flow(
     run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
     state_handlers=[skip_if_running_handler],
 ) as flow:
-    # make sure we have the docker image we want to use to process these built.
-    image = build_docker_image()
-
     # get a location on disk which contains the zips from the sftp endpoint
     zip_location = download_extract_archives()
 
     # iterate over the zips in that location and unarchive them into
-    # a list of temporary directories containtain the files of each
+    # a list of temporary directories containing the files of each
     extracted_archives = unzip_archives(zip_location)
 
     # push up the archives to s3 for archival
-    uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
+    #uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
 
-    # def run_docker_image(extracted_data, vz_etl_image, command):
-    crash_import_tmpdirs = run_docker_image.map(
-        extracted_data=uploaded_archives_csvs,
-        vz_etl_image=unmapped(image),
-        command=unmapped(["/app/process_hasura_import.py", "crash"]),
-    )
 
-    # the next four set of task calls; i want them to be in parallel, but this won't work without a dask setup, i think
-    unit_import_tmpdirs = run_docker_image.map(
-        extracted_data=uploaded_archives_csvs,
-        vz_etl_image=unmapped(image),
-        command=unmapped(["/app/process_hasura_import.py", "unit"]),
-    )
-    unit_import_tmpdirs.set_upstream(crash_import_tmpdirs)
 
-    person_import_tmpdirs = run_docker_image.map(
-        extracted_data=uploaded_archives_csvs,
-        vz_etl_image=unmapped(image),
-        command=unmapped(["/app/process_hasura_import.py", "person"]),
-    )
-    person_import_tmpdirs.set_upstream(crash_import_tmpdirs)
 
-    primaryperson_import_tmpdirs = run_docker_image.map(
-        extracted_data=uploaded_archives_csvs,
-        vz_etl_image=unmapped(image),
-        command=unmapped(["/app/process_hasura_import.py", "primaryperson"]),
-    )
-    primaryperson_import_tmpdirs.set_upstream(crash_import_tmpdirs)
-
-    charges_import_tmpdirs = run_docker_image.map(
-        extracted_data=uploaded_archives_csvs,
-        vz_etl_image=unmapped(image),
-        command=unmapped(["/app/process_hasura_import.py", "charges"]),
-    )
-    charges_import_tmpdirs.set_upstream(crash_import_tmpdirs)
 
     # remove archives from SFTP endpoint
     removal_token = remove_archives_from_sftp_endpoint(zip_location)
-    removal_token.set_upstream(crash_import_tmpdirs)
-    removal_token.set_upstream(unit_import_tmpdirs)
-    removal_token.set_upstream(person_import_tmpdirs)
-    removal_token.set_upstream(primaryperson_import_tmpdirs)
-    removal_token.set_upstream(charges_import_tmpdirs)
 
     cleanup = cleanup_temporary_directories(
         zip_location,
         extracted_archives,
-        crash_import_tmpdirs,
-        unit_import_tmpdirs,
-        person_import_tmpdirs,
-        primaryperson_import_tmpdirs,
-        charges_import_tmpdirs,
     )
     cleanup.set_upstream(removal_token)
 
