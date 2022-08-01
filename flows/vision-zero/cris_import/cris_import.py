@@ -450,8 +450,8 @@ def align_records(typed_token):
         # this table needs to be reworked to use this system
         if table in {"charges"}:
             continue
-        if not table in {"person"}:
-            continue
+        # if not table in {"person"}:
+        # continue
 
         # Prepare helpful constructs to use if we end up needing to update a record
         # UPDATE stuff
@@ -485,8 +485,12 @@ def align_records(typed_token):
         # print(key_columns)
 
         linkage_sql = ""
+        linkage_clauses = []
         for column in key_columns:
-            linkage_sql += f" AND public.{output_map[table]}.{column} = {DB_IMPORT_SCHEMA}.{column}"
+            linkage_clauses.append(
+                f"public.{output_map[table]}.{column} = {DB_IMPORT_SCHEMA}.{table}.{column}"
+            )
+        linkage_sql = " AND " + " AND ".join(linkage_clauses)
 
         # Prepare helpful constructs to use if we end up needing to insert this as a new record
 
@@ -535,21 +539,56 @@ def align_records(typed_token):
             cursor.execute(sql + public_key_sql)
             target = cursor.fetchone()
 
-            # if the target does exist
+            # if the target does exist, we're going to update
             if target:
-                sql = "update public." + output_map[table] + " set "
 
                 column_assignments = []
+                column_comparisons = []
                 for column in target_columns:
                     if (not column["column_name"] in no_override_columns) and column[
                         "column_name"
                     ] in source:
-                        name = column["column_name"]
-                        column_assignments.append(f"{name} = {DB_IMPORT_SCHEMA}.{name}")
+                        column_assignments.append(
+                            f"{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}"
+                        )
+                        column_comparisons.append(
+                            # public.atd_txdot_crashes.crash_fatal_fl = import.crash.crash_fatal_fl
+                            f"""
+                            (
+                                public.{output_map[table]}.{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}
+                            OR
+                                ( public.{output_map[table]}.{column['column_name']} IS NULL AND {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} IS NULL )
+                            )
+                            """
+                        )
 
+                sql = (
+                    "select (" + " and ".join(column_comparisons) + ") as skip_update\n"
+                )
+                sql += f"from public.{output_map[table]}\n"
+                sql += (
+                    f"left join {DB_IMPORT_SCHEMA}.{table} on ("
+                    + " and ".join(linkage_clauses)
+                    + ")\n"
+                )
+                sql += f"where {public_key_sql}\n"
+
+                # print(sql)
+
+                cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                cursor.execute(sql)
+                skip_update_query = cursor.fetchone()
+                # print(skip_update_query)
+                # time.sleep(60)
+                if skip_update_query["skip_update"]:
+                    print(f"Skipping update for {output_map[table]} {public_key_sql}")
+                    continue
+
+                sql = "update public." + output_map[table] + " set "
+                # this next line adds the column assignments generated above into this query.
                 sql += ", ".join(column_assignments) + " "
                 sql += f"""
-                from {DB_IMPORT_SCHEMA}.{table} import
+                from {DB_IMPORT_SCHEMA}.{table}
                 where 
                 {public_key_sql}
                 {linkage_sql}
@@ -568,6 +607,7 @@ def align_records(typed_token):
                     )
                     print(f"Error executing:\n\n{sql}\n")
                     print("\a")  # 🛎
+            # target does not exist, we're going to insert
             else:
                 sql = f"insert into public.{output_map[table]} "
                 sql += "(" + ", ".join(input_column_names) + ") "
@@ -603,8 +643,8 @@ with Flow(
     # OR
 
     zip_location = specify_extract_location(
-        "/root/cris_import/data/jan1_jul24_2022.zip",
-        # "/root/cris_import/data/july_01-july-08.zip",
+        # "/root/cris_import/data/jan1_jul24_2022.zip",
+        "/root/cris_import/data/july_01-july-08.zip",
     )
 
     # iterate over the zips in that location and unarchive them into
