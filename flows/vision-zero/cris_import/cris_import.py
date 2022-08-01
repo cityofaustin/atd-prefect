@@ -562,9 +562,9 @@ def align_records(typed_token):
                     cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
                     cursor.execute(sql)
                     pg.commit()
-                except:
+                except Exception as error:
                     print(
-                        f"There is likely an issue with existing data. Try looking for results with the following WHERE clause:\n{public_key_sql}"
+                        f"There is likely an issue with existing data. Try looking for results in {output_map[table]} with the following WHERE clause:\n'{public_key_sql}'"
                     )
                     print(f"Error executing:\n\n{sql}\n")
                     print("\a")  # 🛎
@@ -585,13 +585,12 @@ def align_records(typed_token):
                     cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
                     cursor.execute(sql)
                     pg.commit()
-                except:
+                except Exception as error:
                     print(
-                        f"There is likely an issue with existing data. Try looking for results with the following WHERE clause:\n{public_key_sql}"
+                        f"There is likely an issue with existing data. Try looking for results in {output_map[table]} with the following WHERE clause:\n{public_key_sql}"
                     )
                     print(f"Error executing:\n\n{sql}\n")
                     print("\a")  # 🛎
-                    time.sleep(10)
                     # raise
 
 
