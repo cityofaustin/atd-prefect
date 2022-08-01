@@ -64,6 +64,6 @@ def no_override_columns():
             "crash_id", # key column
             "prsn_nbr", # key column
             "unit_nbr", # key column
-            "charge_cat_id", # FIXME in the bigger picture: we have a screwed up schema we store this value in
+            "charge_cat_id", # FIXME in the bigger picture: we have misconfigured schema we store this value in
         },
     }
