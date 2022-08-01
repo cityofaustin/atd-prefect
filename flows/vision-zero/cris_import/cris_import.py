@@ -355,7 +355,7 @@ def align_db_typing(futter_token):
 
     pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
 
-    sql = f"SELECT * FROM information_schema.tables WHERE table_schema = '{DB_IMPORT_SCHEMA};"
+    sql = f"SELECT * FROM information_schema.tables WHERE table_schema = '{DB_IMPORT_SCHEMA}';"
     cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute(sql)
     imported_tables = cursor.fetchall()
@@ -364,6 +364,18 @@ def align_db_typing(futter_token):
         output_table = table_mappings.get(input_table["table_name"])
         if not output_table:
             continue
+
+        # drop any records without appropriate keying
+        keys = mappings.get_key_columns()[output_table]
+        sql = f"delete from {DB_IMPORT_SCHEMA}.{input_table['table_name']}"
+        clauses = []
+        for key in keys:
+            clauses.append(f"{key} ~ '^\s*$'")
+        sql += " where (" + " or ".join(clauses) + ")"
+
+        cursor = pg.cursor()
+        cursor.execute(sql)
+        pg.commit()
 
         # This is a subtle SQL injection attack vector.
         # Beware the f-string. But I trust CRIS.
@@ -457,7 +469,7 @@ def align_records(typed_token):
 
         cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute(sql)
-        columns = cursor.fetchall()
+        target_columns = cursor.fetchall()
 
         no_override_columns = mappings.no_override_columns()[output_map[table]]
 
@@ -496,7 +508,7 @@ def align_records(typed_token):
                 sql = "update public." + output_map[table] + " set "
 
                 column_assignments = []
-                for column in columns:
+                for column in target_columns:
                     # print("Column: " + column["column_name"])
                     # print(no_override_columns)
                     if (not column["column_name"] in no_override_columns) and column[
@@ -517,10 +529,8 @@ def align_records(typed_token):
                 cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
                 cursor.execute(sql)
                 pg.commit()
-                # compute the fields and make an SQL statement to do it, no checking values
-            # else:
-            # FIXME implement this
-            # print("This needs to be inserted")
+            else:
+                sql = "insert into public." + output_map[table] + " "
 
 
 with Flow(
