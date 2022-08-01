@@ -454,6 +454,7 @@ def align_records(typed_token):
         if table in {"charges"}:
             continue
 
+        # UPDATE stuff
         sql = f"""
         SELECT
             column_name,
@@ -481,11 +482,34 @@ def align_records(typed_token):
 
         # get the key columns to build the linkage between public and import
         key_columns = mappings.get_key_columns()[output_map[table]]
-        print(key_columns)
+        # print(key_columns)
 
         linkage_sql = ""
         for column in key_columns:
             linkage_sql += f" AND public.{output_map[table]}.{column} = {DB_IMPORT_SCHEMA}.{column}"
+
+        # INSERT stuff
+
+        sql = f"""
+        SELECT
+            column_name,
+            data_type,
+            character_maximum_length AS max_length,
+            character_octet_length AS octet_length
+        FROM
+            information_schema.columns
+        WHERE true
+            AND table_schema = '{DB_IMPORT_SCHEMA}'
+            AND table_name = '{table}'
+        """
+
+        cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute(sql)
+        input_table_column_types = cursor.fetchall()
+
+        input_column_names = []
+        for column in input_table_column_types:
+            input_column_names.append(column["column_name"])
 
         # inspecting each record found in the import
         for source in imported_records:
@@ -495,11 +519,17 @@ def align_records(typed_token):
             from public.{output_map[table]}
             where true
             """
-            key_sql = ""
+            public_key_sql = ""
+            import_key_sql = ""
             for key in table_keys[output_map[table]]:
-                key_sql += f" and public.{output_map[table]}.{key} = {source[key]}"
+                public_key_sql += (
+                    f" and public.{output_map[table]}.{key} = {source[key]}"
+                )
+                import_key_sql += (
+                    f" and {DB_IMPORT_SCHEMA}.{table}.{key} = {source[key]}"
+                )
             cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cursor.execute(sql + key_sql)
+            cursor.execute(sql + public_key_sql)
             target = cursor.fetchone()
 
             # if the target does exist
@@ -522,15 +552,32 @@ def align_records(typed_token):
                 sql += f"""
                 from {DB_IMPORT_SCHEMA}.{table} import
                 where true
-                {key_sql}
+                {public_key_sql}
                 {linkage_sql}
                 """
-                print(sql)
+                # print(sql)
+                print(
+                    f"Executing update in {output_map[table]} for where "
+                    + public_key_sql
+                )
                 cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
                 cursor.execute(sql)
                 pg.commit()
             else:
-                sql = "insert into public." + output_map[table] + " "
+                sql = f"insert into public.{output_map[table]} "
+                sql += "(" + ", ".join(input_column_names) + ") "
+                sql += "(select "
+                sql += ", ".join(input_column_names)
+                sql += f" from {DB_IMPORT_SCHEMA}.{table}"
+                sql += f" where true {import_key_sql})"
+                # print(sql)
+                print(
+                    f"Executing insert in {output_map[table]} for where "
+                    + public_key_sql
+                )
+                cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                cursor.execute(sql)
+                pg.commit()
 
 
 with Flow(
@@ -545,8 +592,8 @@ with Flow(
     # OR
 
     zip_location = specify_extract_location(
-        "/root/cris_import/data/jan1_jul24_2022.zip",
-        # "/root/cris_import/data/july_01-july-08.zip",
+        # "/root/cris_import/data/jan1_jul24_2022.zip",
+        "/root/cris_import/data/july_01-july-08.zip",
     )
 
     # iterate over the zips in that location and unarchive them into
