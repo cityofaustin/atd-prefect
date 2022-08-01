@@ -425,7 +425,10 @@ def align_db_typing(futter_token):
             USING case when {column["column_name"]} = \'\' then null else {column["column_name"]}::{column["data_type"]} end
             """
 
-            print(sql)
+            # print(sql)
+            print(
+                f"Aligning types for {DB_IMPORT_SCHEMA}.{input_table['table_name']}.{column['column_name']}."
+            )
 
             cursor = pg.cursor()
             cursor.execute(sql)
