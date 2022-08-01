@@ -435,16 +435,13 @@ def align_db_typing(futter_token):
     return True
 
 
-@task(name="Find existing/missing records")
+@task(name="Insert / Update records in target schema")
 def align_records(typed_token):
     pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
 
     print("Finding updated records")
 
     output_map = mappings.get_table_map()
-    input_tables = {v: k for k, v in output_map.items()}
-    output_tables = list(output_map.values())
-
     table_keys = mappings.get_key_columns()
 
     for table in output_map.keys():
@@ -454,6 +451,7 @@ def align_records(typed_token):
         if table in {"charges"}:
             continue
 
+        # Prepare helpful constructs to use if we end up needing to update a record
         # UPDATE stuff
         sql = f"""
         SELECT
@@ -488,7 +486,7 @@ def align_records(typed_token):
         for column in key_columns:
             linkage_sql += f" AND public.{output_map[table]}.{column} = {DB_IMPORT_SCHEMA}.{column}"
 
-        # INSERT stuff
+        # Prepare helpful constructs to use if we end up needing to insert this as a new record
 
         sql = f"""
         SELECT
@@ -542,13 +540,10 @@ def align_records(typed_token):
 
                 column_assignments = []
                 for column in target_columns:
-                    # print("Column: " + column["column_name"])
-                    # print(no_override_columns)
                     if (not column["column_name"] in no_override_columns) and column[
                         "column_name"
                     ] in source:
                         name = column["column_name"]
-                        # print(name)
                         column_assignments.append(f"{name} = {DB_IMPORT_SCHEMA}.{name}")
 
                 sql += ", ".join(column_assignments) + " "
@@ -593,8 +588,8 @@ with Flow(
     # OR
 
     zip_location = specify_extract_location(
-        # "/root/cris_import/data/jan1_jul24_2022.zip",
-        "/root/cris_import/data/july_01-july-08.zip",
+        "/root/cris_import/data/jan1_jul24_2022.zip",
+        # "/root/cris_import/data/july_01-july-08.zip",
     )
 
     # iterate over the zips in that location and unarchive them into
