@@ -524,10 +524,10 @@ def align_records(typed_token):
             import_key_clauses = []
             for key in table_keys[output_map[table]]:
                 public_key_clauses.append(
-                    f" public.{output_map[table]}.{key} = {source[key]}"
+                    f"public.{output_map[table]}.{key} = {source[key]}"
                 )
                 import_key_clauses.append(
-                    f" {DB_IMPORT_SCHEMA}.{table}.{key} = {source[key]}"
+                    f"{DB_IMPORT_SCHEMA}.{table}.{key} = {source[key]}"
                 )
             public_key_sql = " and ".join(public_key_clauses)
             import_key_sql = " and ".join(import_key_clauses)
