@@ -434,7 +434,7 @@ def align_records(typed_token):
     table_keys = mappings.get_key_columns()
 
     for table in output_map.keys():
-        # we need to clean up this table. 
+        # we need to clean up this table.
         # it has a constraint `uniq_atd_txdot_charges` which has not accomplished what we wanted.
         # this isn't letting it go because; it's already gone.
         if table in {"charges"}:
