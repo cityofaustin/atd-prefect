@@ -12,8 +12,20 @@ def get_key_columns():
     return {
         "atd_txdot_crashes": ["crash_id"],
         "atd_txdot_units": ["crash_id", "unit_nbr"],
-        "atd_txdot_person": ["crash_id", "unit_nbr", "prsn_nbr"],
-        "atd_txdot_primaryperson": ["crash_id", "unit_nbr", "prsn_nbr"],
+        "atd_txdot_primaryperson": [
+            "crash_id",
+            "unit_nbr",
+            "prsn_nbr",
+            "prsn_type_id",
+            "prsn_occpnt_pos_id",
+        ],
+        "atd_txdot_person": [
+            "crash_id",
+            "unit_nbr",
+            "prsn_nbr",
+            "prsn_type_id",
+            "prsn_occpnt_pos_id",
+        ],
         "atd_txdot_charges": ["crash_id", "prsn_nbr", "unit_nbr"],
     }
 
@@ -51,6 +63,8 @@ def no_override_columns():
             "crash_id",  # key column
             "unit_nbr",  # key column
             "prsn_nbr",  # key column
+            "prsn_type_id",  # key column (but why?)
+            "prsn_occpnt_pos_id",  # key column (but why?)
             "injury_severity",
             "prsn_age",
         },
@@ -58,6 +72,8 @@ def no_override_columns():
             "crash_id",  # key column
             "unit_nbr",  # key column
             "prsn_nbr",  # key column
+            "prsn_type_id",  # key column (but why?)
+            "prsn_occpnt_pos_id",  # key column (but why?)
             "injury_severity",
             "prsn_age",
         },
