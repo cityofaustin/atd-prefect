@@ -321,7 +321,6 @@ def remove_archives_from_sftp_endpoint(zip_location):
 
 def get_pgfutter_path():
     uname = os.uname()
-    print(uname.machine)
     if uname.machine == "aarch64":
         return "/root/pgfutter_arm"
     else:
@@ -445,12 +444,10 @@ def align_records(typed_token):
     table_keys = mappings.get_key_columns()
 
     for table in output_map.keys():
-        # we need to clean up this table.
-        # it has a constraint `uniq_atd_txdot_charges` which has not accomplished what we wanted.
-        # this isn't letting it go because; it's already gone.
+        # this table needs to be reworked to use this system
         if table in {"charges"}:
             continue
-        if not table == "person":
+        if not table in {"person"}:
             continue
 
         # Prepare helpful constructs to use if we end up needing to update a record
@@ -568,8 +565,6 @@ def align_records(typed_token):
                     )
                     print(f"Error executing:\n\n{sql}\n")
                     print("\a")  # 🛎
-                    time.sleep(10)
-                    # raise
             else:
                 sql = f"insert into public.{output_map[table]} "
                 sql += "(" + ", ".join(input_column_names) + ") "
@@ -591,7 +586,6 @@ def align_records(typed_token):
                     )
                     print(f"Error executing:\n\n{sql}\n")
                     print("\a")  # 🛎
-                    # raise
 
 
 with Flow(
