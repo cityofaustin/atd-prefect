@@ -450,6 +450,8 @@ def align_records(typed_token):
         # this isn't letting it go because; it's already gone.
         if table in {"charges"}:
             continue
+        if not table == "person":
+            continue
 
         # Prepare helpful constructs to use if we end up needing to update a record
         # UPDATE stuff
@@ -535,7 +537,6 @@ def align_records(typed_token):
 
             # if the target does exist
             if target:
-                print("We found one that exists")
                 sql = "update public." + output_map[table] + " set "
 
                 column_assignments = []
@@ -557,9 +558,18 @@ def align_records(typed_token):
                     f"Executing update in {output_map[table]} for where "
                     + public_key_sql
                 )
-                cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-                cursor.execute(sql)
-                pg.commit()
+                try:
+                    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                    cursor.execute(sql)
+                    pg.commit()
+                except:
+                    print(
+                        f"There is likely an issue with existing data. Try looking for results with the following WHERE clause:\n{public_key_sql}"
+                    )
+                    print(f"Error executing:\n\n{sql}\n")
+                    print("\a")  # 🛎
+                    time.sleep(10)
+                    # raise
             else:
                 sql = f"insert into public.{output_map[table]} "
                 sql += "(" + ", ".join(input_column_names) + ") "
@@ -571,9 +581,18 @@ def align_records(typed_token):
                     f"Executing insert in {output_map[table]} for where "
                     + public_key_sql
                 )
-                cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-                cursor.execute(sql)
-                pg.commit()
+                try:
+                    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                    cursor.execute(sql)
+                    pg.commit()
+                except:
+                    print(
+                        f"There is likely an issue with existing data. Try looking for results with the following WHERE clause:\n{public_key_sql}"
+                    )
+                    print(f"Error executing:\n\n{sql}\n")
+                    print("\a")  # 🛎
+                    time.sleep(10)
+                    # raise
 
 
 with Flow(
