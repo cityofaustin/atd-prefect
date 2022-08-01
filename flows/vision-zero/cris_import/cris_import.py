@@ -509,7 +509,8 @@ def align_records(typed_token):
 
         input_column_names = []
         for column in input_table_column_types:
-            input_column_names.append(column["column_name"])
+            if column in target_columns:
+                input_column_names.append(column["column_name"])
 
         # inspecting each record found in the import
         for source in imported_records:
@@ -517,17 +518,19 @@ def align_records(typed_token):
             sql = f"""
             select * 
             from public.{output_map[table]}
-            where true
+            where 
             """
-            public_key_sql = ""
-            import_key_sql = ""
+            public_key_clauses = []
+            import_key_clauses = []
             for key in table_keys[output_map[table]]:
-                public_key_sql += (
-                    f" and public.{output_map[table]}.{key} = {source[key]}"
+                public_key_clauses.append(
+                    f" public.{output_map[table]}.{key} = {source[key]}"
                 )
-                import_key_sql += (
-                    f" and {DB_IMPORT_SCHEMA}.{table}.{key} = {source[key]}"
+                import_key_clauses.append(
+                    f" {DB_IMPORT_SCHEMA}.{table}.{key} = {source[key]}"
                 )
+            public_key_sql = " and ".join(public_key_clauses)
+            import_key_sql = " and ".join(import_key_clauses)
             cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cursor.execute(sql + public_key_sql)
             target = cursor.fetchone()
@@ -551,11 +554,10 @@ def align_records(typed_token):
                 sql += ", ".join(column_assignments) + " "
                 sql += f"""
                 from {DB_IMPORT_SCHEMA}.{table} import
-                where true
+                where 
                 {public_key_sql}
                 {linkage_sql}
                 """
-                # print(sql)
                 print(
                     f"Executing update in {output_map[table]} for where "
                     + public_key_sql
@@ -569,8 +571,7 @@ def align_records(typed_token):
                 sql += "(select "
                 sql += ", ".join(input_column_names)
                 sql += f" from {DB_IMPORT_SCHEMA}.{table}"
-                sql += f" where true {import_key_sql})"
-                # print(sql)
+                sql += f" where {import_key_sql})"
                 print(
                     f"Executing insert in {output_map[table]} for where "
                     + public_key_sql
