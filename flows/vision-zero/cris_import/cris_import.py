@@ -355,7 +355,7 @@ def align_db_typing(futter_token):
 
     pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
 
-    sql = "SELECT * FROM information_schema.tables WHERE table_schema = 'import';"
+    sql = f"SELECT * FROM information_schema.tables WHERE table_schema = '{DB_IMPORT_SCHEMA};"
     cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute(sql)
     imported_tables = cursor.fetchall()
@@ -394,7 +394,7 @@ def align_db_typing(futter_token):
             FROM
                 information_schema.columns
             WHERE true
-                AND table_schema = 'import'
+                AND table_schema = '{DB_IMPORT_SCHEMA}'
                 AND table_name = '{input_table["table_name"]}'
                 AND column_name = '{column["column_name"]}'
             """
@@ -409,10 +409,12 @@ def align_db_typing(futter_token):
 
             # the `USING` hackery is due to the reality of the CSV null vs "" confusion
             sql = f"""
-            ALTER TABLE import.{input_table["table_name"]}
+            ALTER TABLE {DB_IMPORT_SCHEMA}.{input_table["table_name"]}
             ALTER COLUMN {column["column_name"]} SET DATA TYPE {column["data_type"]}
             USING case when {column["column_name"]} = \'\' then null else {column["column_name"]}::{column["data_type"]} end
             """
+
+            print(sql)
 
             cursor = pg.cursor()
             cursor.execute(sql)
@@ -459,7 +461,7 @@ def align_records(typed_token):
 
         no_override_columns = mappings.no_override_columns()[output_map[table]]
 
-        sql = "select * from import." + table
+        sql = f"select * from {DB_IMPORT_SCHEMA}.{table}"
 
         cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute(sql)
@@ -471,7 +473,7 @@ def align_records(typed_token):
 
         linkage_sql = ""
         for column in key_columns:
-            linkage_sql += f" AND public.{output_map[table]}.{column} = import.{column}"
+            linkage_sql += f" AND public.{output_map[table]}.{column} = {DB_IMPORT_SCHEMA}.{column}"
 
         # inspecting each record found in the import
         for source in imported_records:
@@ -502,11 +504,11 @@ def align_records(typed_token):
                     ] in source:
                         name = column["column_name"]
                         # print(name)
-                        column_assignments.append(f"{name} = import.{name}")
+                        column_assignments.append(f"{name} = {DB_IMPORT_SCHEMA}.{name}")
 
                 sql += ", ".join(column_assignments) + " "
                 sql += f"""
-                from import.{table} import
+                from {DB_IMPORT_SCHEMA}.{table} import
                 where true
                 {key_sql}
                 {linkage_sql}
@@ -533,7 +535,8 @@ with Flow(
     # OR
 
     zip_location = specify_extract_location(
-        "/root/cris_import/data/july_01-july-08.zip"
+        "/root/cris_import/data/jan1_jul24_2022.zip",
+        # "/root/cris_import/data/july_01-july-08.zip",
     )
 
     # iterate over the zips in that location and unarchive them into
