@@ -434,18 +434,45 @@ def align_records(typed_token):
     table_keys = mappings.get_key_columns()
 
     for table in output_map.keys():
-        # if not table == "crash":
-        # continue
+        if not table == "crash":
+            continue
+
+        sql = f"""
+        SELECT
+            column_name,
+            data_type,
+            character_maximum_length AS max_length,
+            character_octet_length AS octet_length
+        FROM
+            information_schema.columns
+        WHERE true
+            AND table_schema = 'public'
+            AND table_name = '{output_map[table]}'
+        """
+
+        cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute(sql)
+        columns = cursor.fetchall()
+
+        no_override_columns = mappings.no_override_columns()[output_map[table]]
+
         sql = "select * from import." + table
-        print(sql)
 
         cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute(sql)
         imported_records = cursor.fetchall()
 
-        # print(imported_records)
-        for source in imported_records:
+        # get the key columns to build the linkage between public and import
+        key_columns = mappings.get_key_columns()[output_map[table]]
+        print(key_columns)
 
+        linkage_sql = ""
+        for column in key_columns:
+            linkage_sql += f" AND public.{output_map[table]}.{column} = import.{column}"
+
+        # inspecting each record found in the import
+        for source in imported_records:
+            # build and execute a query to find our target record; we're looking for it to exist
             sql = f"""
             select * 
             from public.{output_map[table]}
@@ -453,62 +480,42 @@ def align_records(typed_token):
             """
             key_sql = ""
             for key in table_keys[output_map[table]]:
-                key_sql += f" and {key} = {source[key]}"
+                key_sql += f" and public.{output_map[table]}.{key} = {source[key]}"
             cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cursor.execute(sql + key_sql)
             target = cursor.fetchone()
 
+            # if the target does exist
             if target:
-                update_record(source, target, table, key_sql)
+                print("We found one that exists")
+                sql = "update public." + output_map[table] + " set "
+
+                column_assignments = []
+                for column in columns:
+                    # print("Column: " + column["column_name"])
+                    # print(no_override_columns)
+                    if (not column["column_name"] in no_override_columns) and column[
+                        "column_name"
+                    ] in source:
+                        name = column["column_name"]
+                        # print(name)
+                        column_assignments.append(f"{name} = import.{name}")
+
+                sql += ", ".join(column_assignments) + " "
+                sql += f"""
+                from import.{table} import
+                where true
+                {key_sql}
+                {linkage_sql}
+                """
+                print(sql)
+                cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                cursor.execute(sql)
+                pg.commit()
+                # compute the fields and make an SQL statement to do it, no checking values
             # else:
             # FIXME implement this
             # print("This needs to be inserted")
-
-
-def update_record(source, target, table, key_sql):
-    for key in source.keys():
-        if table == "charges" and key in {"citation_nbr", "charge_cat_id"}:
-            continue
-        # we have a are not supporting null in our DB here
-        # continue
-        # print(f"Source key: {key}")
-        if key in target:
-            # print(f"We have {key} in both the source and target.")
-            source_value = source[key]
-            target_value = target[key]
-
-            # Who puts carriage returns in your strings anyway?
-            if type(source_value) == str:
-                source_value = source_value.replace("\r", "")
-            if type(target_value) == str:
-                target_value = target_value.replace("\r", "")
-
-            if not source_value == target_value:
-                print("\nProcess diff:")
-                print(f"Table: {table}")
-                print("SQL qualifier: " + key_sql)
-                print("Field: " + key)
-                print("Source Type: " + str(type(source_value).__name__))
-                print("Target Type: " + str(type(target_value).__name__))
-                print(f"They differ! {source_value} != {target_value}")
-
-                source_type = str(type(source_value).__name__)
-
-                print("Source Type: " + source_type)
-
-                if target_type == "str":
-                    sql_update_snip = f"set {key} = '{source_value}'"
-                elif target_type == "int":
-                    sql_update_snip = f"set {key} = {source_value}"
-                else:
-                    raise Exception(f"Unhandled type: {target_type}")
-
-                print(sql_update_snip)
-
-                # sql = f"update {table} set {key} = {source[key]} where true {key_sql}"
-                # print(sql)
-        # else:
-        # print(f"We're missing this column {key} in {table}.")
 
 
 with Flow(
