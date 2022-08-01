@@ -12,7 +12,7 @@ def get_key_columns():
     return {
         'atd_txdot_crashes': ['crash_id'],
         'atd_txdot_units': ['crash_id', 'unit_nbr'],
-        'atd_txdot_person': ['crash_id', 'prsn_nbr'],
+        'atd_txdot_person': ['crash_id', 'unit_nbr', 'prsn_nbr'],
         'atd_txdot_primaryperson': ['crash_id', 'prsn_nbr'],
         'atd_txdot_charges': ['crash_id', 'prsn_nbr', 'unit_nbr'],
     }
@@ -37,5 +37,33 @@ def no_override_columns():
             "private_dr_fl",
             "road_constr_zone_fl",
             "micromobility_device_flag",
+        },
+        'atd_txdot_units': {
+            "crash_id", # key column
+            "unit_nbr", # key column
+            "travel_direction",
+            "movement_id",
+            "death_cnt",
+            "sus_serious_injry_cnt",
+        },
+        'atd_txdot_person': {
+            "crash_id", # key column
+            "unit_nbr", # key column
+            "prsn_nbr", # key column
+            "injury_severity",
+            "prsn_age",
+        },
+        'atd_txdot_primaryperson': {
+            "crash_id", # key column
+            "unit_nbr", # key column
+            "prsn_nbr", # key column
+            "injury_severity",
+            "prsn_age",
+        },
+        'atd_txdot_charges': {
+            "crash_id", # key column
+            "prsn_nbr", # key column
+            "unit_nbr", # key column
+            "charge_cat_id", # FIXME in the bigger picture: we have a screwed up schema we store this value in
         },
     }
