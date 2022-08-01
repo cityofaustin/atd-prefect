@@ -13,7 +13,7 @@ def get_key_columns():
         "atd_txdot_crashes": ["crash_id"],
         "atd_txdot_units": ["crash_id", "unit_nbr"],
         "atd_txdot_person": ["crash_id", "unit_nbr", "prsn_nbr"],
-        "atd_txdot_primaryperson": ["crash_id", "prsn_nbr"],
+        "atd_txdot_primaryperson": ["crash_id", "unit_nbr", "prsn_nbr"],
         "atd_txdot_charges": ["crash_id", "prsn_nbr", "unit_nbr"],
     }
 
