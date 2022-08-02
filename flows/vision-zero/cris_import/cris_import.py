@@ -335,7 +335,7 @@ def futter_csvs_into_database(directory):
     Returns: Boolean, as a prefect task token representing the import
     """
 
-    # The program is distributed from GitHub compiled multiple architectures. This utility checks the system
+    # The program is distributed from GitHub compiled for multiple architectures. This utility checks the system
     # running the task and uses the correct one.
     futter = util.get_pgfutter_path()
 
