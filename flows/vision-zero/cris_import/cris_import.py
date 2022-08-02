@@ -328,6 +328,27 @@ def get_pgfutter_path():
     return None
 
 
+def check_if_update_is_a_non_op(
+    pg, column_comparisons, output_map, table, linkage_clauses, public_key_sql
+):
+    sql = "select (" + " and ".join(column_comparisons) + ") as skip_update\n"
+    sql += f"from public.{output_map[table]}\n"
+    sql += (
+        f"left join {DB_IMPORT_SCHEMA}.{table} on ("
+        + " and ".join(linkage_clauses)
+        + ")\n"
+    )
+    sql += f"where {public_key_sql}\n"
+
+    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute(sql)
+    skip_update_query = cursor.fetchone()
+    if skip_update_query["skip_update"]:
+        return True
+    else:
+        return False
+
+
 def get_changed_columns(
     pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql
 ):
@@ -595,21 +616,14 @@ def align_records(typed_token):
                         """
                         )
 
-                sql = (
-                    "select (" + " and ".join(column_comparisons) + ") as skip_update\n"
-                )
-                sql += f"from public.{output_map[table]}\n"
-                sql += (
-                    f"left join {DB_IMPORT_SCHEMA}.{table} on ("
-                    + " and ".join(linkage_clauses)
-                    + ")\n"
-                )
-                sql += f"where {public_key_sql}\n"
-
-                cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-                cursor.execute(sql)
-                skip_update_query = cursor.fetchone()
-                if skip_update_query["skip_update"]:
+                if check_if_update_is_a_non_op(
+                    pg,
+                    column_comparisons,
+                    output_map,
+                    table,
+                    linkage_clauses,
+                    public_key_sql,
+                ):
                     print(f"Skipping update for {output_map[table]} {public_key_sql}")
                     continue
 
