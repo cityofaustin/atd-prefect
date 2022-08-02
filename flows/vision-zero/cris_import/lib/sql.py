@@ -298,3 +298,11 @@ def get_input_column_type(pg, DB_IMPORT_SCHEMA, input_table, column):
     cursor.execute(sql)
     input_column_type = cursor.fetchall()
     return input_column_type
+
+
+def form_alter_statement_to_apply_column_typing(DB_IMPORT_SCHEMA, input_table, column):
+    return f"""
+            ALTER TABLE {DB_IMPORT_SCHEMA}.{input_table["table_name"]}
+            ALTER COLUMN {column["column_name"]} SET DATA TYPE {column["data_type"]}
+            USING case when {column["column_name"]} = \'\' then null else {column["column_name"]}::{column["data_type"]} end
+            """

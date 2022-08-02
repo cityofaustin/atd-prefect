@@ -368,19 +368,11 @@ def align_db_typing(futter_token):
                 continue
 
             # the `USING` hackery is due to the reality of the CSV null vs "" confusion
-            sql = f"""
-            ALTER TABLE {DB_IMPORT_SCHEMA}.{input_table["table_name"]}
-            ALTER COLUMN {column["column_name"]} SET DATA TYPE {column["data_type"]}
-            USING case when {column["column_name"]} = \'\' then null else {column["column_name"]}::{column["data_type"]} end
-            """
-
-            # print(sql)
-            print(
-                f"Aligning types for {DB_IMPORT_SCHEMA}.{input_table['table_name']}.{column['column_name']}."
-            )
+            alter_statement = util.form_alter_statement_to_apply_column_typing(DB_IMPORT_SCHEMA, input_table, column)
+            print(f"Aligning types for {DB_IMPORT_SCHEMA}.{input_table['table_name']}.{column['column_name']}.")
 
             cursor = pg.cursor()
-            cursor.execute(sql)
+            cursor.execute(alter_statement)
             pg.commit()
 
     # fmt: on
