@@ -367,7 +367,6 @@ def align_db_typing(futter_token):
             if not input_column_type:
                 continue
 
-            # the `USING` hackery is due to the reality of the CSV null vs "" confusion
             alter_statement = util.form_alter_statement_to_apply_column_typing(DB_IMPORT_SCHEMA, input_table, column)
             print(f"Aligning types for {DB_IMPORT_SCHEMA}.{input_table['table_name']}.{column['column_name']}.")
 
@@ -389,8 +388,6 @@ def align_records(typed_token):
     table_keys = mappings.get_key_columns()
 
     for table in output_map.keys():
-        # Prepare helpful constructs to use if we end up needing to update a record
-        # UPDATE stuff
 
         target_columns = util.get_target_columns(pg, output_map, table)
         no_override_columns = mappings.no_override_columns()[output_map[table]]

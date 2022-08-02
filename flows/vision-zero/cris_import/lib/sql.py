@@ -310,6 +310,7 @@ def get_input_column_type(pg, DB_IMPORT_SCHEMA, input_table, column):
 
 
 def form_alter_statement_to_apply_column_typing(DB_IMPORT_SCHEMA, input_table, column):
+    # the `USING` hackery is due to the reality of the CSV null vs "" confusion
     return f"""
             ALTER TABLE {DB_IMPORT_SCHEMA}.{input_table["table_name"]}
             ALTER COLUMN {column["column_name"]} SET DATA TYPE {column["data_type"]}
