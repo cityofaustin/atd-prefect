@@ -343,6 +343,7 @@ def futter_csvs_into_database(directory):
 
 @task(name="Align DB Types")
 def align_db_typing(futter_token):
+    # fmt: off
 
     pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
 
@@ -355,30 +356,12 @@ def align_db_typing(futter_token):
         if not output_table:
             continue
 
-        util.enforce_complete_keying(
-            pg, mappings.get_key_columns(), output_table, DB_IMPORT_SCHEMA, input_table
-        )
+        util.enforce_complete_keying(pg, mappings.get_key_columns(), output_table, DB_IMPORT_SCHEMA, input_table)
 
         output_column_types = util.get_output_column_types(pg, output_table)
 
         for column in output_column_types:
-            sql = f"""
-            SELECT
-                column_name,
-                data_type,
-                character_maximum_length AS max_length,
-                character_octet_length AS octet_length
-            FROM
-                information_schema.columns
-            WHERE true
-                AND table_schema = '{DB_IMPORT_SCHEMA}'
-                AND table_name = '{input_table["table_name"]}'
-                AND column_name = '{column["column_name"]}'
-            """
-
-            cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cursor.execute(sql)
-            input_column_type = cursor.fetchall()
+            input_column_type = util.get_input_column_type(pg, DB_IMPORT_SCHEMA, input_table, column)
 
             # skip columns we don't have in our db...
             if not input_column_type:
@@ -400,6 +383,7 @@ def align_db_typing(futter_token):
             cursor.execute(sql)
             pg.commit()
 
+    # fmt: on
     return True
 
 

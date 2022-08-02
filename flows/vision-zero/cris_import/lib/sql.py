@@ -256,6 +256,7 @@ def enforce_complete_keying(
     cursor.execute(sql)
     pg.commit()
 
+
 def get_output_column_types(pg, output_table):
     # This is a subtle SQL injection attack vector.
     # Beware the f-string. But I trust CRIS.
@@ -276,3 +277,24 @@ def get_output_column_types(pg, output_table):
     cursor.execute(sql)
     output_column_types = cursor.fetchall()
     return output_column_types
+
+
+def get_input_column_type(pg, DB_IMPORT_SCHEMA, input_table, column):
+    sql = f"""
+    SELECT
+        column_name,
+        data_type,
+        character_maximum_length AS max_length,
+        character_octet_length AS octet_length
+    FROM
+        information_schema.columns
+    WHERE true
+        AND table_schema = '{DB_IMPORT_SCHEMA}'
+        AND table_name = '{input_table["table_name"]}'
+        AND column_name = '{column["column_name"]}'
+    """
+
+    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute(sql)
+    input_column_type = cursor.fetchall()
+    return input_column_type
