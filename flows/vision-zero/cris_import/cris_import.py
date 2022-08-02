@@ -521,19 +521,11 @@ def align_records(typed_token):
                     print("Changed Columns: " + str(changed_columns["changed_columns"]))
 
                 update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql)
-
                 print(f"Executing update in {output_map[table]} for where " + public_key_sql)
                 util.try_statement(pg, output_map, table, public_key_sql, update_statement)
             # target does not exist, we're going to insert
             else:
-                sql = f"insert into public.{output_map[table]} "
-                sql += "(" + ", ".join(input_column_names) + ") "
-                sql += "(select "
-                sql += ", ".join(input_column_names)
-                sql += f" from {DB_IMPORT_SCHEMA}.{table}"
-                sql += f" where {import_key_sql})"
-
-                insert_statement = sql
+                insert_statement = util.form_insert_statement(output_map, table, input_column_names, import_key_sql)
                 print(f"Executing insert in {output_map[table]} for where " + public_key_sql)
                 util.try_statement(pg, output_map, table, public_key_sql, insert_statement)
         # fmt: on

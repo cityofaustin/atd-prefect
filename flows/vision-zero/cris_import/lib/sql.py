@@ -142,6 +142,14 @@ def form_update_statement(
     """
     return sql
 
+def form_insert_statement(output_map, table, input_column_names, import_key_sql):
+    sql = f"insert into public.{output_map[table]} "
+    sql += "(" + ", ".join(input_column_names) + ") "
+    sql += "(select "
+    sql += ", ".join(input_column_names)
+    sql += f" from {DB_IMPORT_SCHEMA}.{table}"
+    sql += f" where {import_key_sql})"    
+    return sql
 
 def try_statement(pg, output_map, table, public_key_sql, sql):
     try:
