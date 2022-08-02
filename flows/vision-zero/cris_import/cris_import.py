@@ -530,41 +530,23 @@ def align_records(typed_token):
 
                 update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql)
 
-                print( f"Executing update in {output_map[table]} for where " + public_key_sql)
-
+                print(f"Executing update in {output_map[table]} for where " + public_key_sql)
+                util.try_statement(pg, output_map, table, public_key_sql, update_statement)
                 # fmt: on
-                try:
-                    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-                    cursor.execute(update_statement)
-                    pg.commit()
-                except Exception as error:
-                    print(
-                        f"There is likely an issue with existing data. Try looking for results in {output_map[table]} with the following WHERE clause:\n'{public_key_sql}'"
-                    )
-                    print(f"Error executing:\n\n{sql}\n")
-                    print("\a")  # 🛎
             # target does not exist, we're going to insert
             else:
+                # fmt: off
                 sql = f"insert into public.{output_map[table]} "
                 sql += "(" + ", ".join(input_column_names) + ") "
                 sql += "(select "
                 sql += ", ".join(input_column_names)
                 sql += f" from {DB_IMPORT_SCHEMA}.{table}"
                 sql += f" where {import_key_sql})"
-                print(
-                    f"Executing insert in {output_map[table]} for where "
-                    + public_key_sql
-                )
-                try:
-                    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-                    cursor.execute(sql)
-                    pg.commit()
-                except Exception as error:
-                    print(
-                        f"There is likely an issue with existing data. Try looking for results in {output_map[table]} with the following WHERE clause:\n{public_key_sql}"
-                    )
-                    print(f"Error executing:\n\n{sql}\n")
-                    print("\a")  # 🛎
+
+                insert_statement = sql
+                print(f"Executing insert in {output_map[table]} for where " + public_key_sql)
+                util.try_statement(pg, output_map, table, public_key_sql, insert_statement)
+                # fmt: on
 
 
 with Flow(

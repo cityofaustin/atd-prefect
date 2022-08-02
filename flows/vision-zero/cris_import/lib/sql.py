@@ -128,3 +128,15 @@ def form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEM
     {linkage_sql}
     """
     return sql
+
+def try_statement(pg, output_map, table, public_key_sql, sql):
+    try:
+        cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute(sql)
+        pg.commit()
+    except Exception as error:
+        print(
+            f"There is likely an issue with existing data. Try looking for results in {output_map[table]} with the following WHERE clause:\n'{public_key_sql}'"
+        )
+        print(f"Error executing:\n\n{sql}\n")
+        print("\a") # 🛎
