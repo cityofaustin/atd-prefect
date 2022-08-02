@@ -333,14 +333,23 @@ def futter_csvs_into_database(directory):
 
     Returns: Boolean, as a prefect task token representing the import
     """
-    print("Futtering: " + directory)
+    # The program is distributed from GitHub compiled multiple architectures. This utility checks the system
+    # running the task and uses the correct one.
     futter = util.get_pgfutter_path()
+
+    # Walk the directory and find all the CSV files
     for root, dirs, files in os.walk(directory):
         for filename in files:
             if filename.endswith(".csv"):
+
+                # Extract the table name from the filename. They are named `crash`, `unit`, `person`, `primaryperson`, & `charges`.
                 table = re.search("extract_[\d_]+(.*)_[\d].*\.csv", filename).group(1)
+                
+                # Request the database drop any existing table with the same name
                 cmd = f'echo "drop table {DB_IMPORT_SCHEMA}.{table};" | PGPASSWORD={DB_PASS} psql -h {DB_HOST} -U {DB_USER} {DB_NAME}'
                 os.system(cmd)
+
+                # Build the futter command with correct credentials and ask it to do the import
                 cmd = (
                     f"{futter} --host {DB_HOST} --username {DB_USER} --pw {DB_PASS} --dbname {DB_NAME} --schema {DB_IMPORT_SCHEMA} --table "
                     + table
@@ -350,6 +359,8 @@ def futter_csvs_into_database(directory):
                     + filename
                 )
                 os.system(cmd)
+
+    # return a token for prefect to hand off to subsequent tasks in the Flow
     return True
 
 
