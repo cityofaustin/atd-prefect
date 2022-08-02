@@ -211,3 +211,22 @@ def get_target_columns(pg, output_map, table):
     cursor.execute(sql)
     target_columns = cursor.fetchall()
     return target_columns
+
+
+def load_input_data_for_keying(pg, DB_IMPORT_SCHEMA, table):
+    sql = f"select * from {DB_IMPORT_SCHEMA}.{table}"
+
+    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute(sql)
+    imported_records = cursor.fetchall()
+    return imported_records
+
+
+def get_linkage_constructions(key_columns, output_map, table, DB_IMPORT_SCHEMA):
+    linkage_clauses = []
+    for column in key_columns:
+        linkage_clauses.append(
+            f"public.{output_map[table]}.{column} = {DB_IMPORT_SCHEMA}.{table}.{column}"
+        )
+    linkage_sql = " AND " + " AND ".join(linkage_clauses)
+    return linkage_clauses, linkage_sql

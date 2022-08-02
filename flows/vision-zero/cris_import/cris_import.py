@@ -431,8 +431,8 @@ def align_db_typing(futter_token):
 
 @task(name="Insert / Update records in target schema")
 def align_records(typed_token):
+    # fmt: off
     pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
-
     print("Finding updated records")
 
     output_map = mappings.get_table_map()
@@ -445,22 +445,12 @@ def align_records(typed_token):
         target_columns = util.get_target_columns(pg, output_map, table)
         no_override_columns = mappings.no_override_columns()[output_map[table]]
 
-        sql = f"select * from {DB_IMPORT_SCHEMA}.{table}"
-
-        cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute(sql)
-        imported_records = cursor.fetchall()
+        imported_records = util.load_input_data_for_keying(pg, DB_IMPORT_SCHEMA, table)
 
         # get the key columns to build the linkage between public and import
         key_columns = mappings.get_key_columns()[output_map[table]]
-        # print(key_columns)
 
-        linkage_clauses = []
-        for column in key_columns:
-            linkage_clauses.append(
-                f"public.{output_map[table]}.{column} = {DB_IMPORT_SCHEMA}.{table}.{column}"
-            )
-        linkage_sql = " AND " + " AND ".join(linkage_clauses)
+        linkage_clauses, linkage_sql = util.get_linkage_constructions(key_columns, output_map, table, DB_IMPORT_SCHEMA)
 
         # Prepare helpful constructs to use if we end up needing to insert this as a new record
         input_column_names = util.get_input_column_names(
@@ -468,7 +458,6 @@ def align_records(typed_token):
         )
 
         # inspecting each record found in the import
-        # fmt: off
         for source in imported_records:
 
             public_key_sql, import_key_sql = util.get_key_clauses(table_keys, output_map, table, source, DB_IMPORT_SCHEMA)
@@ -493,7 +482,7 @@ def align_records(typed_token):
                 insert_statement = util.form_insert_statement(output_map, table, input_column_names, import_key_sql, DB_IMPORT_SCHEMA)
                 print(f"Executing insert in {output_map[table]} for where " + public_key_sql)
                 util.try_statement(pg, output_map, table, public_key_sql, insert_statement)
-        # fmt: on
+    # fmt: on
 
 
 with Flow(
