@@ -359,24 +359,7 @@ def align_db_typing(futter_token):
             pg, mappings.get_key_columns(), output_table, DB_IMPORT_SCHEMA, input_table
         )
 
-        # This is a subtle SQL injection attack vector.
-        # Beware the f-string. But I trust CRIS.
-        sql = f"""
-        SELECT
-            column_name,
-            data_type,
-            character_maximum_length AS max_length,
-            character_octet_length AS octet_length
-        FROM
-            information_schema.columns
-        WHERE true
-            AND table_schema = 'public'
-            AND table_name = '{output_table}'
-        """
-
-        cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute(sql)
-        output_column_types = cursor.fetchall()
+        output_column_types = util.get_output_column_types(pg, output_table)
 
         for column in output_column_types:
             sql = f"""
@@ -444,9 +427,7 @@ def align_records(typed_token):
         linkage_clauses, linkage_sql = util.get_linkage_constructions(key_columns, output_map, table, DB_IMPORT_SCHEMA)
 
         # Prepare helpful constructs to use if we end up needing to insert this as a new record
-        input_column_names = util.get_input_column_names(
-            pg, DB_IMPORT_SCHEMA, table, target_columns
-        )
+        input_column_names = util.get_input_column_names(pg, DB_IMPORT_SCHEMA, table, target_columns)
 
         # inspecting each record found in the import
         for source in imported_records:
