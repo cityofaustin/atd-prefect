@@ -528,23 +528,14 @@ def align_records(typed_token):
                 if len(changed_columns):
                     print("Changed Columns: " + str(changed_columns["changed_columns"]))
 
+                update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql)
+
+                print( f"Executing update in {output_map[table]} for where " + public_key_sql)
+
                 # fmt: on
-                sql = "update public." + output_map[table] + " set "
-                # this next line adds the column assignments generated above into this query.
-                sql += ", ".join(column_assignments) + " "
-                sql += f"""
-                from {DB_IMPORT_SCHEMA}.{table}
-                where 
-                {public_key_sql}
-                {linkage_sql}
-                """
-                print(
-                    f"Executing update in {output_map[table]} for where "
-                    + public_key_sql
-                )
                 try:
                     cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-                    cursor.execute(sql)
+                    cursor.execute(update_statement)
                     pg.commit()
                 except Exception as error:
                     print(

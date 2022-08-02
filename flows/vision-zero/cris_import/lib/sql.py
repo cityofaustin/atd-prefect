@@ -116,3 +116,15 @@ def fetch_target_record(pg, output_map, table, public_key_sql):
     cursor.execute(sql)
     target = cursor.fetchone()
     return target
+
+def form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql):
+    sql = "update public." + output_map[table] + " set "
+    # this next line adds the column assignments generated above into this query.
+    sql += ", ".join(column_assignments) + " "
+    sql += f"""
+    from {DB_IMPORT_SCHEMA}.{table}
+    where 
+    {public_key_sql}
+    {linkage_sql}
+    """
+    return sql
