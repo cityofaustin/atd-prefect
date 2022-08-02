@@ -1,3 +1,11 @@
+
+# This file is used to provide mappings and lists of fields for various purposes to the
+# CRIS import flow. It's designed to provide the absolute minimum of information needed.
+# Wherever data about a field can be queried from the database, the flow will do that, 
+# hopefully eliminating the need to maintain this file in the future, except when we need
+# to mark a new field as editable by the VZ team.
+
+
 def get_table_map():
     return {
         "crash": "atd_txdot_crashes",
