@@ -441,23 +441,8 @@ def align_records(typed_token):
     for table in output_map.keys():
         # Prepare helpful constructs to use if we end up needing to update a record
         # UPDATE stuff
-        sql = f"""
-        SELECT
-            column_name,
-            data_type,
-            character_maximum_length AS max_length,
-            character_octet_length AS octet_length
-        FROM
-            information_schema.columns
-        WHERE true
-            AND table_schema = 'public'
-            AND table_name = '{output_map[table]}'
-        """
 
-        cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute(sql)
-        target_columns = cursor.fetchall()
-
+        target_columns = util.get_target_columns(pg, output_map, table)
         no_override_columns = mappings.no_override_columns()[output_map[table]]
 
         sql = f"select * from {DB_IMPORT_SCHEMA}.{table}"

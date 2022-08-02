@@ -191,3 +191,23 @@ def get_input_column_names(pg, DB_IMPORT_SCHEMA, table, target_columns):
         if column in target_columns:
             input_column_names.append(column["column_name"])
     return input_column_names
+
+
+def get_target_columns(pg, output_map, table):
+    sql = f"""
+    SELECT
+        column_name,
+        data_type,
+        character_maximum_length AS max_length,
+        character_octet_length AS octet_length
+    FROM
+        information_schema.columns
+    WHERE true
+        AND table_schema = 'public'
+        AND table_name = '{output_map[table]}'
+    """
+
+    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute(sql)
+    target_columns = cursor.fetchall()
+    return target_columns
