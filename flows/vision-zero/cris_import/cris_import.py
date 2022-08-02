@@ -479,28 +479,7 @@ def align_records(typed_token):
         linkage_sql = " AND " + " AND ".join(linkage_clauses)
 
         # Prepare helpful constructs to use if we end up needing to insert this as a new record
-
-        sql = f"""
-        SELECT
-            column_name,
-            data_type,
-            character_maximum_length AS max_length,
-            character_octet_length AS octet_length
-        FROM
-            information_schema.columns
-        WHERE true
-            AND table_schema = '{DB_IMPORT_SCHEMA}'
-            AND table_name = '{table}'
-        """
-
-        cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute(sql)
-        input_table_column_types = cursor.fetchall()
-
-        input_column_names = []
-        for column in input_table_column_types:
-            if column in target_columns:
-                input_column_names.append(column["column_name"])
+        input_column_names = util.get_input_column_names(pg, DB_IMPORT_SCHEMA, table, target_columns)
 
         # inspecting each record found in the import
         # fmt: off
