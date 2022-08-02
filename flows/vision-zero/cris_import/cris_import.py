@@ -597,12 +597,8 @@ def align_records(typed_token):
 
         # inspecting each record found in the import
         for source in imported_records:
-            # build and execute a query to find our target record; we're looking for it to exist
-            sql = f"""
-            select * 
-            from public.{output_map[table]}
-            where 
-            """
+
+            # form some snippets we'll reuse
             public_key_clauses = []
             import_key_clauses = []
             for key in table_keys[output_map[table]]:
@@ -614,13 +610,20 @@ def align_records(typed_token):
                 )
             public_key_sql = " and ".join(public_key_clauses)
             import_key_sql = " and ".join(import_key_clauses)
+
+            # build and execute a query to find our target record; we're looking for it to exist
+            sql = f"""
+            select * 
+            from public.{output_map[table]}
+            where 
+            {public_key_sql}
+            """
             cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cursor.execute(sql + public_key_sql)
+            cursor.execute(sql)
             target = cursor.fetchone()
 
             # if the target does exist, we're going to update
             if target:
-
                 # fmt: off
                 column_assignments, column_comparisons, column_aggregators = get_column_operators(target_columns, no_override_columns, source, table, output_map)
 
