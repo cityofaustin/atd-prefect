@@ -346,11 +346,10 @@ def align_db_typing(futter_token):
 
     pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
 
-    sql = f"SELECT * FROM information_schema.tables WHERE table_schema = '{DB_IMPORT_SCHEMA}';"
-    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cursor.execute(sql)
-    imported_tables = cursor.fetchall()
+    imported_tables = get_imported_tables(pg, DB_IMPORT_SCHEMA) 
+
     table_mappings = mappings.get_table_map()
+
     for input_table in imported_tables:
         output_table = table_mappings.get(input_table["table_name"])
         if not output_table:
@@ -477,6 +476,7 @@ def align_records(typed_token):
                 update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql)
                 print(f"Executing update in {output_map[table]} for where " + public_key_sql)
                 util.try_statement(pg, output_map, table, public_key_sql, update_statement)
+
             # target does not exist, we're going to insert
             else:
                 insert_statement = util.form_insert_statement(output_map, table, input_column_names, import_key_sql, DB_IMPORT_SCHEMA)
