@@ -470,7 +470,6 @@ def align_records(typed_token):
         key_columns = mappings.get_key_columns()[output_map[table]]
         # print(key_columns)
 
-        linkage_sql = ""
         linkage_clauses = []
         for column in key_columns:
             linkage_clauses.append(
@@ -479,7 +478,9 @@ def align_records(typed_token):
         linkage_sql = " AND " + " AND ".join(linkage_clauses)
 
         # Prepare helpful constructs to use if we end up needing to insert this as a new record
-        input_column_names = util.get_input_column_names(pg, DB_IMPORT_SCHEMA, table, target_columns)
+        input_column_names = util.get_input_column_names(
+            pg, DB_IMPORT_SCHEMA, table, target_columns
+        )
 
         # inspecting each record found in the import
         # fmt: off
@@ -504,7 +505,7 @@ def align_records(typed_token):
                 util.try_statement(pg, output_map, table, public_key_sql, update_statement)
             # target does not exist, we're going to insert
             else:
-                insert_statement = util.form_insert_statement(output_map, table, input_column_names, import_key_sql)
+                insert_statement = util.form_insert_statement(output_map, table, input_column_names, import_key_sql, DB_IMPORT_SCHEMA)
                 print(f"Executing insert in {output_map[table]} for where " + public_key_sql)
                 util.try_statement(pg, output_map, table, public_key_sql, insert_statement)
         # fmt: on

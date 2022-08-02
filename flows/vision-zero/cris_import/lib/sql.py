@@ -142,14 +142,18 @@ def form_update_statement(
     """
     return sql
 
-def form_insert_statement(output_map, table, input_column_names, import_key_sql):
+
+def form_insert_statement(
+    output_map, table, input_column_names, import_key_sql, DB_IMPORT_SCHEMA
+):
     sql = f"insert into public.{output_map[table]} "
     sql += "(" + ", ".join(input_column_names) + ") "
     sql += "(select "
     sql += ", ".join(input_column_names)
     sql += f" from {DB_IMPORT_SCHEMA}.{table}"
-    sql += f" where {import_key_sql})"    
+    sql += f" where {import_key_sql})"
     return sql
+
 
 def try_statement(pg, output_map, table, public_key_sql, sql):
     try:
@@ -162,6 +166,7 @@ def try_statement(pg, output_map, table, public_key_sql, sql):
         )
         print(f"Error executing:\n\n{sql}\n")
         print("\a")  # 🛎
+
 
 def get_input_column_names(pg, DB_IMPORT_SCHEMA, table, target_columns):
     sql = f"""
@@ -185,4 +190,4 @@ def get_input_column_names(pg, DB_IMPORT_SCHEMA, table, target_columns):
     for column in input_table_column_types:
         if column in target_columns:
             input_column_names.append(column["column_name"])
-
+    return input_column_names
