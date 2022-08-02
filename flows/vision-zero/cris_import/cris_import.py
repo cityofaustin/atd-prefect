@@ -439,12 +439,6 @@ def align_records(typed_token):
     table_keys = mappings.get_key_columns()
 
     for table in output_map.keys():
-        # this table needs to be reworked to use this system
-        if table in {"charges"}:
-            continue
-        # if not table in {"person"}:
-        # continue
-
         # Prepare helpful constructs to use if we end up needing to update a record
         # UPDATE stuff
         sql = f"""
