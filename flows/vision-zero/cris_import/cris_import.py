@@ -346,7 +346,7 @@ def align_db_typing(futter_token):
 
     pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
 
-    imported_tables = get_imported_tables(pg, DB_IMPORT_SCHEMA) 
+    imported_tables = util.get_imported_tables(pg, DB_IMPORT_SCHEMA)
 
     table_mappings = mappings.get_table_map()
 
@@ -355,17 +355,9 @@ def align_db_typing(futter_token):
         if not output_table:
             continue
 
-        # drop any records without appropriate keying
-        keys = mappings.get_key_columns()[output_table]
-        sql = f"delete from {DB_IMPORT_SCHEMA}.{input_table['table_name']}"
-        clauses = []
-        for key in keys:
-            clauses.append(f"{key} ~ '^\s*$'")
-        sql += " where (" + " or ".join(clauses) + ")"
-
-        cursor = pg.cursor()
-        cursor.execute(sql)
-        pg.commit()
+        util.enforce_complete_keying(
+            pg, mappings.get_key_columns(), output_table, DB_IMPORT_SCHEMA, input_table
+        )
 
         # This is a subtle SQL injection attack vector.
         # Beware the f-string. But I trust CRIS.

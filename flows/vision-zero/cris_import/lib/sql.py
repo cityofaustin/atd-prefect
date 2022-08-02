@@ -231,9 +231,27 @@ def get_linkage_constructions(key_columns, output_map, table, DB_IMPORT_SCHEMA):
     linkage_sql = " AND " + " AND ".join(linkage_clauses)
     return linkage_clauses, linkage_sql
 
+
 def get_imported_tables(pg, DB_IMPORT_SCHEMA):
     sql = f"SELECT * FROM information_schema.tables WHERE table_schema = '{DB_IMPORT_SCHEMA}';"
     cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute(sql)
     imported_tables = cursor.fetchall()
     return imported_tables
+
+
+def enforce_complete_keying(
+    pg, key_columns, output_table, DB_IMPORT_SCHEMA, input_table
+):
+    # drop any records without appropriate keying
+    # keys = mappings.get_key_columns()[output_table]
+    keys = key_columns[output_table]
+    sql = f"delete from {DB_IMPORT_SCHEMA}.{input_table['table_name']}"
+    clauses = []
+    for key in keys:
+        clauses.append(f"{key} ~ '^\s*$'")
+    sql += " where (" + " or ".join(clauses) + ")"
+
+    cursor = pg.cursor()
+    cursor.execute(sql)
+    pg.commit()
