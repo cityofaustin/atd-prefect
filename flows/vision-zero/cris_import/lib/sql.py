@@ -4,7 +4,7 @@ import psycopg2.extras
 
 # This library is /not/ designed for reuse in other projects. It is designed to increase the
 # readability of the `cris_import.py` prefect flow by pulling logical groups of code out
-# and replacing them with a descriptively named function.  # The code was reviewed with an
+# and replacing them with a descriptively named function. The code was reviewed with an
 # eye for getting 100% of the code which forms SQL directly into this file, as code which writes
 # code is universally hard to read and grok. If one considers that each of these functions is called
 # in only one place in `cris_import.py`, one may appreciate these functions exist only to improve
