@@ -1,6 +1,6 @@
-
 import os
 import psycopg2.extras
+
 
 def get_pgfutter_path():
     uname = os.uname()
@@ -47,7 +47,13 @@ def get_column_operators(
 
 
 def check_if_update_is_a_non_op(
-    pg, column_comparisons, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA
+    pg,
+    column_comparisons,
+    output_map,
+    table,
+    linkage_clauses,
+    public_key_sql,
+    DB_IMPORT_SCHEMA,
 ):
     sql = "select (" + " and ".join(column_comparisons) + ") as skip_update\n"
     sql += f"from public.{output_map[table]}\n"
@@ -68,7 +74,13 @@ def check_if_update_is_a_non_op(
 
 
 def get_changed_columns(
-    pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA
+    pg,
+    column_aggregators,
+    output_map,
+    table,
+    linkage_clauses,
+    public_key_sql,
+    DB_IMPORT_SCHEMA,
 ):
     sql = "select "
     sql += (
@@ -89,20 +101,18 @@ def get_changed_columns(
     changed_columns = cursor.fetchone()
     return changed_columns
 
+
 def get_key_clauses(table_keys, output_map, table, source, DB_IMPORT_SCHEMA):
     # form some snippets we'll reuse
     public_key_clauses = []
     import_key_clauses = []
     for key in table_keys[output_map[table]]:
-        public_key_clauses.append(
-            f"public.{output_map[table]}.{key} = {source[key]}"
-        )
-        import_key_clauses.append(
-            f"{DB_IMPORT_SCHEMA}.{table}.{key} = {source[key]}"
-        )
+        public_key_clauses.append(f"public.{output_map[table]}.{key} = {source[key]}")
+        import_key_clauses.append(f"{DB_IMPORT_SCHEMA}.{table}.{key} = {source[key]}")
     public_key_sql = " and ".join(public_key_clauses)
     import_key_sql = " and ".join(import_key_clauses)
     return public_key_sql, import_key_sql
+
 
 def fetch_target_record(pg, output_map, table, public_key_sql):
     # build and execute a query to find our target record; we're looking for it to exist
@@ -117,7 +127,10 @@ def fetch_target_record(pg, output_map, table, public_key_sql):
     target = cursor.fetchone()
     return target
 
-def form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql):
+
+def form_update_statement(
+    output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql
+):
     sql = "update public." + output_map[table] + " set "
     # this next line adds the column assignments generated above into this query.
     sql += ", ".join(column_assignments) + " "
@@ -129,6 +142,7 @@ def form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEM
     """
     return sql
 
+
 def try_statement(pg, output_map, table, public_key_sql, sql):
     try:
         cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -139,4 +153,4 @@ def try_statement(pg, output_map, table, public_key_sql, sql):
             f"There is likely an issue with existing data. Try looking for results in {output_map[table]} with the following WHERE clause:\n'{public_key_sql}'"
         )
         print(f"Error executing:\n\n{sql}\n")
-        print("\a") # 🛎
+        print("\a")  # 🛎
