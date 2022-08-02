@@ -621,36 +621,18 @@ def align_records(typed_token):
             # if the target does exist, we're going to update
             if target:
 
-                (
-                    column_assignments,
-                    column_comparisons,
-                    column_aggregators,
-                ) = get_column_operators(
-                    target_columns, no_override_columns, source, table, output_map
-                )
+                # fmt: off
+                column_assignments, column_comparisons, column_aggregators = get_column_operators(target_columns, no_override_columns, source, table, output_map)
 
-                if check_if_update_is_a_non_op(
-                    pg,
-                    column_comparisons,
-                    output_map,
-                    table,
-                    linkage_clauses,
-                    public_key_sql,
-                ):
+                if check_if_update_is_a_non_op(pg, column_comparisons, output_map, table, linkage_clauses, public_key_sql,):
                     print(f"Skipping update for {output_map[table]} {public_key_sql}")
                     continue
 
-                changed_columns = get_changed_columns(
-                    pg,
-                    column_aggregators,
-                    output_map,
-                    table,
-                    linkage_clauses,
-                    public_key_sql,
-                )
+                changed_columns = get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql)
                 if len(changed_columns):
                     print("Changed Columns: " + str(changed_columns["changed_columns"]))
 
+                # fmt: on
                 sql = "update public." + output_map[table] + " set "
                 # this next line adds the column assignments generated above into this query.
                 sql += ", ".join(column_assignments) + " "
