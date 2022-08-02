@@ -322,6 +322,17 @@ def remove_archives_from_sftp_endpoint(zip_location):
 
 @task(name="Futter CSV into DB")
 def futter_csvs_into_database(directory):
+    """
+    Use `pgfutter` to import each CSV file received from CRIS into the database. These tables created
+    are found in the `import` schema, which can be configured via KV store or environment variable.
+    The tables are DROPed and CREATED before each import, and the names used for each table are drawn
+    from the filename provided by CRIS, extracted by a regex.
+
+    Arguments:
+        directory: String representing the path of the temporary directory containing the CSV files
+
+    Returns: Boolean, as a prefect task token representing the import
+    """
     print("Futtering: " + directory)
     futter = util.get_pgfutter_path()
     for root, dirs, files in os.walk(directory):
@@ -339,6 +350,7 @@ def futter_csvs_into_database(directory):
                     + filename
                 )
                 os.system(cmd)
+    return True
 
 
 @task(name="Align DB Types")
