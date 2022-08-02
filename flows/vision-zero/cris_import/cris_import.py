@@ -320,9 +320,6 @@ def remove_archives_from_sftp_endpoint(zip_location):
     return None
 
 
-
-
-
 @task(name="Futter CSV into DB")
 def futter_csvs_into_database(directory):
 
@@ -349,7 +346,7 @@ def futter_csvs_into_database(directory):
 
                 # Extract the table name from the filename. They are named `crash`, `unit`, `person`, `primaryperson`, & `charges`.
                 table = re.search("extract_[\d_]+(.*)_[\d].*\.csv", filename).group(1)
-                
+
                 # Request the database drop any existing table with the same name
                 cmd = f'echo "drop table {DB_IMPORT_SCHEMA}.{table};" | PGPASSWORD={DB_PASS} psql -h {DB_HOST} -U {DB_USER} {DB_NAME}'
                 os.system(cmd)
@@ -375,8 +372,8 @@ def align_db_typing(futter_token):
 
     """
     This function compares the target table in the VZDB with the corollary table in the import schema. For each column pair,
-    the type of the VZDB table's column is applied to the import table. This acts as a strong typing check for all input data, 
-    and will raise an exception if CRIS begins feeding the system data it's not ready to parse and handle. 
+    the type of the VZDB table's column is applied to the import table. This acts as a strong typing check for all input data,
+    and will raise an exception if CRIS begins feeding the system data it's not ready to parse and handle.
 
     Arguments:
         futter_token: Boolean value received from the previously ran task which imported the CSV files into the database.
@@ -435,7 +432,7 @@ def align_db_typing(futter_token):
 
 @task(name="Insert / Update records in target schema")
 def align_records(typed_token):
-    
+
     """
     This function begins by preparing a number of list and string variables containing SQL fragments.
     These fragments are used to create queries which inspect the data differences between a pair of records.
@@ -519,7 +516,7 @@ def align_records(typed_token):
 
                 # Execute the insert statement
                 util.try_statement(pg, output_map, table, public_key_sql, insert_statement)
-    
+
     # fmt: on
     return True
 
