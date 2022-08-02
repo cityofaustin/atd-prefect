@@ -328,6 +328,29 @@ def get_pgfutter_path():
     return None
 
 
+def get_changed_columns(
+    pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql
+):
+    sql = "select "
+    sql += (
+        "array_remove(array["
+        + ",".join(column_aggregators)
+        + "], null)"
+        + "as changed_columns "
+    )
+    sql += f"from public.{output_map[table]} "
+    sql += (
+        f"left join {DB_IMPORT_SCHEMA}.{table} on ("
+        + " and ".join(linkage_clauses)
+        + ")\n"
+    )
+    sql += f"where {public_key_sql}\n"
+    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute(sql)
+    changed_columns = cursor.fetchone()
+    return changed_columns
+
+
 @task(name="Futter CSV into DB")
 def futter_csvs_into_database(directory):
     print("Futtering: " + directory)
@@ -590,23 +613,14 @@ def align_records(typed_token):
                     print(f"Skipping update for {output_map[table]} {public_key_sql}")
                     continue
 
-                sql = "select "
-                sql += (
-                    "array_remove(array["
-                    + ",".join(column_aggregators)
-                    + "], null)"
-                    + "as changed_columns "
+                changed_columns = get_changed_columns(
+                    pg,
+                    column_aggregators,
+                    output_map,
+                    table,
+                    linkage_clauses,
+                    public_key_sql,
                 )
-                sql += f"from public.{output_map[table]} "
-                sql += (
-                    f"left join {DB_IMPORT_SCHEMA}.{table} on ("
-                    + " and ".join(linkage_clauses)
-                    + ")\n"
-                )
-                sql += f"where {public_key_sql}\n"
-                cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-                cursor.execute(sql)
-                changed_columns = cursor.fetchone()
                 print("Changed Columns: " + str(changed_columns["changed_columns"]))
 
                 sql = "update public." + output_map[table] + " set "
