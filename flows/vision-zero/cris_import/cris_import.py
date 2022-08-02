@@ -328,6 +328,41 @@ def get_pgfutter_path():
     return None
 
 
+def get_column_operators(
+    target_columns, no_override_columns, source, table, output_map
+):
+    column_assignments = []
+    column_comparisons = []
+    column_aggregators = []
+    for column in target_columns:
+        if (not column["column_name"] in no_override_columns) and column[
+            "column_name"
+        ] in source:
+            column_assignments.append(
+                f"{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}"
+            )
+            column_comparisons.append(
+                # there are two ways to be equal. Either be of the same value and type or /both/ be undefined
+                f"""
+                (
+                    public.{output_map[table]}.{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}
+                OR
+                    ( public.{output_map[table]}.{column['column_name']} IS NULL AND {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} IS NULL )
+                )
+                """
+            )
+            column_aggregators.append(
+                f"""
+                case when not (
+                    public.{output_map[table]}.{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}
+                    or
+                    (public.{output_map[table]}.{column['column_name']} is null and {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} is null)
+                ) then '{column['column_name']}' else null end
+            """
+            )
+    return column_assignments, column_comparisons, column_aggregators
+
+
 def check_if_update_is_a_non_op(
     pg, column_comparisons, output_map, table, linkage_clauses, public_key_sql
 ):
@@ -586,35 +621,13 @@ def align_records(typed_token):
             # if the target does exist, we're going to update
             if target:
 
-                column_assignments = []
-                column_comparisons = []
-                column_aggregators = []
-                for column in target_columns:
-                    if (not column["column_name"] in no_override_columns) and column[
-                        "column_name"
-                    ] in source:
-                        column_assignments.append(
-                            f"{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}"
-                        )
-                        column_comparisons.append(
-                            # there are two ways to be equal. Either be of the same value and type or /both/ be undefined
-                            f"""
-                            (
-                                public.{output_map[table]}.{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}
-                            OR
-                                ( public.{output_map[table]}.{column['column_name']} IS NULL AND {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} IS NULL )
-                            )
-                            """
-                        )
-                        column_aggregators.append(
-                            f"""
-                            case when not (
-                                public.{output_map[table]}.{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}
-                                or
-                                (public.{output_map[table]}.{column['column_name']} is null and {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} is null)
-                            ) then '{column['column_name']}' else null end
-                        """
-                        )
+                (
+                    column_assignments,
+                    column_comparisons,
+                    column_aggregators,
+                ) = get_column_operators(
+                    target_columns, no_override_columns, source, table, output_map
+                )
 
                 if check_if_update_is_a_non_op(
                     pg,
