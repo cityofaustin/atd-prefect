@@ -511,18 +511,8 @@ def align_records(typed_token):
         # inspecting each record found in the import
         for source in imported_records:
 
-            # form some snippets we'll reuse
-            public_key_clauses = []
-            import_key_clauses = []
-            for key in table_keys[output_map[table]]:
-                public_key_clauses.append(
-                    f"public.{output_map[table]}.{key} = {source[key]}"
-                )
-                import_key_clauses.append(
-                    f"{DB_IMPORT_SCHEMA}.{table}.{key} = {source[key]}"
-                )
-            public_key_sql = " and ".join(public_key_clauses)
-            import_key_sql = " and ".join(import_key_clauses)
+            # fmt: off
+            public_key_sql, import_key_sql = get_key_clauses(table_keys, output_map, table, source, DB_IMPORT_SCHEMA)
 
             # build and execute a query to find our target record; we're looking for it to exist
             sql = f"""
@@ -538,13 +528,13 @@ def align_records(typed_token):
             # if the target does exist, we're going to update
             if target:
                 # fmt: off
-                column_assignments, column_comparisons, column_aggregators = util.get_column_operators(target_columns, no_override_columns, source, table, output_map)
+                column_assignments, column_comparisons, column_aggregators = util.get_column_operators(target_columns, no_override_columns, source, table, output_map, DB_IMPORT_SCHEMA)
 
-                if util.check_if_update_is_a_non_op(pg, column_comparisons, output_map, table, linkage_clauses, public_key_sql,):
+                if util.check_if_update_is_a_non_op(pg, column_comparisons, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA):
                     print(f"Skipping update for {output_map[table]} {public_key_sql}")
                     continue
 
-                changed_columns = util.get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql)
+                changed_columns = util.get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
                 if len(changed_columns):
                     print("Changed Columns: " + str(changed_columns["changed_columns"]))
 

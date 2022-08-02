@@ -1,5 +1,6 @@
 
 import os
+import psycopg2.extras
 
 def get_pgfutter_path():
     uname = os.uname()
@@ -11,7 +12,7 @@ def get_pgfutter_path():
 
 
 def get_column_operators(
-    target_columns, no_override_columns, source, table, output_map
+    target_columns, no_override_columns, source, table, output_map, DB_IMPORT_SCHEMA
 ):
     column_assignments = []
     column_comparisons = []
@@ -46,7 +47,7 @@ def get_column_operators(
 
 
 def check_if_update_is_a_non_op(
-    pg, column_comparisons, output_map, table, linkage_clauses, public_key_sql
+    pg, column_comparisons, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA
 ):
     sql = "select (" + " and ".join(column_comparisons) + ") as skip_update\n"
     sql += f"from public.{output_map[table]}\n"
@@ -67,7 +68,7 @@ def check_if_update_is_a_non_op(
 
 
 def get_changed_columns(
-    pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql
+    pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA
 ):
     sql = "select "
     sql += (
@@ -87,3 +88,18 @@ def get_changed_columns(
     cursor.execute(sql)
     changed_columns = cursor.fetchone()
     return changed_columns
+
+def get_key_clauses(table_keys, output_map, table, source, DB_IMPORT_SCHEMA):
+    # form some snippets we'll reuse
+    public_key_clauses = []
+    import_key_clauses = []
+    for key in table_keys[output_map[table]]:
+        public_key_clauses.append(
+            f"public.{output_map[table]}.{key} = {source[key]}"
+        )
+        import_key_clauses.append(
+            f"{DB_IMPORT_SCHEMA}.{table}.{key} = {source[key]}"
+        )
+    public_key_sql = " and ".join(public_key_clauses)
+    import_key_sql = " and ".join(import_key_clauses)
+    return public_key_sql, import_key_sql
