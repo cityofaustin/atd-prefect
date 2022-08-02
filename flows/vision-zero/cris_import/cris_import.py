@@ -513,20 +513,10 @@ def align_records(typed_token):
 
             # fmt: off
             public_key_sql, import_key_sql = util.get_key_clauses(table_keys, output_map, table, source, DB_IMPORT_SCHEMA)
+            # fmt: on
 
-            # build and execute a query to find our target record; we're looking for it to exist
-            sql = f"""
-            select * 
-            from public.{output_map[table]}
-            where 
-            {public_key_sql}
-            """
-            cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cursor.execute(sql)
-            target = cursor.fetchone()
-
-            # if the target does exist, we're going to update
-            if target:
+            # if the target exists, we're going to update
+            if util.fetch_target_record(pg, output_map, table, public_key_sql):
                 # fmt: off
                 column_assignments, column_comparisons, column_aggregators = util.get_column_operators(target_columns, no_override_columns, source, table, output_map, DB_IMPORT_SCHEMA)
 

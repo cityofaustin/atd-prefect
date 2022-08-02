@@ -103,3 +103,16 @@ def get_key_clauses(table_keys, output_map, table, source, DB_IMPORT_SCHEMA):
     public_key_sql = " and ".join(public_key_clauses)
     import_key_sql = " and ".join(import_key_clauses)
     return public_key_sql, import_key_sql
+
+def fetch_target_record(pg, output_map, table, public_key_sql):
+    # build and execute a query to find our target record; we're looking for it to exist
+    sql = f"""
+    select * 
+    from public.{output_map[table]}
+    where 
+    {public_key_sql}
+    """
+    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute(sql)
+    target = cursor.fetchone()
+    return target
