@@ -503,15 +503,13 @@ def align_records(typed_token):
                 input_column_names.append(column["column_name"])
 
         # inspecting each record found in the import
+        # fmt: off
         for source in imported_records:
 
-            # fmt: off
             public_key_sql, import_key_sql = util.get_key_clauses(table_keys, output_map, table, source, DB_IMPORT_SCHEMA)
-            # fmt: on
 
             # if the target exists, we're going to update
             if util.fetch_target_record(pg, output_map, table, public_key_sql):
-                # fmt: off
                 column_assignments, column_comparisons, column_aggregators = util.get_column_operators(target_columns, no_override_columns, source, table, output_map, DB_IMPORT_SCHEMA)
 
                 if util.check_if_update_is_a_non_op(pg, column_comparisons, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA):
@@ -526,10 +524,8 @@ def align_records(typed_token):
 
                 print(f"Executing update in {output_map[table]} for where " + public_key_sql)
                 util.try_statement(pg, output_map, table, public_key_sql, update_statement)
-                # fmt: on
             # target does not exist, we're going to insert
             else:
-                # fmt: off
                 sql = f"insert into public.{output_map[table]} "
                 sql += "(" + ", ".join(input_column_names) + ") "
                 sql += "(select "
@@ -540,7 +536,7 @@ def align_records(typed_token):
                 insert_statement = sql
                 print(f"Executing insert in {output_map[table]} for where " + public_key_sql)
                 util.try_statement(pg, output_map, table, public_key_sql, insert_statement)
-                # fmt: on
+        # fmt: on
 
 
 with Flow(
