@@ -635,7 +635,8 @@ def align_records(typed_token):
                     linkage_clauses,
                     public_key_sql,
                 )
-                print("Changed Columns: " + str(changed_columns["changed_columns"]))
+                if len(changed_columns):
+                    print("Changed Columns: " + str(changed_columns["changed_columns"]))
 
                 sql = "update public." + output_map[table] + " set "
                 # this next line adds the column assignments generated above into this query.
