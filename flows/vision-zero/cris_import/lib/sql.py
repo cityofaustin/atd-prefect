@@ -164,7 +164,10 @@ def form_insert_statement(
     return sql
 
 
-def try_statement(pg, output_map, table, public_key_sql, sql):
+def try_statement(pg, output_map, table, public_key_sql, sql, dry_run):
+    if dry_run:
+        print("Dry run; skipping")
+        return
     try:
         cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute(sql)

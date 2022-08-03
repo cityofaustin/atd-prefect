@@ -431,7 +431,7 @@ def align_db_typing(futter_token):
 
 
 @task(name="Insert / Update records in target schema")
-def align_records(typed_token):
+def align_records(typed_token, dry_run):
 
     """
     This function begins by preparing a number of list and string variables containing SQL fragments.
@@ -505,7 +505,7 @@ def align_records(typed_token):
                 print(f"Executing update in {output_map[table]} for where " + public_key_sql)
 
                 # Execute the update statement
-                util.try_statement(pg, output_map, table, public_key_sql, update_statement)
+                util.try_statement(pg, output_map, table, public_key_sql, update_statement, dry_run)
 
             # target does not exist, we're going to insert
             else:
@@ -515,7 +515,7 @@ def align_records(typed_token):
                 print(f"Executing insert in {output_map[table]} for where " + public_key_sql)
 
                 # Execute the insert statement
-                util.try_statement(pg, output_map, table, public_key_sql, insert_statement)
+                util.try_statement(pg, output_map, table, public_key_sql, insert_statement, dry_run)
 
     # fmt: on
     return True
@@ -526,6 +526,8 @@ with Flow(
     run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
     # state_handlers=[skip_if_running_handler],
 ) as flow:
+
+    dry_run = True
 
     # get a location on disk which contains the zips from the sftp endpoint
     # zip_location = download_extract_archives()
