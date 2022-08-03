@@ -497,8 +497,7 @@ def align_records(typed_token, dry_run):
                 # column names which have differing values between the import and target records.
                 # Return these column names as an array and display them in the output.
                 changed_columns = util.get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
-                if len(changed_columns):
-                    print("Changed Columns: " + str(changed_columns["changed_columns"]))
+                util.show_changed_values(pg, changed_columns, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
 
                 # Using all the information we've gathered, form a single SQL update statement to update the target record.
                 update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql, changed_columns)

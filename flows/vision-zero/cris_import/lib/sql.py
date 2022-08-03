@@ -144,10 +144,6 @@ def form_update_statement(
     linkage_sql,
     changed_columns,
 ):
-
-    # print("Changed columns:", type(set(changed_columns["changed_columns"])))
-
-    required_assignments = []
     sql = "update public." + output_map[table] + " set "
 
     required_assignments = []
@@ -161,7 +157,6 @@ def form_update_statement(
     {public_key_sql}
     {linkage_sql}
     """
-    print(sql)
     return sql
 
 
@@ -332,3 +327,35 @@ def form_alter_statement_to_apply_column_typing(DB_IMPORT_SCHEMA, input_table, c
             ALTER COLUMN {column["column_name"]} SET DATA TYPE {column["data_type"]}
             USING case when {column["column_name"]} = \'\' then null else {column["column_name"]}::{column["data_type"]} end
             """
+
+
+def show_changed_values(
+    pg,
+    changed_columns,
+    output_map,
+    table,
+    linkage_clauses,
+    public_key_sql,
+    DB_IMPORT_SCHEMA,
+):
+    for column in changed_columns["changed_columns"]:
+        print(column)
+        linkage_sql = " and ".join(linkage_clauses)
+        sql = f"""
+            select import.{table}.{column}::text as import_{column},
+                   public.{output_map[table]}.{column}::text as public_{column}
+            from public.{output_map[table]}
+            left join {DB_IMPORT_SCHEMA}.{table} on {linkage_sql}
+            where {public_key_sql}
+            """
+        cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute(sql)
+        values = cursor.fetchone()
+
+        # give some visible feedback for select special characters
+        values[f"import_{column}"] = values[f"import_{column}"].replace("\n", "\\n")
+        values[f"import_{column}"] = values[f"import_{column}"].replace("\r", "\\r")
+
+        print(f"For column {column}:")
+        print(f"  import: '{values[f'import_{column}']}'")
+        print(f"  public: '{values[f'public_{column}']}'")
