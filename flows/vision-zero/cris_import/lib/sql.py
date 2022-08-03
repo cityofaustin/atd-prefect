@@ -23,16 +23,13 @@ def get_pgfutter_path():
 def get_column_operators(
     target_columns, no_override_columns, source, table, output_map, DB_IMPORT_SCHEMA
 ):
-    column_assignments = []
+    column_assignments = {}
     column_comparisons = []
     column_aggregators = []
     for column in target_columns:
-        if (not column["column_name"] in no_override_columns) and column[
-            "column_name"
-        ] in source:
-            column_assignments.append(
-                f"{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}"
-            )
+        # fmt: off
+        if (not column["column_name"] in no_override_columns) and column[ "column_name" ] in source:
+            column_assignments[ column["column_name"] ] = f"{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}"
             column_comparisons.append(
                 # there are two ways to be equal. Either be of the same value and type or /both/ be undefined
                 f"""
@@ -52,6 +49,7 @@ def get_column_operators(
                 ) then '{column['column_name']}' else null end
             """
             )
+        # fmt: on
     return column_assignments, column_comparisons, column_aggregators
 
 
@@ -138,17 +136,32 @@ def fetch_target_record(pg, output_map, table, public_key_sql):
 
 
 def form_update_statement(
-    output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql
+    output_map,
+    table,
+    column_assignments,
+    DB_IMPORT_SCHEMA,
+    public_key_sql,
+    linkage_sql,
+    changed_columns,
 ):
+
+    # print("Changed columns:", type(set(changed_columns["changed_columns"])))
+
+    required_assignments = []
     sql = "update public." + output_map[table] + " set "
-    # this next line adds the column assignments generated above into this query.
-    sql += ", ".join(column_assignments) + " "
+
+    required_assignments = []
+    for changed_column in set(changed_columns["changed_columns"]):
+        required_assignments.append(column_assignments[changed_column])
+    sql += ", ".join(required_assignments) + " "
+
     sql += f"""
     from {DB_IMPORT_SCHEMA}.{table}
     where 
     {public_key_sql}
     {linkage_sql}
     """
+    print(sql)
     return sql
 
 

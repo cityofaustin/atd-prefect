@@ -501,7 +501,7 @@ def align_records(typed_token, dry_run):
                     print("Changed Columns: " + str(changed_columns["changed_columns"]))
 
                 # Using all the information we've gathered, form a single SQL update statement to update the target record.
-                update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql)
+                update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql, changed_columns)
                 print(f"Executing update in {output_map[table]} for where " + public_key_sql)
 
                 # Execute the update statement
@@ -547,7 +547,7 @@ with Flow(
 
     typed_token = align_db_typing(futter_token=futter_token)
 
-    align_records(typed_token=typed_token)
+    align_records(typed_token=typed_token, dry_run=dry_run)
 
     # push up the archives to s3 for archival
     # uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
