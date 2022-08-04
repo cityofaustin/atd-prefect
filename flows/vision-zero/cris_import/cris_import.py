@@ -339,6 +339,8 @@ def futter_csvs_into_database(directory):
     # running the task and uses the correct one.
     futter = util.get_pgfutter_path()
 
+    #print(f"Futtering: {directory}")
+
     # Walk the directory and find all the CSV files
     for root, dirs, files in os.walk(directory):
         for filename in files:
@@ -497,6 +499,8 @@ def align_records(typed_token, dry_run):
                 # column names which have differing values between the import and target records.
                 # Return these column names as an array and display them in the output.
                 changed_columns = util.get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
+
+                # Display the before and after values of the columns which are subject to update
                 util.show_changed_values(pg, changed_columns, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
 
                 # Using all the information we've gathered, form a single SQL update statement to update the target record.
