@@ -37,7 +37,8 @@ MSTRO_PASSWORD = environment_variables["MSTRO_PASSWORD"]
 ## Go to Tools > Report Details Page or Document Details Page.
 ## Click Show Advanced Details button at the bottom
 # Report name should be unique as it is the file name in the S3 bucket
-REPORTS = [["2020 Bond Expenses Obligated", "85A9E0A049F06D98AF1CF3BE8CDA9394"]]
+REPORTS = [["2020 Bond Expenses Obligated", "85A9E0A049F06D98AF1CF3BE8CDA9394"],
+["All bonds Expenses Obligated", "6B0DE57644C7C9912AAAE48392873233"]]
 
 ## AWS Credentials
 AWS_ACCESS_ID = environment_variables["AWS_ACCESS_ID"]
@@ -52,7 +53,7 @@ report_ids = [i[1] for i in REPORTS]
 @task(
     max_retries=2,
     retry_delay=datetime.timedelta(minutes=10),
-    # state_handlers=[handler],
+    state_handlers=[handler],
 )
 def connect_to_mstro():
     conn = Connection(
@@ -69,7 +70,7 @@ def connect_to_mstro():
 @task(
     max_retries=2,
     retry_delay=datetime.timedelta(minutes=10),
-    # state_handlers=[handler],
+    state_handlers=[handler],
 )
 def connect_to_AWS():
     session = boto3.Session(
@@ -85,7 +86,7 @@ def connect_to_AWS():
 @task(
     max_retries=2,
     retry_delay=datetime.timedelta(minutes=10),
-    # state_handlers=[handler],
+    state_handlers=[handler],
 )
 def download_report(report_id, conn):
     my_report = Report(connection=conn, id=report_id, parallel=False)
@@ -98,7 +99,7 @@ def download_report(report_id, conn):
 @task(
     max_retries=2,
     retry_delay=datetime.timedelta(minutes=10),
-    # state_handlers=[handler],
+    state_handlers=[handler],
 )
 def report_to_s3(df, report_name, s3):
     csv_buffer = StringIO()
