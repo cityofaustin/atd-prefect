@@ -61,6 +61,7 @@ def connect_to_mstro():
         username=MSTRO_USERNAME,
         password=MSTRO_PASSWORD,
         project_id=PROJECT_ID,
+        timeout = 900,
         login_mode=1,
     )
     return conn
