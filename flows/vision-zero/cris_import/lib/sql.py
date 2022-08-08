@@ -319,6 +319,27 @@ def get_input_column_type(pg, DB_IMPORT_SCHEMA, input_table, column):
     input_column_type = cursor.fetchall()
     return input_column_type
 
+def get_input_tables(pg, DB_IMPORT_SCHEMA):
+    sql = f"""
+    SELECT
+        table_name,
+        column_name,
+        data_type,
+        character_maximum_length AS max_length,
+        character_octet_length AS octet_length
+    FROM
+        information_schema.columns
+    WHERE true
+        AND table_schema = '{DB_IMPORT_SCHEMA}'
+    """
+
+    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute(sql)
+    input_tables = cursor.fetchall()
+    return input_tables
+
+def trim_trailing_carriage_returns(pg, DB_IMPORT_SCHEMA, column):
+    pass
 
 def form_alter_statement_to_apply_column_typing(DB_IMPORT_SCHEMA, input_table, column):
     # the `USING` hackery is due to the reality of the CSV null vs "" confusion

@@ -339,7 +339,7 @@ def futter_csvs_into_database(directory):
     # running the task and uses the correct one.
     futter = util.get_pgfutter_path()
 
-    #print(f"Futtering: {directory}")
+    # print(f"Futtering: {directory}")
 
     # Walk the directory and find all the CSV files
     for root, dirs, files in os.walk(directory):
@@ -368,9 +368,19 @@ def futter_csvs_into_database(directory):
     # return a token for prefect to hand off to subsequent tasks in the Flow
     return True
 
+@task(name="Remove trailing carriage returns from imported data")
+def remove_trailing_carriage_returns(futter_token):
+
+    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
+
+    columns = util.get_input_tables_and_columns(pg, DB_IMPORT_SCHEMA)
+    for column in columns:
+        util.trim_trailing_carriage_returns(pg, DB_IMPORT_SCHEMA, column)
+
+
 
 @task(name="Align DB Types")
-def align_db_typing(futter_token):
+def align_db_typing(trimmed_token):
 
     """
     This function compares the target table in the VZDB with the corollary table in the import schema. For each column pair,
@@ -548,7 +558,9 @@ with Flow(
 
     futter_token = futter_csvs_into_database.map(extracted_archives)
 
-    typed_token = align_db_typing(futter_token=futter_token)
+    trimmed_token = remove_trailing_carriage_returns(futter_token)
+
+    typed_token = align_db_typing(trimmed_token=trimmed_token)
 
     align_records(typed_token=typed_token, dry_run=dry_run)
 
