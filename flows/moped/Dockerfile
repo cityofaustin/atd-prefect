@@ -6,7 +6,8 @@ RUN apt-get update && \
     ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata
 RUN apt-get upgrade -y
-RUN apt-get install -y vim magic-wormhole aptitude python3-pip docker.io black libpq-dev zip jq
+RUN apt-get install -y vim magic-wormhole aptitude python3-pip docker.io black libpq-dev zip jq curl
 COPY ./requirements.txt /root/requirements.txt
 RUN pip install -r /root/requirements.txt
+RUN curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | bash
 WORKDIR /root/
