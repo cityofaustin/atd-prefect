@@ -2,8 +2,8 @@
 
 prefect auth login -k $PREFECT_API_KEY
 
-dask-scheduler &
-dask-worker tcp://prefect-agent:8786 &
+dask-scheduler --dashboard-address :8787 &
+#dask-worker tcp://prefect-agent:8786 &
 dask-worker tcp://prefect-agent:8786 &
 dask-worker tcp://prefect-agent:8786 &
 
