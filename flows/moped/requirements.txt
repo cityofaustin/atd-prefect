@@ -4,3 +4,4 @@ boto3==1.24.*
 zappa==0.54.1
 virtualenv==20.15.*
 awscli==1.25.*
+bokeh==2.4.*

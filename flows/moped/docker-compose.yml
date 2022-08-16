@@ -5,6 +5,8 @@ services:
     command: ["/root/agent/start_agent.sh"]
     build: .
     restart: always
+    ports:
+      - "8787:8787"
     volumes:
       - /tmp:/tmp
       - ./prefect_bootstrap:/root/agent

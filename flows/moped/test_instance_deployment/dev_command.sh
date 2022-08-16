@@ -1,7 +1,7 @@
 #!/bin/bash
 
 clear;
-rm output_log;
+#rm output_log;
 black ./test_instance_deployment/atd-moped/moped-etl/prefect/moped_test_create_flow.py 
 black ./test_instance_deployment/atd-moped/moped-etl/prefect/tasks/ecs.py;
 black ./test_instance_deployment/atd-moped/moped-etl/prefect/tasks/netlify.py;
