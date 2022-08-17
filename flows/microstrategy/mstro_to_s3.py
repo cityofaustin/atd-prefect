@@ -23,7 +23,7 @@ handler = slack_notifier(only_states=[Failed])
 
 environment_variables = get_key_value(key=f"atd_microstrategy")
 
-ENV = "test"
+ENV = "prod"
 
 # Microstrategy Credentials
 PROJECT_ID = "6B64D80C11E1AFEA001000805B2705A0"
@@ -31,29 +31,28 @@ BASE_URL = "https://mstrprod-library.austintexas.gov/MicroStrategyLibrary/api/"
 MSTRO_USERNAME = environment_variables["MSTRO_USERNAME"]
 MSTRO_PASSWORD = environment_variables["MSTRO_PASSWORD"]
 
-# 2D list of default reports to be retrived
-## [File Name for S3, Report ID]
+# List dicts of default reports to be retrived
 # To find report ID, go to the report in Microstrategy then:
 ## Go to Tools > Report Details Page or Document Details Page.
 ## Click Show Advanced Details button at the bottom
 # Report name should be unique as it is the file name in the S3 bucket
-REPORTS = [["2020 Bond Expenses Obligated", "85A9E0A049F06D98AF1CF3BE8CDA9394"],
-["All bonds Expenses Obligated", "6B0DE57644C7C9912AAAE48392873233"]]
+REPORTS = [
+    {"name": "2020 Bond Expenses Obligated", "id": "85A9E0A049F06D98AF1CF3BE8CDA9394"},
+    {"name": "All bonds Expenses Obligated", "id": "6B0DE57644C7C9912AAAE48392873233"},
+]
 
 ## AWS Credentials
 AWS_ACCESS_ID = environment_variables["AWS_ACCESS_ID"]
 AWS_PASS = environment_variables["AWS_PASS"]
 BUCKET_NAME = environment_variables["BUCKET"]
 
-# Report names and ids separated from 2D list
-report_names = [i[0] for i in REPORTS]
-report_ids = [i[1] for i in REPORTS]
+# Report names and ids separated from dicts
+report_names = [i["name"] for i in REPORTS]
+report_ids = [i["id"] for i in REPORTS]
 
 # Returns a connection object for interacting with the microstrategy API
 @task(
-    max_retries=2,
-    retry_delay=datetime.timedelta(minutes=10),
-    state_handlers=[handler],
+    max_retries=2, retry_delay=datetime.timedelta(minutes=10), state_handlers=[handler],
 )
 def connect_to_mstro():
     conn = Connection(
@@ -68,9 +67,7 @@ def connect_to_mstro():
 
 # Returns a s3 object for interacting with the boto3 AWS S3 API
 @task(
-    max_retries=2,
-    retry_delay=datetime.timedelta(minutes=10),
-    state_handlers=[handler],
+    max_retries=2, retry_delay=datetime.timedelta(minutes=10), state_handlers=[handler],
 )
 def connect_to_AWS():
     session = boto3.Session(
@@ -84,9 +81,7 @@ def connect_to_AWS():
 # Downloads a report from microstrategy with a given report_id
 # returns it as a pandas dataframe
 @task(
-    max_retries=2,
-    retry_delay=datetime.timedelta(minutes=10),
-    state_handlers=[handler],
+    max_retries=3, retry_delay=datetime.timedelta(minutes=2),
 )
 def download_report(report_id, conn):
     my_report = Report(connection=conn, id=report_id, parallel=False)
@@ -97,9 +92,7 @@ def download_report(report_id, conn):
 # Uses the report_name.csv as a file name
 # report_name should be unique or it'll overwrite another report
 @task(
-    max_retries=2,
-    retry_delay=datetime.timedelta(minutes=10),
-    state_handlers=[handler],
+    max_retries=2, retry_delay=datetime.timedelta(minutes=10), state_handlers=[handler],
 )
 def report_to_s3(df, report_name, s3):
     csv_buffer = StringIO()
