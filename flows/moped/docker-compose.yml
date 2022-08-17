@@ -8,7 +8,6 @@ services:
     ports:
       - "8787:8787"
     volumes:
-      - /tmp:/tmp
       - ./prefect_bootstrap:/root/agent
       - ./make_kv_store.py:/root/make_kv_store.py
       - /var/run/docker.sock:/var/run/docker.sock
