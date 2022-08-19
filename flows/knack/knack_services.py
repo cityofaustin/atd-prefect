@@ -42,7 +42,7 @@ logger = prefect.context.get("logger")
 docker_env = "test"
 docker_image = f"atddocker/atd-knack-services:{docker_env}"
 
-environment_variables = get_key_value(key=f"atd_parking_data_meters")
+environment_variables = get_key_value(key=f"atd_knack_services")
 
 # Last execution date
 # prev_execution_key = f"parking_data_reconciliation_prev_exec"
