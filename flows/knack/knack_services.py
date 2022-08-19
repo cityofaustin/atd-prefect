@@ -50,16 +50,16 @@ environment_variables = get_key_value(key=f"atd_parking_data_meters")
 
 # Task to pull the latest Docker image
 # @task(
-#    name="pull_docker_image",
-#    max_retries=1,
-#    timeout=timedelta(minutes=60),
-#    retry_delay=timedelta(minutes=5),
-#    state_handlers=[handler],
-#    log_stdout=True
+#   name="pull_docker_image",
+#   max_retries=1,
+#   timeout=timedelta(minutes=60),
+#   retry_delay=timedelta(minutes=5),
+#   state_handlers=[handler],
+#   log_stdout=True
 # )
 # def pull_docker_image():
 #    client = docker.from_env()
-#    client.images.pull("atddocker/atd-parking-data-meters", all_tags=True)
+#    client.images.pull("atddocker/atd-knack-services", all_tags=True)
 #    logger.info(docker_env)
 #    return
 
@@ -79,7 +79,7 @@ def records_to_postgrest():
         .containers.run(
             image=docker_image,
             working_dir=None,
-            command="python app/services/records_to_postgrest.py -a signs-markings -c view_3628",
+            command="python atd-knack-services/services/records_to_postgrest.py -a signs-markings -c view_3628",
             environment=environment_variables,
             volumes=None,
             remove=True,
