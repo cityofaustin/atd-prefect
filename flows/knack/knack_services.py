@@ -185,10 +185,10 @@ with Flow(
     pull_docker_image()
 
     # 2. Download Knack records and send them to Postgres(t)
-    records_to_postgrest(app_name, container)
+    records_to_postgrest.map(app_name, container)
 
     # 3. Send data from Postgrest to AGOL
-    records_to_agol(app_name, container)
+    records_to_agol.map(app_name, container)
 
     # 4. Build line geometries in AGOL
     agol_build_markings_segment_geometries()
