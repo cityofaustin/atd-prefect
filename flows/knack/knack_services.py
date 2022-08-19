@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 """
-Name: Parking Data Reconciliation Flows
-Description: Parse Fiserv emails then upsert the CSVs to a postgres DB.
-    Grab the payment data retrived from flowbird and upsert that to a postgres DB.
-    Then, compare them before uploading the data to Socrata.
-Schedule: "30 5 * * *"
-Labels: atd-data02, parking
+Name: ATD Knack Services
+Description: This set of tasks publishes data from ATD's various Knack 
+ applications to other platforms including a Postgres database, Socrata, 
+ and ArcGIS Online (AGOL). 
+Schedule: "30 14,18 * * *"
+Labels: atd-data02, knack
 """
 
 import os
@@ -30,12 +30,18 @@ from prefect.tasks.docker import PullImage
 from prefect.utilities.notifications import slack_notifier
 
 CONFIG = [
-    {"apps": "signs-markings", "containers": "view_3628"},
+    {
+        "apps": "signs-markings",
+        "containers": "view_3628",
+        "layer": "markings_contractor_work_orders",
+    },
 ]
 
 # Report names and ids separated from dicts
 app_names = [i["apps"] for i in CONFIG]
 containers = [i["containers"] for i in CONFIG]
+layer_names = [i["layer"] for i in CONFIG]
+
 
 # Define current environment
 current_environment = "test"
@@ -100,7 +106,7 @@ def records_to_postgrest(app_name, container):
     return response
 
 
-# Records to postgrest
+# Records to AGOL
 @task(
     name="records_to_agol",
     max_retries=1,
@@ -128,7 +134,7 @@ def records_to_agol(app_name, container):
     return response
 
 
-# Records to postgrest
+# Building AGOL segment geometries
 @task(
     name="agol_build_markings_segment_geometries",
     max_retries=1,
@@ -137,13 +143,13 @@ def records_to_agol(app_name, container):
     # state_handlers=[handler],
     log_stdout=True,
 )
-def agol_build_markings_segment_geometries():
+def agol_build_markings_segment_geometries(layer):
     response = (
         docker.from_env()
         .containers.run(
             image=docker_image,
             working_dir=None,
-            command="python atd-knack-services/services/agol_build_markings_segment_geometries.py -l markings_contractor_work_orders",
+            command=f"python atd-knack-services/services/agol_build_markings_segment_geometries.py -l {layer}",
             environment=environment_variables,
             volumes=None,
             remove=True,
@@ -173,13 +179,12 @@ with Flow(
         path="flows/knack/knack_services.py",
         ref="atd-knack-services",  # The branch name
     ),
-    # Run config will always need the current_environment
-    # plus whatever labels you need to attach to this flow
     run_config=LocalRun(labels=["atd-data02", "test"]),
     schedule=None,
 ) as flow:
     app_name = Parameter("apps", default=app_names, required=True)
     container = Parameter("containers", default=containers, required=True)
+    layer = Parameter("layers", default=layer_names, required=True)
 
     # 1. Pull latest docker image
     pull_docker_image()
@@ -191,8 +196,10 @@ with Flow(
     records_to_agol.map(app_name, container)
 
     # 4. Build line geometries in AGOL
-    agol_build_markings_segment_geometries()
+    agol_build_markings_segment_geometries.map(layer)
 
 
 if __name__ == "__main__":
-    flow.run(parameters={"apps": app_names, "containers": containers})
+    flow.run(
+        parameters={"apps": app_names, "containers": containers, "layers": layer_names}
+    )
