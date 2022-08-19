@@ -16,7 +16,7 @@ import prefect
 from datetime import datetime, timedelta
 
 # Prefect
-from prefect import Flow, task
+from prefect import Flow, task, Parameter
 from prefect.storage import GitHub
 from prefect.run_configs import LocalRun
 from prefect.engine.state import Failed
@@ -34,8 +34,8 @@ CONFIG = [
 ]
 
 # Report names and ids separated from dicts
-app_names = [i["name"] for i in REPORTS]
-containers = [i["id"] for i in REPORTS]
+app_names = [i["apps"] for i in CONFIG]
+containers = [i["containers"] for i in CONFIG]
 
 # Define current environment
 current_environment = "test"
@@ -109,9 +109,9 @@ def records_to_postgrest(app_name, container):
     # state_handlers=[handler],
     log_stdout=True,
 )
-def records_to_agol():
+def records_to_agol(app_name, container):
     response = (
-        docker.from_env(app_name, container)
+        docker.from_env()
         .containers.run(
             image=docker_image,
             working_dir=None,
