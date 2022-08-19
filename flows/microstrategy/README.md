@@ -4,7 +4,7 @@ This Prefect flow runs and then downloads a report from Microstrategy and then u
 
 ## Parameters
 
-By default, two reports are defined for this flow. More can be added in the Prefect cloud management console. Two fields are required for each report: ID and name. 
+By default, two reports are defined for this flow. More can be added in the Prefect cloud management console or committed to this file later. Two fields are required for each report: ID and name. 
 
 - Report ID: To find report ID, go to the report in Microstrategy web then, go to Tools -> Report Details Page or Document Details Page, then click "Show Advanced Details" button at the bottom.
 
@@ -12,9 +12,9 @@ By default, two reports are defined for this flow. More can be added in the Pref
 
 ## Power BI
 
-The purpose of this flow is to make it easier to access Microstrategy reports in external applications like Power BI. The URL for all objects in the S3 is default to publicly accessible. 
+The purpose of this flow is to make it easier to access Microstrategy reports in external applications like Power BI. The URL for all objects in the S3 bucket is default to publicly accessible. 
 
-To access this data in Power BI, view the file in S3 and copy the URL to the object. Then, use the "Get Data" button in Power BI, and select "web" and paste in your copied URL. 
+To access this data in Power BI, view the file in S3 and copy the URL to the object. Then, click the "Get Data" button in Power BI, and select "web" and paste in your copied URL. 
 
 A benefit of "web" data sources in Power BI is that they can be scheduled refreshed to stay in sync with the latest data published to the S3 bucket.
 

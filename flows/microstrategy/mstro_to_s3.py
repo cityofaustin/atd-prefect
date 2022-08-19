@@ -126,8 +126,8 @@ with Flow(
     report_to_s3.map(df, names, unmapped(s3))
 
 flow.storage = Docker(
-    registry_url="",  # Needs to be empty string for pushing to dockerhub
-    image_name="atddocker/atd-microstrategy",
+    registry_url="atddocker",
+    image_name="atd-microstrategy",
     image_tag=ENV,
     python_dependencies=["mstrio-py", "pandas", "boto3"],
     # Can also/either include dockerfile = "path/to/Dockerfile" if you need to
