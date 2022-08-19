@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 # Prefect
 from prefect import Flow, task
 from prefect.storage import GitHub
-from prefect.run_configs import UniversalRun
+from prefect.run_configs import LocalRun
 from prefect.engine.state import Failed
 from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
