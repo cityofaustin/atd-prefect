@@ -111,7 +111,7 @@ with Flow(
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
-    run_config=UniversalRun(labels=["local", "charliesmacbook"]),
+    run_config=LocalRun(labels=["local", "charliesmacbook"]),
     schedule=None,
 ) as flow:
     flow.chain(
