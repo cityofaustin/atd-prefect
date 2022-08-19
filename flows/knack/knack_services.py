@@ -29,6 +29,14 @@ from prefect.tasks.docker import PullImage
 
 from prefect.utilities.notifications import slack_notifier
 
+CONFIG = [
+    {"apps": "signs-markings", "containers": "view_3628"},
+]
+
+# Report names and ids separated from dicts
+app_names = [i["name"] for i in REPORTS]
+containers = [i["id"] for i in REPORTS]
+
 # Define current environment
 current_environment = "test"
 
@@ -73,13 +81,69 @@ def pull_docker_image():
     # state_handlers=[handler],
     log_stdout=True,
 )
-def records_to_postgrest():
+def records_to_postgrest(app_name, container):
     response = (
         docker.from_env()
         .containers.run(
             image=docker_image,
             working_dir=None,
-            command="python atd-knack-services/services/records_to_postgrest.py -a signs-markings -c view_3628",
+            command=f"python atd-knack-services/services/records_to_postgrest.py -a {app_name} -c {container}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
+# Records to postgrest
+@task(
+    name="records_to_agol",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+    log_stdout=True,
+)
+def records_to_agol():
+    response = (
+        docker.from_env(app_name, container)
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python atd-knack-services/services/records_to_agol.py -a {app_name} -c {container}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
+# Records to postgrest
+@task(
+    name="agol_build_markings_segment_geometries",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+    log_stdout=True,
+)
+def agol_build_markings_segment_geometries():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command="python atd-knack-services/services/agol_build_markings_segment_geometries.py -l markings_contractor_work_orders",
             environment=environment_variables,
             volumes=None,
             remove=True,
@@ -114,11 +178,21 @@ with Flow(
     run_config=LocalRun(labels=["atd-data02", "test"]),
     schedule=None,
 ) as flow:
-    flow.chain(
-        pull_docker_image,
-        records_to_postgrest,
-    )
+    app_name = Parameter("apps", default=app_names, required=True)
+    container = Parameter("containers", default=containers, required=True)
+
+    # 1. Pull latest docker image
+    pull_docker_image()
+
+    # 2. Download Knack records and send them to Postgres(t)
+    records_to_postgrest(app_name, container)
+
+    # 3. Send data from Postgrest to AGOL
+    records_to_agol(app_name, container)
+
+    # 4. Build line geometries in AGOL
+    agol_build_markings_segment_geometries()
 
 
 if __name__ == "__main__":
-    flow.run()
+    flow.run(parameters={"apps": app_names, "containers": containers})
