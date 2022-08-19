@@ -49,19 +49,19 @@ environment_variables = get_key_value(key=f"atd_parking_data_meters")
 # prev_execution_date_success = get_key_value(prev_execution_key)
 
 # Task to pull the latest Docker image
-# @task(
-#   name="pull_docker_image",
-#   max_retries=1,
-#   timeout=timedelta(minutes=60),
-#   retry_delay=timedelta(minutes=5),
-#   state_handlers=[handler],
-#   log_stdout=True
-# )
-# def pull_docker_image():
-#    client = docker.from_env()
-#    client.images.pull("atddocker/atd-knack-services", all_tags=True)
-#    logger.info(docker_env)
-#    return
+@task(
+    name="pull_docker_image",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
+    log_stdout=True,
+)
+def pull_docker_image():
+    client = docker.from_env()
+    client.images.pull("atddocker/atd-knack-services", all_tags=True)
+    logger.info(docker_env)
+    return
 
 
 # Records to postgrest
@@ -111,10 +111,11 @@ with Flow(
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
-    run_config=LocalRun(labels=["local", "charliesmacbook"]),
+    run_config=LocalRun(labels=["atd-data02", "test"]),
     schedule=None,
 ) as flow:
     flow.chain(
+        pull_docker_image,
         records_to_postgrest,
     )
 
