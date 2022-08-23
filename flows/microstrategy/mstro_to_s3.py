@@ -26,8 +26,8 @@ environment_variables = get_key_value(key=f"atd_microstrategy")
 ENV = "prod"
 
 # Microstrategy Credentials
-PROJECT_ID = "6B64D80C11E1AFEA001000805B2705A0"
-BASE_URL = "https://mstrprod-library.austintexas.gov/MicroStrategyLibrary/api/"
+PROJECT_ID = environment_variables["PROJECT_ID"]
+BASE_URL = environment_variables["BASE_URL"]
 MSTRO_USERNAME = environment_variables["MSTRO_USERNAME"]
 MSTRO_PASSWORD = environment_variables["MSTRO_PASSWORD"]
 
