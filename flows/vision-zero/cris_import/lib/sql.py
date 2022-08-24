@@ -1,6 +1,9 @@
 import os
+import time
 import psycopg2.extras
 
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 # This library is /not/ designed for reuse in other projects. It is designed to increase the
 # readability of the `cris_import.py` prefect flow by pulling logical groups of code out
@@ -319,7 +322,7 @@ def get_input_column_type(pg, DB_IMPORT_SCHEMA, input_table, column):
     input_column_type = cursor.fetchall()
     return input_column_type
 
-def get_input_tables(pg, DB_IMPORT_SCHEMA):
+def get_input_tables_and_columns(pg, DB_IMPORT_SCHEMA):
     sql = f"""
     SELECT
         table_name,
@@ -335,11 +338,18 @@ def get_input_tables(pg, DB_IMPORT_SCHEMA):
 
     cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute(sql)
-    input_tables = cursor.fetchall()
-    return input_tables
+    input_tables_and_columns = cursor.fetchall()
+    return input_tables_and_columns
 
 def trim_trailing_carriage_returns(pg, DB_IMPORT_SCHEMA, column):
-    pass
+    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    sql = f"""
+    update {DB_IMPORT_SCHEMA}.{column["table_name"]}
+    set {column["column_name"]} = regexp_replace({column["column_name"]}, '[\\n\\r]*$', '')
+    """
+    #print(sql)
+    cursor.execute(sql)
+    pg.commit()
 
 def form_alter_statement_to_apply_column_typing(DB_IMPORT_SCHEMA, input_table, column):
     # the `USING` hackery is due to the reality of the CSV null vs "" confusion
