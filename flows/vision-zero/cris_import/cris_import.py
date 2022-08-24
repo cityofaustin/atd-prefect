@@ -26,7 +26,6 @@ from prefect.engine.state import Skipped
 from prefect.backend import get_key_value
 from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
-from prefect.run_configs import UniversalRun
 
 import lib.mappings as mappings
 import lib.sql as util
@@ -536,7 +535,6 @@ def align_records(typed_token, dry_run):
 
 with Flow(
     "CRIS Crash Import",
-    run_config=UniversalRun(labels=["vision-zero", "atd-data03"]),
     # state_handlers=[skip_if_running_handler],
 ) as flow:
 
@@ -548,8 +546,8 @@ with Flow(
     # OR
 
     zip_location = specify_extract_location(
-        # "/root/cris_import/data/jan1_jul24_2022.zip",
-        "/root/cris_import/data/july_01-july-08.zip",
+        # "/root/cris_import/data/2022-ytd.zip",
+        "/root/cris_import/data/july-2022.zip",
     )
 
     # iterate over the zips in that location and unarchive them into
@@ -578,5 +576,5 @@ with Flow(
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
-# flow.register(project_name="vision-zero")
+#flow.register(project_name="vision-zero")
 flow.run()
