@@ -68,7 +68,7 @@ environment_variables = get_key_value(key=f"atd_knack_services")
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     log_stdout=True,
 )
 def pull_docker_image():
@@ -186,18 +186,16 @@ with Flow(
     container = Parameter("containers", default=containers, required=True)
     layer = Parameter("layers", default=layer_names, required=True)
 
-    # 1. Pull latest docker image
-    pull_docker_image()
-
-    # 2. Download Knack records and send them to Postgres(t)
-    records_to_postgrest.map(app_name, container)
-
-    # 3. Send data from Postgrest to AGOL
-    records_to_agol.map(app_name, container)
-
-    # 4. Build line geometries in AGOL
-    agol_build_markings_segment_geometries.map(layer)
-
+    flow.chain(
+        # 1. Pull latest docker image
+        pull_docker_image(),
+        # 2. Download Knack records and send them to Postgres(t)
+        records_to_postgrest.map(app_name, container),
+        # 3. Send data from Postgrest to AGOL
+        records_to_agol.map(app_name, container),
+        # 4. Build line geometries in AGOL
+        agol_build_markings_segment_geometries.map(layer),
+    )
 
 if __name__ == "__main__":
     flow.run(
