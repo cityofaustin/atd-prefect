@@ -516,6 +516,9 @@ def align_records(typed_token, dry_run):
                 changed_columns = util.get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
 
                 #print("Changed Columns:" + str(changed_columns["changed_columns"]))
+                if len(changed_columns["changed_columns"]) == 0:
+                    logger.info(update_statement)
+                    raise "No changed columns? Why are we forming an update? This is a bug."
 
                 # Display the before and after values of the columns which are subject to update
                 util.show_changed_values(pg, changed_columns, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
@@ -526,9 +529,7 @@ def align_records(typed_token, dry_run):
 
                 # Execute the update statement
                 util.try_statement(pg, output_map, table, public_key_sql, update_statement, dry_run)
-                if len(changed_columns["changed_columns"]) == 0:
-                    logger.info(update_statement)
-                    raise "No changed columns? Why are we forming an update? This is a bug."
+
 
             # target does not exist, we're going to insert
             else:
