@@ -356,9 +356,8 @@ def trim_trailing_carriage_returns(pg, DB_IMPORT_SCHEMA, column):
     cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     sql = f"""
     update {DB_IMPORT_SCHEMA}.{column["table_name"]}
-    set {column["column_name"]} = regexp_replace({column["column_name"]}, '[\\n\\r]*$', '')
+    set {column["column_name"]} = regexp_replace({column["column_name"]}, '[\\n\\r]*$', '', 'g')
     """
-    #print(sql)
     cursor.execute(sql)
     pg.commit()
 
