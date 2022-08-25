@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import sys
 import os
 import json
 import shutil
@@ -29,6 +30,9 @@ from prefect.schedules.clocks import CronClock
 
 import lib.mappings as mappings
 import lib.sql as util
+
+sys.path.insert(0, "/root/cris_import/atd-vz-data/atd-etl/app")
+from process.helpers_import import insert_crash_change_template
 
 kv_store = get_key_value("Vision Zero")
 kv_dictionary = json.loads(kv_store)
@@ -545,7 +549,7 @@ with Flow(
     # state_handlers=[skip_if_running_handler],
 ) as flow:
 
-    dry_run = True
+    dry_run = False
 
     # get a location on disk which contains the zips from the sftp endpoint
     # zip_location = download_extract_archives()
@@ -553,7 +557,7 @@ with Flow(
     # OR
 
     zip_location = specify_extract_location(
-        # "/root/cris_import/data/2022-ytd.zip",
+        #"/root/cris_import/data/2022-ytd.zip",
         "/root/cris_import/data/july-2022.zip",
     )
 
