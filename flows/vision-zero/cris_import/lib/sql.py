@@ -393,9 +393,10 @@ def show_changed_values(
         cursor.execute(sql)
         values = cursor.fetchone()
 
-        # give some visible feedback for select special characters
-        values[f"import_{column}"] = values[f"import_{column}"].replace("\n", "\\n")
-        values[f"import_{column}"] = values[f"import_{column}"].replace("\r", "\\r")
+        if values[f"import_{column}"]:
+            # give some visible feedback for select special characters
+            values[f"import_{column}"] = values[f"import_{column}"].replace("\n", "\\n")
+            values[f"import_{column}"] = values[f"import_{column}"].replace("\r", "\\r")
 
         print(f"For column {column}:")
         print(f"  import: '{values[f'import_{column}']}'")
