@@ -33,23 +33,34 @@ def get_column_operators(
         # fmt: off
         if (not column["column_name"] in no_override_columns) and column[ "column_name" ] in source:
             column_assignments[ column["column_name"] ] = f"{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}"
-            column_comparisons.append(
-                # there are two ways to be equal. Either be of the same value and type or /both/ be undefined
-                f"""
+            
+            # there are two normal ways to be equal. Either be of the same value and type or /both/ be undefined.
+            comparison_clause = f"""
                 (
                     public.{output_map[table]}.{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}
                 OR
                     ( public.{output_map[table]}.{column['column_name']} IS NULL AND {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} IS NULL )
-                )
                 """
-            )
+
+            # And .. and there are two more ways that stem from past typing tech-debt we have on our db
+            if column["data_type"] in ('character varying', 'text'):
+                comparison_clause += f"""
+                OR 
+                    (public.{output_map[table]}.{column['column_name']} IS null and {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} = '')
+                OR 
+                    (public.{output_map[table]}.{column['column_name']} = '' and {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} IS NULL)  
+                """
+
+            comparison_clause += ")"
+
+            column_comparisons.append(comparison_clause)
             column_aggregators.append(
                 f"""
-                case when not (
+                case when not coalesce(
                     public.{output_map[table]}.{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}
                     or
                     (public.{output_map[table]}.{column['column_name']} is null and {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} is null)
-                ) then '{column['column_name']}' else null end
+                , false) then '{column['column_name']}' else null end
             """
             )
         # fmt: on
