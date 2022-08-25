@@ -458,6 +458,7 @@ def align_records(typed_token, dry_run):
 
     Returns: Boolean representing the completion of the import / update
     """
+    logger = prefect.context.get("logger")
 
     # fmt: off
     pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
