@@ -502,30 +502,36 @@ def align_records(typed_token, dry_run):
                 # Check if the proposed update would result in a non-op, such as if there are no changes between the import and
                 # target record. If this is the case, continue to the next record. There's no changes needed in this case.
                 if util.check_if_update_is_a_non_op(pg, column_comparisons, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA):
-                    print(f"Skipping update for {output_map[table]} {public_key_sql}")
+                    #logger.info(f"Skipping update for {output_map[table]} {public_key_sql}")
                     continue
+
 
                 # For future reporting and debugging purposes: Use SQL to query a list of 
                 # column names which have differing values between the import and target records.
                 # Return these column names as an array and display them in the output.
                 changed_columns = util.get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
 
+                #print("Changed Columns:" + str(changed_columns["changed_columns"]))
+
                 # Display the before and after values of the columns which are subject to update
                 util.show_changed_values(pg, changed_columns, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
 
                 # Using all the information we've gathered, form a single SQL update statement to update the target record.
                 update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql, changed_columns)
-                print(f"Executing update in {output_map[table]} for where " + public_key_sql)
+                logger.info(f"Executing update in {output_map[table]} for where " + public_key_sql)
 
                 # Execute the update statement
                 util.try_statement(pg, output_map, table, public_key_sql, update_statement, dry_run)
+                if len(changed_columns["changed_columns"]) == 0:
+                    logger.info(update_statement)
+                    raise "No changed columns? Why are we forming an update? This is a bug."
 
             # target does not exist, we're going to insert
             else:
                 # An insert is always just an vanilla insert, as there is not a pair of records to compare.
                 # Produce the SQL which creates a new VZDB record from a query of the imported data
                 insert_statement = util.form_insert_statement(output_map, table, input_column_names, import_key_sql, DB_IMPORT_SCHEMA)
-                print(f"Executing insert in {output_map[table]} for where " + public_key_sql)
+                logger.info(f"Executing insert in {output_map[table]} for where " + public_key_sql)
 
                 # Execute the insert statement
                 util.try_statement(pg, output_map, table, public_key_sql, insert_statement, dry_run)
