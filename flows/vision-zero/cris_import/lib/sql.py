@@ -36,19 +36,15 @@ def get_column_operators(
             
             # there are two normal ways to be equal. Either be of the same value and type or /both/ be undefined.
             comparison_clause = f"""
-                (
-                    public.{output_map[table]}.{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}
-                OR
-                    ( public.{output_map[table]}.{column['column_name']} IS NULL AND {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} IS NULL )
+                (  (public.{output_map[table]}.{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']})
+                OR (public.{output_map[table]}.{column['column_name']} IS NULL AND {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} IS NULL)
                 """
 
             # And .. and there are two more ways that stem from past typing tech-debt we have on our db
             if column["data_type"] in ('character varying', 'text'):
                 comparison_clause += f"""
-                OR 
-                    (public.{output_map[table]}.{column['column_name']} IS null and {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} = '')
-                OR 
-                    (public.{output_map[table]}.{column['column_name']} = '' and {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} IS NULL)  
+                OR (public.{output_map[table]}.{column['column_name']} IS null and {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} = '')
+                OR (public.{output_map[table]}.{column['column_name']} = '' and {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} IS NULL)  
                 """
 
             comparison_clause += ")"
