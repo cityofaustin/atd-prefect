@@ -143,7 +143,7 @@ def records_to_agol(app_name, container):
     # state_handlers=[handler],
     log_stdout=True,
 )
-def records_to_agol(app_name, container):
+def records_to_socrata(app_name, container):
     response = (
         docker.from_env()
         .containers.run(
