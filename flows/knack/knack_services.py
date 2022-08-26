@@ -58,9 +58,6 @@ docker_image = f"atddocker/atd-knack-services:{docker_env}"
 
 environment_variables = get_key_value(key=f"signs-markings-atd_knack_services")
 
-# Last execution date
-# prev_execution_key = f"parking_data_reconciliation_prev_exec"
-# prev_execution_date_success = get_key_value(prev_execution_key)
 
 # Task to pull the latest Docker image
 @task(
@@ -190,10 +187,22 @@ def agol_build_markings_segment_geometries(layer):
     return response
 
 
+# Update the date stored in the key value in Prefect
+# if the upstream tasks were successful
 @task(trigger=all_successful)
-def update_last_exec_time():
+def update_last_exec_time(app, container):
+    # Get today's date as a string
     new_date = datetime.today().strftime("%Y-%m-%d")
-    set_key_value(key=prev_execution_key, value=new_date)
+
+    # Get dict of previous executions
+    prev_execs = get_key_value("atd_knack_services_prev_exec")
+
+    # Key is unique based on the container and app
+    key = f"{app}:{container}-prev-exec"
+
+    # Set that key to the new date
+    prev_execs[key] = new_date
+    set_key_value(key="atd_knack_services_prev_exec", value=prev_execs)
 
 
 # Next, we define the flow (equivalent to a DAG).
@@ -225,6 +234,8 @@ with Flow(
         records_to_socrata.map(app_name, container),
         # 5. Build line geometries in AGOL
         agol_build_markings_segment_geometries.map(layer),
+        # 6. (if successful) update exec time
+        update_last_exec_time.map(app_name, container),
     )
 
 if __name__ == "__main__":
