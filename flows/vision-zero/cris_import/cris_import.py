@@ -500,7 +500,7 @@ def align_records(typed_token, dry_run):
             # To decide to UPDATE, we need to find a matching target record in the output table.
             # This function returns that record as a token of existence or false if none is available
             if util.fetch_target_record(pg, output_map, table, public_key_sql):
-                # Build 3 arrays of SQL fragments, one element per column which can be `join`ed together in subsequent queries.
+                # Build 2 sets of 3 arrays of SQL fragments, one element per column which can be `join`ed together in subsequent queries.
                 column_assignments, column_comparisons, column_aggregators, important_column_assignments, important_column_comparisons, important_column_aggregators = util.get_column_operators(target_columns, no_override_columns, source, table, output_map, DB_IMPORT_SCHEMA)
 
                 # Check if the proposed update would result in a non-op, such as if there are no changes between the import and
@@ -513,12 +513,19 @@ def align_records(typed_token, dry_run):
                 # column names which have differing values between the import and target records.
                 # Return these column names as an array and display them in the output.
                 changed_columns = util.get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
+                
+                # Do the same thing, but this time using the SQL clauses formed from "important" columns.
                 important_changed_columns = util.get_changed_columns(pg, important_column_aggregators, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
+
+
                 if len(important_changed_columns['changed_columns']) > 0:
+                    # This execution branch leads to the conflict resolution system in VZ
                     print("\a🛎 Needs to go into conflict resolution system")
                     print("Changed column count: " + str(len(important_changed_columns['changed_columns'])))
                     print(important_changed_columns['changed_columns'])
                 else:
+                    # This execution branch leads to forming an update statement and executing it
+                    
                     #print("Changed Columns:" + str(changed_columns["changed_columns"]))
                     if len(changed_columns["changed_columns"]) == 0:
                         logger.info(update_statement)
