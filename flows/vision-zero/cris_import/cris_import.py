@@ -523,6 +523,10 @@ def align_records(typed_token, dry_run):
                     print("\a🛎 Needs to go into conflict resolution system")
                     print("Changed column count: " + str(len(important_changed_columns['changed_columns'])))
                     print(important_changed_columns['changed_columns'])
+                    
+                    all_changed_columns = ", ".join(important_changed_columns["changed_columns"] + changed_columns["changed_columns"])
+                    mutation = insert_crash_change_template(new_record_dict=source, differences=all_changed_columns, crash_id=str(source["crash_id"]))
+                    print(mutation)
                 else:
                     # This execution branch leads to forming an update statement and executing it
                     
