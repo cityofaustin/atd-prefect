@@ -134,6 +134,34 @@ def records_to_agol(app_name, container):
     return response
 
 
+# Records to Socrata
+@task(
+    name="records_to_socrata",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+    log_stdout=True,
+)
+def records_to_agol(app_name, container):
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python atd-knack-services/services/records_to_socrata.py -a {app_name} -c {container}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
 # Building AGOL segment geometries
 @task(
     name="agol_build_markings_segment_geometries",
@@ -193,7 +221,9 @@ with Flow(
         records_to_postgrest.map(app_name, container),
         # 3. Send data from Postgrest to AGOL
         records_to_agol.map(app_name, container),
-        # 4. Build line geometries in AGOL
+        # 4. Send data from Postgrest to Socrata
+        records_to_socrata.map(app_name, container),
+        # 5. Build line geometries in AGOL
         agol_build_markings_segment_geometries.map(layer),
     )
 
