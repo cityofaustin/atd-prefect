@@ -56,7 +56,7 @@ logger = prefect.context.get("logger")
 docker_env = "test"
 docker_image = f"atddocker/atd-knack-services:{docker_env}"
 
-environment_variables = get_key_value(key=f"atd_knack_services")
+environment_variables = get_key_value(key=f"signs-markings-atd_knack_services")
 
 # Last execution date
 # prev_execution_key = f"parking_data_reconciliation_prev_exec"
@@ -190,10 +190,10 @@ def agol_build_markings_segment_geometries(layer):
     return response
 
 
-# @task(trigger=all_successful)
-# def update_last_exec_time():
-#    new_date = datetime.today().strftime("%Y-%m-%d")
-#    set_key_value(key=prev_execution_key, value=new_date)
+@task(trigger=all_successful)
+def update_last_exec_time():
+    new_date = datetime.today().strftime("%Y-%m-%d")
+    set_key_value(key=prev_execution_key, value=new_date)
 
 
 # Next, we define the flow (equivalent to a DAG).
