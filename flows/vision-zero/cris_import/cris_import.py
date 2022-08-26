@@ -371,6 +371,7 @@ def futter_csvs_into_database(directory):
     # return a token for prefect to hand off to subsequent tasks in the Flow
     return True
 
+
 @task(name="Remove trailing carriage returns from imported data")
 def remove_trailing_carriage_returns(futter_token):
 
@@ -379,7 +380,6 @@ def remove_trailing_carriage_returns(futter_token):
     columns = util.get_input_tables_and_columns(pg, DB_IMPORT_SCHEMA)
     for column in columns:
         util.trim_trailing_carriage_returns(pg, DB_IMPORT_SCHEMA, column)
-
 
 
 @task(name="Align DB Types")
@@ -501,7 +501,7 @@ def align_records(typed_token, dry_run):
             # This function returns that record as a token of existence or false if none is available
             if util.fetch_target_record(pg, output_map, table, public_key_sql):
                 # Build 3 arrays of SQL fragments, one element per column which can be `join`ed together in subsequent queries.
-                column_assignments, column_comparisons, column_aggregators = util.get_column_operators(target_columns, no_override_columns, source, table, output_map, DB_IMPORT_SCHEMA)
+                column_assignments, column_comparisons, column_aggregators, important_column_assignments, important_column_comparisons, important_column_aggregators = util.get_column_operators(target_columns, no_override_columns, source, table, output_map, DB_IMPORT_SCHEMA)
 
                 # Check if the proposed update would result in a non-op, such as if there are no changes between the import and
                 # target record. If this is the case, continue to the next record. There's no changes needed in this case.
@@ -509,26 +509,30 @@ def align_records(typed_token, dry_run):
                     #logger.info(f"Skipping update for {output_map[table]} {public_key_sql}")
                     continue
 
-
                 # For future reporting and debugging purposes: Use SQL to query a list of 
                 # column names which have differing values between the import and target records.
                 # Return these column names as an array and display them in the output.
                 changed_columns = util.get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
+                important_changed_columns = util.get_changed_columns(pg, important_column_aggregators, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
+                if len(important_changed_columns['changed_columns']) > 0:
+                    print("\a🛎 Needs to go into conflict resolution system")
+                    print("Changed column count: " + str(len(important_changed_columns['changed_columns'])))
+                    print(important_changed_columns['changed_columns'])
+                else:
+                    #print("Changed Columns:" + str(changed_columns["changed_columns"]))
+                    if len(changed_columns["changed_columns"]) == 0:
+                        logger.info(update_statement)
+                        raise "No changed columns? Why are we forming an update? This is a bug."
 
-                #print("Changed Columns:" + str(changed_columns["changed_columns"]))
-                if len(changed_columns["changed_columns"]) == 0:
-                    logger.info(update_statement)
-                    raise "No changed columns? Why are we forming an update? This is a bug."
+                    # Display the before and after values of the columns which are subject to update
+                    util.show_changed_values(pg, changed_columns, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
 
-                # Display the before and after values of the columns which are subject to update
-                util.show_changed_values(pg, changed_columns, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
+                    # Using all the information we've gathered, form a single SQL update statement to update the target record.
+                    update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql, changed_columns)
+                    logger.info(f"Executing update in {output_map[table]} for where " + public_key_sql)
 
-                # Using all the information we've gathered, form a single SQL update statement to update the target record.
-                update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql, changed_columns)
-                logger.info(f"Executing update in {output_map[table]} for where " + public_key_sql)
-
-                # Execute the update statement
-                util.try_statement(pg, output_map, table, public_key_sql, update_statement, dry_run)
+                    # Execute the update statement
+                    util.try_statement(pg, output_map, table, public_key_sql, update_statement, dry_run)
 
 
             # target does not exist, we're going to insert
@@ -550,7 +554,7 @@ with Flow(
     # state_handlers=[skip_if_running_handler],
 ) as flow:
 
-    dry_run = False
+    dry_run = True
 
     # get a location on disk which contains the zips from the sftp endpoint
     # zip_location = download_extract_archives()
@@ -558,7 +562,7 @@ with Flow(
     # OR
 
     zip_location = specify_extract_location(
-        #"/root/cris_import/data/2022-ytd.zip",
+        # "/root/cris_import/data/2022-ytd.zip",
         "/root/cris_import/data/july-2022.zip",
     )
 
@@ -588,5 +592,5 @@ with Flow(
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
-#flow.register(project_name="vision-zero")
+# flow.register(project_name="vision-zero")
 flow.run()

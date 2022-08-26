@@ -10,8 +10,8 @@ pp = pprint.PrettyPrinter(indent=4)
 # and replacing them with a descriptively named function. The code was reviewed with an
 # eye for getting 100% of the code which forms SQL directly into this file, as code which writes
 # code is universally hard to read and grok. If one considers that each of these functions is called
-# in only one place in `cris_import.py`, one may appreciate these functions exist only to improve
-# readability and maintainability -- not reusability.
+# in only one place (with one exception) in `cris_import.py`, one may appreciate these functions exist
+# only to improve readability and maintainability -- not reusability.
 
 
 def get_pgfutter_path():
@@ -29,38 +29,48 @@ def get_column_operators(
     column_assignments = {}
     column_comparisons = []
     column_aggregators = []
+
+    important_column_assignments = {}
+    important_column_comparisons = []
+    important_column_aggregators = []
     for column in target_columns:
         # fmt: off
-        if (not column["column_name"] in no_override_columns) and column[ "column_name" ] in source:
-            column_assignments[ column["column_name"] ] = f"{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}"
+        if column[ "column_name" ] in source:
+            column_assignment = f"{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}"
+
             
             # there are two normal ways to be equal. Either be of the same value and type or /both/ be undefined.
             comparison_clause = f"""
                 (  (public.{output_map[table]}.{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']})
                 OR (public.{output_map[table]}.{column['column_name']} IS NULL AND {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} IS NULL)
                 """
-
             # And .. and there are two more ways that stem from past typing tech-debt we have on our db
             if column["data_type"] in ('character varying', 'text'):
                 comparison_clause += f"""
                 OR (public.{output_map[table]}.{column['column_name']} IS null and {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} = '')
                 OR (public.{output_map[table]}.{column['column_name']} = '' and {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} IS NULL)  
                 """
-
             comparison_clause += ")"
 
-            column_comparisons.append(comparison_clause)
-            column_aggregators.append(
-                f"""
+            column_aggregator = f"""
                 case when not coalesce(
                     public.{output_map[table]}.{column['column_name']} = {DB_IMPORT_SCHEMA}.{table}.{column['column_name']}
                     or
                     (public.{output_map[table]}.{column['column_name']} is null and {DB_IMPORT_SCHEMA}.{table}.{column['column_name']} is null)
                 , false) then '{column['column_name']}' else null end
             """
-            )
+
+            if column["column_name"] in no_override_columns:
+                important_column_assignments[ column["column_name"] ] = column_assignment
+                important_column_comparisons.append(comparison_clause)
+                important_column_aggregators.append(column_aggregator)
+            else:
+                column_assignments[ column["column_name"] ] = column_assignment
+                column_comparisons.append(comparison_clause)
+                column_aggregators.append(column_aggregator)
+
         # fmt: on
-    return column_assignments, column_comparisons, column_aggregators
+    return column_assignments, column_comparisons, column_aggregators, important_column_assignments, important_column_comparisons, important_column_aggregators
 
 
 def check_if_update_is_a_non_op(
