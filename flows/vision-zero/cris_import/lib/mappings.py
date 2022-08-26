@@ -58,8 +58,6 @@ def no_override_columns():
             "private_dr_fl",
             "road_constr_zone_fl",
             "micromobility_device_flag",
-            # the equality clause needs to strip out carriage returns in lieu of new lines
-            # "investigator_narrative", # this like a dos2unix like problem, a carriage return or something
         },
         "atd_txdot_units": {
             "crash_id",  # key column
