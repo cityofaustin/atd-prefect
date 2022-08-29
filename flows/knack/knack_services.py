@@ -75,6 +75,35 @@ def pull_docker_image():
     return
 
 
+# Get the last date (string) the flow was succesful
+@task(
+    name="get_last_exec_time",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+    log_stdout=True,
+)
+def get_last_exec_time(app, container):
+    # Completely replace data on 15th day of every month,
+    # to catch records potentially missed by incremental refreshes
+    if datetime.today().day == 15:
+        return "1970-01-01"
+
+    # Get dict of previous executions
+    prev_execs = get_key_value("atd_knack_services_prev_exec")
+
+    # Key is unique based on the container and app
+    key = f"{app}:{container}-prev-exec"
+
+    # Return the date for this container/app if it exists
+    if key in prev_execs:
+        return prev_execs[key]
+    else:
+        # Return this if it doesn't exist yet
+        return "1970-01-01"
+
+
 # Records to postgrest
 @task(
     name="records_to_postgrest",
@@ -84,13 +113,13 @@ def pull_docker_image():
     # state_handlers=[handler],
     log_stdout=True,
 )
-def records_to_postgrest(app_name, container):
+def records_to_postgrest(app_name, container, date_filter):
     response = (
         docker.from_env()
         .containers.run(
             image=docker_image,
             working_dir=None,
-            command=f"python atd-knack-services/services/records_to_postgrest.py -a {app_name} -c {container}",
+            command=f"python atd-knack-services/services/records_to_postgrest.py -a {app_name} -c {container} -d {date_filter}",
             environment=environment_variables,
             volumes=None,
             remove=True,
@@ -112,13 +141,13 @@ def records_to_postgrest(app_name, container):
     # state_handlers=[handler],
     log_stdout=True,
 )
-def records_to_agol(app_name, container):
+def records_to_agol(app_name, container, date_filter):
     response = (
         docker.from_env()
         .containers.run(
             image=docker_image,
             working_dir=None,
-            command=f"python atd-knack-services/services/records_to_agol.py -a {app_name} -c {container}",
+            command=f"python atd-knack-services/services/records_to_agol.py -a {app_name} -c {container} -d {date_filter}",
             environment=environment_variables,
             volumes=None,
             remove=True,
@@ -140,13 +169,13 @@ def records_to_agol(app_name, container):
     # state_handlers=[handler],
     log_stdout=True,
 )
-def records_to_socrata(app_name, container):
+def records_to_socrata(app_name, container, date_filter):
     response = (
         docker.from_env()
         .containers.run(
             image=docker_image,
             working_dir=None,
-            command=f"python atd-knack-services/services/records_to_socrata.py -a {app_name} -c {container}",
+            command=f"python atd-knack-services/services/records_to_socrata.py -a {app_name} -c {container} -d {date_filter}",
             environment=environment_variables,
             volumes=None,
             remove=True,
@@ -168,13 +197,13 @@ def records_to_socrata(app_name, container):
     # state_handlers=[handler],
     log_stdout=True,
 )
-def agol_build_markings_segment_geometries(layer):
+def agol_build_markings_segment_geometries(layer, date_filter):
     response = (
         docker.from_env()
         .containers.run(
             image=docker_image,
             working_dir=None,
-            command=f"python atd-knack-services/services/agol_build_markings_segment_geometries.py -l {layer}",
+            command=f"python atd-knack-services/services/agol_build_markings_segment_geometries.py -l {layer} -d {date_filter}",
             environment=environment_variables,
             volumes=None,
             remove=True,
@@ -223,18 +252,21 @@ with Flow(
     container = Parameter("containers", default=containers, required=True)
     layer = Parameter("layers", default=layer_names, required=True)
 
+    # Get the last time the flow ran for this app/container combo
+    date_filter = get_last_exec_time.map(app_name, container)
+
     flow.chain(
         # 1. Pull latest docker image
         pull_docker_image(),
         # 2. Download Knack records and send them to Postgres(t)
-        records_to_postgrest.map(app_name, container),
+        records_to_postgrest.map(app_name, container, date_filter),
         # 3. Send data from Postgrest to AGOL
-        records_to_agol.map(app_name, container),
+        records_to_agol.map(app_name, container, date_filter),
         # 4. Send data from Postgrest to Socrata
-        records_to_socrata.map(app_name, container),
+        records_to_socrata.map(app_name, container, date_filter),
         # 5. Build line geometries in AGOL
-        agol_build_markings_segment_geometries.map(layer),
-        # 6. (if successful) update exec time
+        agol_build_markings_segment_geometries.map(layer, date_filter),
+        # 6. (if successful) update exec date
         update_last_exec_time.map(app_name, container),
     )
 
