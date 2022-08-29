@@ -216,21 +216,22 @@ def records_to_socrata(app_name, container, date_filter, environment_variables):
     log_stdout=True,
 )
 def agol_build_markings_segment_geometries(layer, date_filter, environment_variables):
-    response = (
-        docker.from_env()
-        .containers.run(
-            image=docker_image,
-            working_dir=None,
-            command=f"python atd-knack-services/services/agol_build_markings_segment_geometries.py -l {layer} -d {date_filter}",
-            environment=environment_variables,
-            volumes=None,
-            remove=True,
-            detach=False,
-            stdout=True,
+    if layer:
+        response = (
+            docker.from_env()
+            .containers.run(
+                image=docker_image,
+                working_dir=None,
+                command=f"python atd-knack-services/services/agol_build_markings_segment_geometries.py -l {layer} -d {date_filter}",
+                environment=environment_variables,
+                volumes=None,
+                remove=True,
+                detach=False,
+                stdout=True,
+            )
+            .decode("utf-8")
         )
-        .decode("utf-8")
-    )
-    logger.info(response)
+        logger.info(response)
     return response
 
 
