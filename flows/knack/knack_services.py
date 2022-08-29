@@ -16,7 +16,7 @@ import prefect
 from datetime import datetime, timedelta
 
 # Prefect
-from prefect import Flow, task, Parameter
+from prefect import Flow, task, Parameter, unmapped
 from prefect.storage import GitHub
 from prefect.run_configs import LocalRun
 from prefect.engine.state import Failed
@@ -36,6 +36,8 @@ CONFIG = [
         "layer": "markings_contractor_work_orders",
     },
 ]
+
+REPLACE_DATA = False
 
 # Report names and ids separated from dicts
 app_names = [i["apps"] for i in CONFIG]
@@ -84,10 +86,14 @@ def pull_docker_image():
     # state_handlers=[handler],
     log_stdout=True,
 )
-def get_last_exec_time(app, container):
+def get_last_exec_time(app, container, replace_data):
     # Completely replace data on 15th day of every month,
     # to catch records potentially missed by incremental refreshes
     if datetime.today().day == 15:
+        return "1970-01-01"
+
+    # parameter option to replace all data
+    if replace_data:
         return "1970-01-01"
 
     # Get dict of previous executions
@@ -251,9 +257,10 @@ with Flow(
     app_name = Parameter("apps", default=app_names, required=True)
     container = Parameter("containers", default=containers, required=True)
     layer = Parameter("layers", default=layer_names, required=True)
+    replace_data = Parameter("replace_data", default=REPLACE_DATA, required=True)
 
     # Get the last time the flow ran for this app/container combo
-    date_filter = get_last_exec_time.map(app_name, container)
+    date_filter = get_last_exec_time.map(app_name, container, unmapped(replace_data))
 
     flow.chain(
         # 1. Pull latest docker image
@@ -272,5 +279,10 @@ with Flow(
 
 if __name__ == "__main__":
     flow.run(
-        parameters={"apps": app_names, "containers": containers, "layers": layer_names}
+        parameters={
+            "apps": app_names,
+            "containers": containers,
+            "layers": layer_names,
+            "replace_data": REPLACE_DATA,
+        }
     )
