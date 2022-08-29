@@ -274,7 +274,7 @@ with Flow(
     # Get the last time the flow ran for this app/container combo
     date_filter = get_last_exec_time.map(app_name, container, unmapped(replace_data))
 
-    environment_variables = get_env_vars(app_name)
+    environment_variables = get_env_vars.map(app_name)
 
     flow.chain(
         # 1. Pull latest docker image
