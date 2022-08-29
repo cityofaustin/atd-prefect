@@ -232,7 +232,8 @@ def agol_build_markings_segment_geometries(layer, date_filter, environment_varia
             .decode("utf-8")
         )
         logger.info(response)
-    return response
+        return response
+    return
 
 
 # Update the date stored in the key value in Prefect
