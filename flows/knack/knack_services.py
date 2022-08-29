@@ -78,6 +78,7 @@ def pull_docker_image():
 # Get the envrioment variables for the given app
 @task(
     name="get_env_vars",
+    task_run_name="get_env_vars:{app}",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
@@ -92,6 +93,7 @@ def get_env_vars(app):
 # Get the last date (string) the flow was succesful
 @task(
     name="get_last_exec_time",
+    task_run_name="get_last_exec_time:{app}-{container}",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
@@ -125,6 +127,7 @@ def get_last_exec_time(app, container, replace_data):
 # Records to postgrest
 @task(
     name="records_to_postgrest",
+    task_run_name="records_to_postgrest:{app_name}-{container}-{date_filter}",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
@@ -153,6 +156,7 @@ def records_to_postgrest(app_name, container, date_filter, environment_variables
 # Records to AGOL
 @task(
     name="records_to_agol",
+    task_run_name="records_to_agol:{app_name}-{container}-{date_filter}",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
@@ -181,6 +185,7 @@ def records_to_agol(app_name, container, date_filter, environment_variables):
 # Records to Socrata
 @task(
     name="records_to_socrata",
+    task_run_name="records_to_socrata:{app_name}-{container}-{date_filter}",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
@@ -209,6 +214,7 @@ def records_to_socrata(app_name, container, date_filter, environment_variables):
 # Building AGOL segment geometries
 @task(
     name="agol_build_markings_segment_geometries",
+    task_run_name="agol_build_markings_segment_geometries:{layer}-{date_filter}",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
