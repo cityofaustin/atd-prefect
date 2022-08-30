@@ -315,33 +315,36 @@ with Flow(
     records_to_postgrest(app_name, container, date_filter, environment_variables)
     # 3. Send data from Postgrest to AGOL
     records_to_agol(
-        upstream_tasks=[records_to_postgrest],
         app_name,
         container,
         date_filter,
         environment_variables,
+        upstream_tasks=[records_to_postgrest],
     )
     # 4. Send data from Postgrest to Socrata
     records_to_socrata(
-        upstream_tasks=[records_to_postgrest],
         app_name,
         container,
         date_filter,
         environment_variables,
+        upstream_tasks=[records_to_postgrest],
     )
     # 5. Build line geometries in AGOL (optional)
     if layer:
         agol_build_markings_segment_geometries(
-            upstream_tasks=[records_to_agol], layer, date_filter, environment_variables
+            layer,
+            date_filter,
+            environment_variables,
+            upstream_tasks=[records_to_agol],
         )
     # 6. Send data to another knack app (optional)
     if app_name_dest:
         records_to_knack(
-            upstream_tasks=[records_to_postgrest],
             app_name,
             container,
             app_name_dest,
             environment_variables,
+            upstream_tasks=[records_to_postgrest],
         )
 
     # 6. (if successful) update exec date
