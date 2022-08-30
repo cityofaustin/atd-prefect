@@ -29,21 +29,24 @@ from prefect.tasks.docker import PullImage
 
 from prefect.utilities.notifications import slack_notifier
 
-CONFIG = [
-    {
-        "apps": "signs-markings",
-        "containers": "view_3628",
-        "layer": "markings_contractor_work_orders",
-    },
-]
+# CONFIG = [
+#    {
+#        "apps": "signs-markings",
+#        "containers": "view_3628",
+#        "layer": "markings_contractor_work_orders",
+#    },
+# ]
 
 REPLACE_DATA = False
 
 # Report names and ids separated from dicts
-app_names = [i["apps"] for i in CONFIG]
-containers = [i["containers"] for i in CONFIG]
-layer_names = [i["layer"] for i in CONFIG]
+# app_names = [i["apps"] for i in CONFIG]
+# containers = [i["containers"] for i in CONFIG]
+# layer_names = [i["layer"] for i in CONFIG]
 
+app_name = "signs-markings"
+container = "view_3628"
+layer_name = "markings_contractor_work_orders"
 
 # Define current environment
 current_environment = "test"
@@ -274,41 +277,39 @@ with Flow(
     run_config=LocalRun(labels=["atd-data02", "test"]),
     schedule=None,
 ) as flow:
-    app_name = Parameter("apps", default=app_names, required=True)
-    container = Parameter("containers", default=containers, required=True)
-    layer = Parameter("layers", default=layer_names, required=True)
+    app_name = Parameter("apps", default=app_name, required=False)
+    container = Parameter("containers", default=container, required=False)
+    layer = Parameter("layers", default=layer_name, required=False)
     replace_data = Parameter("replace_data", default=REPLACE_DATA, required=True)
 
     # Get the last time the flow ran for this app/container combo
-    date_filter = get_last_exec_time.map(app_name, container, unmapped(replace_data))
+    date_filter = get_last_exec_time(app_name, container, replace_data)
 
-    environment_variables = get_env_vars.map(app_name)
+    environment_variables = get_env_vars(app_name)
 
     flow.chain(
         # 1. Pull latest docker image
         pull_docker_image(),
         # 2. Download Knack records and send them to Postgres(t)
-        records_to_postgrest.map(
-            app_name, container, date_filter, environment_variables
-        ),
+        records_to_postgrest(app_name, container, date_filter, environment_variables),
         # 3. Send data from Postgrest to AGOL
-        records_to_agol.map(app_name, container, date_filter, environment_variables),
+        records_to_agol(app_name, container, date_filter, environment_variables),
         # 4. Send data from Postgrest to Socrata
-        records_to_socrata.map(app_name, container, date_filter, environment_variables),
+        records_to_socrata(app_name, container, date_filter, environment_variables),
         # 5. Build line geometries in AGOL
-        agol_build_markings_segment_geometries.map(
+        agol_build_markings_segment_geometries(
             layer, date_filter, environment_variables
         ),
         # 6. (if successful) update exec date
-        update_last_exec_time.map(app_name, container),
+        update_last_exec_time(app_name, container),
     )
 
 if __name__ == "__main__":
     flow.run(
         parameters={
-            "apps": app_names,
-            "containers": containers,
-            "layers": layer_names,
+            "apps": app_name,
+            "containers": container,
+            "layers": layer_name,
             "replace_data": REPLACE_DATA,
         }
     )
