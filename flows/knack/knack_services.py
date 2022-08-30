@@ -16,7 +16,7 @@ import prefect
 from datetime import datetime, timedelta
 
 # Prefect
-from prefect import Flow, task, Parameter, unmapped
+from prefect import Flow, task, Parameter, unmapped, case
 from prefect.storage import GitHub
 from prefect.run_configs import LocalRun
 from prefect.engine.state import Failed
@@ -317,7 +317,7 @@ with Flow(
         container,
         date_filter,
         environment_variables,
-        # upstream_tasks=[pull_docker_image],
+        upstream_tasks=[pull_docker_image],
     )
     # 3. Send data from Postgrest to AGOL
     records_to_agol(
@@ -325,7 +325,7 @@ with Flow(
         container,
         date_filter,
         environment_variables,
-        # upstream_tasks=[pull_docker_image, records_to_postgrest],
+        upstream_tasks=[pull_docker_image, records_to_postgrest],
     )
     # 4. Send data from Postgrest to Socrata
     records_to_socrata(
@@ -333,24 +333,24 @@ with Flow(
         container,
         date_filter,
         environment_variables,
-        # upstream_tasks=[pull_docker_image, records_to_postgrest],
+        upstream_tasks=[pull_docker_image, records_to_postgrest],
     )
     # 5. Build line geometries in AGOL (optional)
-    if layer:
+    with case(bool(layer), True):
         agol_build_markings_segment_geometries(
             layer,
             date_filter,
             environment_variables,
-            # upstream_tasks=[pull_docker_image, records_to_agol],
+            upstream_tasks=[pull_docker_image, records_to_agol],
         )
     # 6. Send data to another knack app (optional)
-    if app_name_dest:
+    with case(bool(app_name_dest), True):
         records_to_knack(
             app_name,
             container,
             app_name_dest,
             environment_variables,
-            # upstream_tasks=[pull_docker_image, records_to_postgrest],
+            upstream_tasks=[pull_docker_image, records_to_postgrest],
         )
 
     # 6. (if successful) update exec date
