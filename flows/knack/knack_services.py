@@ -71,7 +71,7 @@ def pull_docker_image():
 # Get the envrioment variables for the given app
 @task(
     name="get_env_vars",
-    # task_run_name="get_env_vars:{app}",
+    task_run_name="get_env_vars:{app}",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
@@ -86,7 +86,7 @@ def get_env_vars(app):
 # Get the last date (string) the flow was succesful
 @task(
     name="get_last_exec_time",
-    # task_run_name="get_last_exec_time (app: {app}, container: {container})",
+    task_run_name="get_last_exec_time (app: {app}, container: {container})",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
@@ -120,7 +120,7 @@ def get_last_exec_time(app, container, replace_data):
 # Records to postgrest
 @task(
     name="records_to_postgrest",
-    # task_run_name="records_to_postgrest (app: {app_name}, contianer: {container}, date_filter:{date_filter})",
+    task_run_name="records_to_postgrest (app: {app_name}, contianer: {container}, date_filter:{date_filter})",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
@@ -149,7 +149,7 @@ def records_to_postgrest(app_name, container, date_filter, environment_variables
 # Records to AGOL
 @task(
     name="records_to_agol",
-    # task_run_name="records_to_agol (app: {app_name}, container: {container}, date_filter: {date_filter})",
+    task_run_name="records_to_agol (app: {app_name}, container: {container}, date_filter: {date_filter})",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
@@ -178,7 +178,7 @@ def records_to_agol(app_name, container, date_filter, environment_variables):
 # Records to Socrata
 @task(
     name="records_to_socrata",
-    # task_run_name="records_to_socrata (app: {app_name}, container: {container}, date_filter: {date_filter})",
+    task_run_name="records_to_socrata (app: {app_name}, container: {container}, date_filter: {date_filter})",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
@@ -207,7 +207,7 @@ def records_to_socrata(app_name, container, date_filter, environment_variables):
 # Building AGOL segment geometries
 @task(
     name="agol_build_markings_segment_geometries",
-    # task_run_name="agol_build_markings_segment_geometries (layer: {layer}, date_filter: {date_filter})",
+    task_run_name="agol_build_markings_segment_geometries (layer: {layer}, date_filter: {date_filter})",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
@@ -238,14 +238,16 @@ def agol_build_markings_segment_geometries(layer, date_filter, environment_varia
 # Send Records to a destination knack app
 @task(
     name="records_to_knack",
-    # task_run_name="records_to_knack (app_name_src: {app_name_src}, container_src: {container_src}, app_name_dest: {app_name_dest})",
+    task_run_name="records_to_knack (app_name_src: {app_name_src}, container_src: {container_src}, app_name_dest: {app_name_dest})",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     # state_handlers=[handler],
     log_stdout=True,
 )
-def records_to_knack(app_name_src, container_src, app_name_dest, environment_variables):
+def records_to_knack(
+    app_name_src, container_src, date_filter, app_name_dest, environment_variables
+):
     if layer:
         response = (
             docker.from_env()
@@ -313,43 +315,54 @@ with Flow(
     pull_docker_image()
     # 2. Download Knack records and send them to Postgres(t)
     records_to_postgrest(
-        app_name,
-        container,
-        date_filter,
-        environment_variables,
+        task_args={
+            "app_name": app_name,
+            "container": container,
+            "date_filter": date_filter,
+            "environment_variables": environment_variables,
+        },
         upstream_tasks=[pull_docker_image],
     )
     # 3. Send data from Postgrest to AGOL
     records_to_agol(
-        app_name,
-        container,
-        date_filter,
-        environment_variables,
+        task_args={
+            "app_name": app_name,
+            "container": container,
+            "date_filter": date_filter,
+            "environment_variables": environment_variables,
+        },
         upstream_tasks=[pull_docker_image, records_to_postgrest],
     )
     # 4. Send data from Postgrest to Socrata
     records_to_socrata(
-        app_name,
-        container,
-        date_filter,
-        environment_variables,
+        task_args={
+            "app_name": app_name,
+            "container": container,
+            "date_filter": date_filter,
+            "environment_variables": environment_variables,
+        },
         upstream_tasks=[pull_docker_image, records_to_postgrest],
     )
     # 5. Build line geometries in AGOL (optional)
     with case(bool(layer), True):
         agol_build_markings_segment_geometries(
-            layer,
-            date_filter,
-            environment_variables,
+            task_args={
+                "layer": layer,
+                "date_filter": date_filter,
+                "environment_variables": environment_variables,
+            },
             upstream_tasks=[pull_docker_image, records_to_agol],
         )
     # 6. Send data to another knack app (optional)
     with case(bool(app_name_dest), True):
         records_to_knack(
-            app_name,
-            container,
-            app_name_dest,
-            environment_variables,
+            task_args={
+                "app_name": app_name,
+                "container": container,
+                "date_filter": date_filter,
+                "environment_variables": environment_variables,
+                "app_name_dest": app_name_dest,
+            },
             upstream_tasks=[pull_docker_image, records_to_postgrest],
         )
 
