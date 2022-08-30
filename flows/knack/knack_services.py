@@ -312,14 +312,20 @@ with Flow(
     # 1. Pull latest docker image
     pull_docker_image()
     # 2. Download Knack records and send them to Postgres(t)
-    records_to_postgrest(app_name, container, date_filter, environment_variables)
+    records_to_postgrest(
+        app_name,
+        container,
+        date_filter,
+        environment_variables,
+        upstream_tasks=[pull_docker_image],
+    )
     # 3. Send data from Postgrest to AGOL
     records_to_agol(
         app_name,
         container,
         date_filter,
         environment_variables,
-        upstream_tasks=[records_to_postgrest],
+        upstream_tasks=[pull_docker_image, records_to_postgrest],
     )
     # 4. Send data from Postgrest to Socrata
     records_to_socrata(
@@ -327,7 +333,7 @@ with Flow(
         container,
         date_filter,
         environment_variables,
-        upstream_tasks=[records_to_postgrest],
+        upstream_tasks=[pull_docker_image, records_to_postgrest],
     )
     # 5. Build line geometries in AGOL (optional)
     if layer:
@@ -335,7 +341,7 @@ with Flow(
             layer,
             date_filter,
             environment_variables,
-            upstream_tasks=[records_to_agol],
+            upstream_tasks=[pull_docker_image, records_to_agol],
         )
     # 6. Send data to another knack app (optional)
     if app_name_dest:
@@ -344,7 +350,7 @@ with Flow(
             container,
             app_name_dest,
             environment_variables,
-            upstream_tasks=[records_to_postgrest],
+            upstream_tasks=[pull_docker_image, records_to_postgrest],
         )
 
     # 6. (if successful) update exec date
