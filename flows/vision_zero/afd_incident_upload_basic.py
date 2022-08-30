@@ -175,7 +175,7 @@ def upload_data_to_postgres(data):
 
     cursor = connection.cursor()
 
-    for index, row in data.iterrows():
+    for index, row in data.iloc[::-1].iterrows():
         print(row)
         if not index % 1000:
             print(str(index) + ":")
@@ -189,6 +189,14 @@ def upload_data_to_postgres(data):
             ems_number_2 = ems_numbers[1] or None
         else:
             ems_number_2 = None
+
+        # Prevent geometry creation error on "-" X/Y value
+        longitude = row["X"]
+        latitude = row["Y"]
+        if row["X"] == '-':
+            longitude = None
+        if row["Y"] == '-':
+            latitude = None
 
         sql = """
             insert into afd__incidents (
@@ -224,14 +232,14 @@ def upload_data_to_postgres(data):
             row["CAD_Address"],
             row["CAD_Problem"],
             row["Flagged_Incs"],
-            row["X"],
-            row["Y"],
+            longitude,
+            latitude,
             ems_number_1,
             ems_number_2,
             row["Inc_Date"].strftime("%Y-%m-%d"),
             row["Inc_Time"].strftime("%H:%M:%S"),
-            row["Y"],
-            row["X"]
+            longitude,
+            latitude
         ]
 
         cursor.execute(sql, values)
@@ -267,9 +275,9 @@ with Flow(
     data = create_and_parse_dataframe()
     data.set_upstream(upload)
 
-    ONLY_SIXTY = False
+    ONLY_SIXTY_DAYS = False
 
-    if ONLY_SIXTY:
+    if ONLY_SIXTY_DAYS:
         # partial upload
         sixty_day_data = filter_data_to_last_sixty_days(data)
         pg_upload = upload_data_to_postgres(sixty_day_data)

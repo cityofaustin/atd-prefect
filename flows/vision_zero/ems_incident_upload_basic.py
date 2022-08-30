@@ -349,9 +349,9 @@ with Flow(
     data = create_and_parse_dataframe()
     data.set_upstream(upload)
 
-    ONLY_SIXTY = False
+    ONLY_SIXTY_DAYS = False
 
-    if ONLY_SIXTY:
+    if ONLY_SIXTY_DAYS:
         # partial upload
         sixty_day_data = filter_data_to_last_sixty_days(data)
         pg_upload = upload_data_to_postgres(sixty_day_data)
