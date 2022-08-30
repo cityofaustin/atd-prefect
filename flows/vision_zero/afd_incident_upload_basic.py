@@ -4,7 +4,7 @@
 Name: AFD Incident Uploads
 Description: This flow uploads AFD Incident Response CSVs (AFD Contact: Gus). 
     The data is emailed to atd-afd-incident-data@austinmobility.io daily ~ 3:30AM. From there it
-    gets forwarded to a S3 bucket via AWS Simple Email Serivce.
+    gets forwarded to a S3 bucket via AWS Simple Email Service.
 Schedule: Daily at 03:30
 Labels: test
 """
@@ -72,11 +72,12 @@ def get_most_recent_email(bucket, client):
 
     # Stack Overflow helped:
     # https://stackoverflow.com/questions/45375999/how-to-download-the-latest-file-of-an-s3-bucket-using-boto3
-    get_last_modified = lambda obj: int(obj["LastModified"].strftime("%s"))
+    def get_last_modified(obj): return int(obj["LastModified"].strftime("%s"))
 
     all_bucket_objects = client.list_objects_v2(Bucket=bucket)["Contents"]
     # only look in "atd-afd/" directory
-    raw_emails_list = [obj for obj in all_bucket_objects if "atd-afd/" in obj["Key"]]
+    raw_emails_list = [
+        obj for obj in all_bucket_objects if "atd-afd/" in obj["Key"]]
     # Newest Key as string
     last_added_key = [
         obj["Key"] for obj in sorted(raw_emails_list, key=get_last_modified)
@@ -179,18 +180,37 @@ def upload_data_to_postgres(data):
         if not index % 1000:
             print(str(index) + ":")
 
+        # Split EMS Incident Numbers when there is more than once.
+        # Also format incident number to exclude "-"
+        ems_numbers = str(row["EMS_IncidentNumber"]
+                          ).replace('-', '').split(";")
+        ems_number_1 = ems_numbers[0] or None
+        if len(ems_numbers) > 1:
+            ems_number_2 = ems_numbers[1] or None
+        else:
+            ems_number_2 = None
+
         sql = """
             insert into afd__incidents (
                 incident_number, 
-                ems_incident_number, 
+                ems_incident_number_raw, 
                 call_datetime, 
                 calendar_year, 
                 jurisdiction, 
                 address, 
                 problem, 
                 flagged_incs, 
-                geometry
-            ) values (%s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_Point(%s, %s), 4326)
+                geometry,
+                ems_incident_number_1,
+                ems_incident_number_2,
+                call_date,
+                call_time,
+                latitude,
+                longitude
+            ) values (
+                %s, %s, %s, %s, %s, %s, %s, %s, 
+                ST_SetSRID(ST_Point(%s, %s), 4326),
+                %s, %s, %s, %s, %s, %s
             ) ON CONFLICT DO NOTHING;
         """
         values = [
@@ -206,6 +226,12 @@ def upload_data_to_postgres(data):
             row["Flagged_Incs"],
             row["X"],
             row["Y"],
+            ems_number_1,
+            ems_number_2,
+            row["Inc_Date"].strftime("%Y-%m-%d"),
+            row["Inc_Time"].strftime("%H:%M:%S"),
+            row["Y"],
+            row["X"]
         ]
 
         cursor.execute(sql, values)
@@ -219,7 +245,10 @@ def upload_data_to_postgres(data):
 @task
 def clean_up():
     # Clean up the file from temp location
-    os.remove("/tmp/attach.csv")
+    try:
+        os.remove("/tmp/attach.csv")
+    except OSError:
+        pass
 
 
 with Flow(
@@ -231,7 +260,8 @@ with Flow(
 ) as f:
     timestamp = get_timestamp()
     aws_s3_client = create_boto_client()
-    newest_email = get_most_recent_email("atd-afd-incident-data", aws_s3_client)
+    newest_email = get_most_recent_email(
+        "atd-afd-incident-data", aws_s3_client)
     attachment = extract_email_attachment(newest_email)
     upload = upload_attachment_to_S3(attachment, timestamp, aws_s3_client)
     data = create_and_parse_dataframe()

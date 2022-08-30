@@ -4,7 +4,7 @@
 Name: EMS Incident Uploads
 Description: This flow uploads EMS Incident Response CSVs (EMS Contact: Lynn C). 
     The data is emailed to atd-ems-incident-data@austinmobility.io daily ~ 3:30AM. From there it
-    gets forwarded to a S3 bucket via AWS Simple Email Serivce.
+    gets forwarded to a S3 bucket via AWS Simple Email Service.
 Schedule: Daily at 03:30
 Labels: test
 """
@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 import psycopg2
 from psycopg2 import Error
 import numpy as np
+import math
 from prefect.storage import GitHub
 from prefect.run_configs import UniversalRun
 from prefect.backend import get_key_value
@@ -72,11 +73,12 @@ def get_most_recent_ems_email(bucket, client):
 
     # Stack Overflow helped:
     # https://stackoverflow.com/questions/45375999/how-to-download-the-latest-file-of-an-s3-bucket-using-boto3
-    get_last_modified = lambda obj: int(obj["LastModified"].strftime("%s"))
+    def get_last_modified(obj): return int(obj["LastModified"].strftime("%s"))
 
     all_bucket_objects = client.list_objects_v2(Bucket=bucket)["Contents"]
     # only look in "atd-ems/" directory
-    raw_emails_list = [obj for obj in all_bucket_objects if "atd-ems/" in obj["Key"]]
+    raw_emails_list = [
+        obj for obj in all_bucket_objects if "atd-ems/" in obj["Key"]]
     # Newest Key as string
     last_added_key = [
         obj["Key"] for obj in sorted(raw_emails_list, key=get_last_modified)
@@ -183,8 +185,28 @@ def upload_data_to_postgres(data):
 
     for index, row in data.iterrows():
         print(row)
+
         if not index % 1000:
             print(str(index) + ":")
+
+        # Split APD Incident Numbers when there is more than once
+        apd_numbers = str(row["APD_Incident_Numbers"]).split(",")
+        if len(apd_numbers) > 1:
+            apd_number_1 = apd_numbers[0] or None
+            apd_number_2 = apd_numbers[1] or None
+        else:
+            apd_number_1 = row["APD_Incident_Numbers"]
+            apd_number_2 = None
+
+        # Split MVC Form Extrication datetime str into Date & Time values
+        if type(row["MVC_Form_Extrication_Time"]) is str:
+            datetime_obj = datetime.strptime(
+                row["MVC_Form_Extrication_Time"], '%Y-%m-%d %H:%M:%S')
+            time = datetime_obj.time().strftime("%H:%M:%S")
+            date = datetime_obj.date().strftime("%Y-%m-%d")
+        else:
+            time = None
+            date = None
 
         sql = """
             insert into ems__incidents (
@@ -231,13 +253,18 @@ def upload_data_to_postgres(data):
                 apd_incident_numbers,
                 pcr_patient_acuity_initial,
                 pcr_patient_acuity_final,
-                geometry
+                geometry,
+                apd_incident_number_1, 
+                apd_incident_number_2, 
+                mvc_form_time, 
+                mvc_form_date
             ) values (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
-                %s, %s, %s, ST_SetSRID(ST_Point(%s, %s), 4326)
+                %s, %s, %s, ST_SetSRID(ST_Point(%s, %s), 4326),
+                %s, %s, %s, %s
             ) ON CONFLICT DO NOTHING;
         """
         values = [
@@ -286,6 +313,10 @@ def upload_data_to_postgres(data):
             row["PCR_Patient_Acuity_Final"],
             row["Incident_Location_Longitude"],
             row["Incident_Location_Latitude"],
+            apd_number_1,
+            apd_number_2,
+            time,
+            date
         ]
 
         cursor.execute(sql, values)
@@ -311,13 +342,14 @@ with Flow(
 ) as f:
     timestamp = get_timestamp()
     aws_s3_client = create_boto_client()
-    newest_email = get_most_recent_ems_email("atd-ems-incident-data", aws_s3_client)
+    newest_email = get_most_recent_ems_email(
+        "atd-ems-incident-data", aws_s3_client)
     attachment = extract_email_attachment(newest_email)
     upload = upload_attachment_to_S3(attachment, timestamp, aws_s3_client)
     data = create_and_parse_dataframe()
     data.set_upstream(upload)
 
-    ONLY_SIXTY = True
+    ONLY_SIXTY = False
 
     if ONLY_SIXTY:
         # partial upload
