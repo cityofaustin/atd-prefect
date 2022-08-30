@@ -29,27 +29,16 @@ from prefect.tasks.docker import PullImage
 
 from prefect.utilities.notifications import slack_notifier
 
-# CONFIG = [
-#    {
-#        "apps": "signs-markings",
-#        "containers": "view_3628",
-#        "layer": "markings_contractor_work_orders",
-#    },
-# ]
 
+# Default parameters is for Signs/Markings Contractor Work Orders
+APP_NAME = "signs-markings"
+CONTAINER = "view_3628"
+LAYER_NAME = "markings_contractor_work_orders"
+# Parameter that will overwrite all data (ignores date)
 REPLACE_DATA = False
 
-# Report names and ids separated from dicts
-# app_names = [i["apps"] for i in CONFIG]
-# containers = [i["containers"] for i in CONFIG]
-# layer_names = [i["layer"] for i in CONFIG]
-
-app_name = "signs-markings"
-container = "view_3628"
-layer_name = "markings_contractor_work_orders"
-
 # Define current environment
-current_environment = "test"
+current_environment = "prod"
 
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed])
@@ -58,7 +47,7 @@ handler = slack_notifier(only_states=[Failed])
 logger = prefect.context.get("logger")
 
 # Select the appropriate tag for the Docker Image
-docker_env = "test"
+docker_env = "production"
 docker_image = f"atddocker/atd-knack-services:{docker_env}"
 
 
@@ -274,12 +263,12 @@ with Flow(
         path="flows/knack/knack_services.py",
         ref="atd-knack-services",  # The branch name
     ),
-    run_config=LocalRun(labels=["atd-data02", "test"]),
+    run_config=LocalRun(labels=["atd-data02", "production"]),
     schedule=None,
 ) as flow:
-    app_name = Parameter("apps", default=app_name, required=False)
-    container = Parameter("containers", default=container, required=False)
-    layer = Parameter("layers", default=layer_name, required=False)
+    app_name = Parameter("apps", default=APP_NAME, required=False)
+    container = Parameter("containers", default=CONTAINER, required=False)
+    layer = Parameter("layers", default=LAYER_NAME, required=False)
     replace_data = Parameter("replace_data", default=REPLACE_DATA, required=True)
 
     # Get the last time the flow ran for this app/container combo
@@ -307,9 +296,9 @@ with Flow(
 if __name__ == "__main__":
     flow.run(
         parameters={
-            "apps": app_name,
-            "containers": container,
-            "layers": layer_name,
+            "apps": APP_NAME,
+            "containers": CONTAINER,
+            "layers": LAYER_NAME,
             "replace_data": REPLACE_DATA,
         }
     )
