@@ -238,7 +238,7 @@ def agol_build_markings_segment_geometries(layer, date_filter, environment_varia
 # Send Records to a destination knack app
 @task(
     name="records_to_knack",
-    task_run_name="records_to_knack (layer: {layer}, date_filter: {date_filter})",
+    task_run_name="records_to_knack (app_name_src: {app_name_src}, container_src: {container_src}, app_name_dest: {app_name_dest})",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
@@ -298,11 +298,11 @@ with Flow(
     run_config=LocalRun(labels=["atd-data02", "production"]),
     schedule=None,
 ) as flow:
-    app_name = Parameter("apps", default=APP_NAME, required=False)
-    container = Parameter("containers", default=CONTAINER, required=False)
+    app_name = Parameter("apps", default=APP_NAME, required=True)
+    container = Parameter("containers", default=CONTAINER, required=True)
     layer = Parameter("layers", default=LAYER_NAME, required=False)
     replace_data = Parameter("replace_data", default=REPLACE_DATA, required=True)
-    app_name_dest = Parameter("app_name_dest", default=APP_NAME_DEST, required=True)
+    app_name_dest = Parameter("app_name_dest", default=APP_NAME_DEST, required=False)
 
     # Get the last time the flow ran for this app/container combo
     date_filter = get_last_exec_time(app_name, container, replace_data)
