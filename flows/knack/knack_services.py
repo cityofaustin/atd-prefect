@@ -36,6 +36,7 @@ CONTAINER = "view_3628"
 LAYER_NAME = "markings_contractor_work_orders"
 # Parameter that will overwrite all data (ignores date)
 REPLACE_DATA = False
+APP_NAME_DEST = None
 
 # Define current environment
 current_environment = "prod"
@@ -234,6 +235,37 @@ def agol_build_markings_segment_geometries(layer, date_filter, environment_varia
     return
 
 
+# Send Records to a destination knack app
+@task(
+    name="records_to_knack",
+    task_run_name="records_to_knack (layer: {layer}, date_filter: {date_filter})",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+    log_stdout=True,
+)
+def records_to_knack(app_name_src, container_src, app_name_dest, environment_variables):
+    if layer:
+        response = (
+            docker.from_env()
+            .containers.run(
+                image=docker_image,
+                working_dir=None,
+                command=f"python atd-knack-services/services/records_to_knack.py -a {app_name_src} -c {container_src} -d {date_filter} -dest {app_name_dest}",
+                environment=environment_variables,
+                volumes=None,
+                remove=True,
+                detach=False,
+                stdout=True,
+            )
+            .decode("utf-8")
+        )
+        logger.info(response)
+        return response
+    return
+
+
 # Update the date stored in the key value in Prefect
 # if the upstream tasks were successful
 @task(trigger=all_successful)
@@ -270,28 +302,50 @@ with Flow(
     container = Parameter("containers", default=CONTAINER, required=False)
     layer = Parameter("layers", default=LAYER_NAME, required=False)
     replace_data = Parameter("replace_data", default=REPLACE_DATA, required=True)
+    app_name_dest = Parameter("app_name_dest", default=APP_NAME_DEST, required=True)
 
     # Get the last time the flow ran for this app/container combo
     date_filter = get_last_exec_time(app_name, container, replace_data)
 
     environment_variables = get_env_vars(app_name)
 
-    flow.chain(
-        # 1. Pull latest docker image
-        pull_docker_image(),
-        # 2. Download Knack records and send them to Postgres(t)
-        records_to_postgrest(app_name, container, date_filter, environment_variables),
-        # 3. Send data from Postgrest to AGOL
-        records_to_agol(app_name, container, date_filter, environment_variables),
-        # 4. Send data from Postgrest to Socrata
-        records_to_socrata(app_name, container, date_filter, environment_variables),
-        # 5. Build line geometries in AGOL
-        agol_build_markings_segment_geometries(
-            layer, date_filter, environment_variables
-        ),
-        # 6. (if successful) update exec date
-        update_last_exec_time(app_name, container),
+    # 1. Pull latest docker image
+    pull_docker_image()
+    # 2. Download Knack records and send them to Postgres(t)
+    records_to_postgrest(app_name, container, date_filter, environment_variables)
+    # 3. Send data from Postgrest to AGOL
+    records_to_agol(
+        upstream_tasks=[records_to_postgrest],
+        app_name,
+        container,
+        date_filter,
+        environment_variables,
     )
+    # 4. Send data from Postgrest to Socrata
+    records_to_socrata(
+        upstream_tasks=[records_to_postgrest],
+        app_name,
+        container,
+        date_filter,
+        environment_variables,
+    )
+    # 5. Build line geometries in AGOL (optional)
+    if layer:
+        agol_build_markings_segment_geometries(
+            upstream_tasks=[records_to_agol], layer, date_filter, environment_variables
+        )
+    # 6. Send data to another knack app (optional)
+    if app_name_dest:
+        records_to_knack(
+            upstream_tasks=[records_to_postgrest],
+            app_name,
+            container,
+            app_name_dest,
+            environment_variables,
+        )
+
+    # 6. (if successful) update exec date
+    update_last_exec_time(app_name, container)
 
 if __name__ == "__main__":
     flow.run(
@@ -300,5 +354,6 @@ if __name__ == "__main__":
             "containers": CONTAINER,
             "layers": LAYER_NAME,
             "replace_data": REPLACE_DATA,
+            "app_name_dest": APP_NAME_DEST,
         }
     )
