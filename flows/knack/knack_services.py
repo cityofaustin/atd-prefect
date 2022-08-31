@@ -36,7 +36,8 @@ CONTAINER = "view_3628"
 LAYER_NAME = "markings_contractor_work_orders"
 # Parameter that will overwrite all data (ignores date)
 REPLACE_DATA = False
-APP_NAME_DEST = None
+APP_NAME_DEST = ""
+TO_KNACK = False
 
 # Define current environment
 current_environment = "prod"
@@ -303,6 +304,7 @@ with Flow(
     layer = Parameter("layers", default=LAYER_NAME, required=False)
     replace_data = Parameter("replace_data", default=REPLACE_DATA, required=True)
     app_name_dest = Parameter("app_name_dest", default=APP_NAME_DEST, required=False)
+    to_knack = Parameter("to_knack", default=False, required=True)
 
     # Get the last time the flow ran for this app/container combo
     date_filter = get_last_exec_time(app_name, container, replace_data)
@@ -344,7 +346,7 @@ with Flow(
             upstream_tasks=[docker_pull, agol_res],
         )
     # 6. Send data to another knack app (optional)
-    with case(bool(app_name_dest), True):
+    with case(to_knack, True):
         knack_res = records_to_knack(
             app_name,
             container,
@@ -365,5 +367,6 @@ if __name__ == "__main__":
             "layers": LAYER_NAME,
             "replace_data": REPLACE_DATA,
             "app_name_dest": APP_NAME_DEST,
+            "to_knack": TO_KNACK,
         }
     )
