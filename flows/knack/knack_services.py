@@ -248,24 +248,22 @@ def agol_build_markings_segment_geometries(layer, date_filter, environment_varia
 def records_to_knack(
     app_name_src, container_src, date_filter, app_name_dest, environment_variables
 ):
-    if layer:
-        response = (
-            docker.from_env()
-            .containers.run(
-                image=docker_image,
-                working_dir=None,
-                command=f"python atd-knack-services/services/records_to_knack.py -a {app_name_src} -c {container_src} -d {date_filter} -dest {app_name_dest}",
-                environment=environment_variables,
-                volumes=None,
-                remove=True,
-                detach=False,
-                stdout=True,
-            )
-            .decode("utf-8")
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python atd-knack-services/services/records_to_knack.py -a {app_name_src} -c {container_src} -d {date_filter} -dest {app_name_dest}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
         )
-        logger.info(response)
-        return response
-    return
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
 
 
 # Update the date stored in the key value in Prefect
@@ -351,8 +349,8 @@ with Flow(
             app_name,
             container,
             date_filter,
-            environment_variables,
             app_name_dest,
+            environment_variables,
             upstream_tasks=[docker_pull, postgrest_res],
         )
 
