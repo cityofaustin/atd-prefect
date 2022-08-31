@@ -63,9 +63,9 @@ docker_image = f"atddocker/atd-knack-services:{docker_env}"
 )
 def pull_docker_image():
     client = docker.from_env()
-    client.images.pull("atddocker/atd-knack-services", all_tags=True)
+    response = client.images.pull("atddocker/atd-knack-services", all_tags=True)
     logger.info(docker_env)
-    return
+    return response
 
 
 # Get the envrioment variables for the given app
@@ -312,58 +312,48 @@ with Flow(
     environment_variables = get_env_vars(app_name)
 
     # 1. Pull latest docker image
-    pull_docker_image()
+    docker_pull = pull_docker_image()
     # 2. Download Knack records and send them to Postgres(t)
-    records_to_postgrest(
-        task_args={
-            "app_name": app_name,
-            "container": container,
-            "date_filter": date_filter,
-            "environment_variables": environment_variables,
-        },
-        upstream_tasks=[pull_docker_image],
+    postgrest_res = records_to_postgrest(
+        app_name,
+        container,
+        date_filter,
+        environment_variables,
+        upstream_tasks=[docker_pull],
     )
     # 3. Send data from Postgrest to AGOL
-    records_to_agol(
-        task_args={
-            "app_name": app_name,
-            "container": container,
-            "date_filter": date_filter,
-            "environment_variables": environment_variables,
-        },
-        upstream_tasks=[pull_docker_image, records_to_postgrest],
+    agol_res = records_to_agol(
+        app_name,
+        container,
+        date_filter,
+        environment_variables,
+        upstream_tasks=[docker_pull, postgrest_res],
     )
     # 4. Send data from Postgrest to Socrata
-    records_to_socrata(
-        task_args={
-            "app_name": app_name,
-            "container": container,
-            "date_filter": date_filter,
-            "environment_variables": environment_variables,
-        },
-        upstream_tasks=[pull_docker_image, records_to_postgrest],
+    socrata_res = records_to_socrata(
+        app_name,
+        container,
+        date_filter,
+        environment_variables,
+        upstream_tasks=[docker_pull, postgrest_res],
     )
     # 5. Build line geometries in AGOL (optional)
     with case(bool(layer), True):
-        agol_build_markings_segment_geometries(
-            task_args={
-                "layer": layer,
-                "date_filter": date_filter,
-                "environment_variables": environment_variables,
-            },
-            upstream_tasks=[pull_docker_image, records_to_agol],
+        agol_build_res = agol_build_markings_segment_geometries(
+            layer,
+            date_filter,
+            environment_variables,
+            upstream_tasks=[docker_pull, agol_res],
         )
     # 6. Send data to another knack app (optional)
     with case(bool(app_name_dest), True):
-        records_to_knack(
-            task_args={
-                "app_name": app_name,
-                "container": container,
-                "date_filter": date_filter,
-                "environment_variables": environment_variables,
-                "app_name_dest": app_name_dest,
-            },
-            upstream_tasks=[pull_docker_image, records_to_postgrest],
+        knack_res = records_to_knack(
+            app_name,
+            container,
+            date_filter,
+            environment_variables,
+            app_name_dest,
+            upstream_tasks=[docker_pull, postgrest_res],
         )
 
     # 6. (if successful) update exec date
