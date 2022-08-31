@@ -37,7 +37,10 @@ LAYER_NAME = "markings_contractor_work_orders"
 # Parameter that will overwrite all data (ignores date)
 REPLACE_DATA = False
 APP_NAME_DEST = ""
+# Options to run tasks
 TO_KNACK = False
+BUILD_GEOM = False
+
 
 # Define current environment
 current_environment = "prod"
@@ -305,6 +308,7 @@ with Flow(
     replace_data = Parameter("replace_data", default=REPLACE_DATA, required=True)
     app_name_dest = Parameter("app_name_dest", default=APP_NAME_DEST, required=False)
     to_knack = Parameter("to_knack", default=False, required=True)
+    build_geom = Parameter("build_geom", default=False, required=True)
 
     # Get the last time the flow ran for this app/container combo
     date_filter = get_last_exec_time(app_name, container, replace_data)
@@ -338,7 +342,7 @@ with Flow(
         upstream_tasks=[docker_pull, postgrest_res],
     )
     # 5. Build line geometries in AGOL (optional)
-    with case(bool(layer), True):
+    with case(build_geom, True):
         agol_build_res = agol_build_markings_segment_geometries(
             layer,
             date_filter,
@@ -368,5 +372,6 @@ if __name__ == "__main__":
             "replace_data": REPLACE_DATA,
             "app_name_dest": APP_NAME_DEST,
             "to_knack": TO_KNACK,
+            "build_geom": BUILD_GEOM,
         }
     )
