@@ -59,7 +59,7 @@ docker_image = f"atddocker/atd-knack-services:{docker_env}"
 def set_run_name(flow, old_state, new_state):
     if new_state.is_running():
         client = prefect.Client()
-        name = f"{flow.name}-{prefect.context.date:%A}"  # use flow-name-day-of-week as the flow run name, for example
+        name = f"{flow.name}-{prefect.context.parameters['flow_name']}-{prefect.context.date}"  # use flow-name-day-of-week as the flow run name, for example
         client.set_flow_run_name(prefect.context.flow_run_id, name)
 
 
@@ -303,7 +303,7 @@ def update_last_exec_time(app, container):
 # Notice we use the label "test" to match this flow to an agent.
 with Flow(
     # Postfix the name of the flow with the environment it belongs to
-    f"{flow_name}_knack_services_{current_environment}",
+    f"knack_services_{current_environment}",
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
