@@ -399,6 +399,6 @@ if __name__ == "__main__":
             "Records to Knack: App Name Destination": APP_NAME_DEST,
             "Send data to Socrata": SOCRATA_FLAG,
             "Send data to AGOL": AGOL_FLAG,
-            "c": FLOW_NAME_UNIQUE,
+            "Flow Name Unique": FLOW_NAME_UNIQUE,
         }
     )
