@@ -59,7 +59,7 @@ docker_image = f"atddocker/atd-knack-services:{docker_env}"
 def set_run_name(flow, old_state, new_state):
     if new_state.is_running():
         client = prefect.Client()
-        name = f"{prefect.context.parameters['Flow Name Unique']}-{prefect.context.date}"  # use flow-name-day-of-week as the flow run name, for example
+        name = f"{prefect.context.parameters['App Name']}:{prefect.context.parameters['Knack Container']}-{prefect.context.date}"  # use flow-name-day-of-week as the flow run name, for example
         client.set_flow_run_name(prefect.context.flow_run_id, name)
 
 
@@ -315,9 +315,6 @@ with Flow(
     state_handlers=[set_run_name],
 ) as flow:
     # Parameter tasks
-    flow_name_unique = Parameter(
-        "Flow Name Unique", default=FLOW_NAME_UNIQUE, required=True
-    )
     app_name = Parameter("App Name", default=APP_NAME, required=True)
     container = Parameter("Knack Container", default=CONTAINER, required=True)
     layer = Parameter(
@@ -399,6 +396,5 @@ if __name__ == "__main__":
             "Records to Knack: App Name Destination": APP_NAME_DEST,
             "Send data to Socrata": SOCRATA_FLAG,
             "Send data to AGOL": AGOL_FLAG,
-            "Flow Name Unique": FLOW_NAME_UNIQUE,
         }
     )
