@@ -37,10 +37,6 @@ LAYER_NAME = "markings_contractor_work_orders"
 # Parameter that will overwrite all data (ignores date)
 REPLACE_DATA = False
 APP_NAME_DEST = ""
-# Options to run tasks
-TO_KNACK = False
-BUILD_GEOM = False
-
 
 # Define current environment
 current_environment = "prod"
@@ -54,6 +50,11 @@ logger = prefect.context.get("logger")
 # Select the appropriate tag for the Docker Image
 docker_env = "production"
 docker_image = f"atddocker/atd-knack-services:{docker_env}"
+
+# Based on inputs, determine if some conditional tasks should run
+@task(name="determine_task_runs")
+def determine_task_runs(layer, app_name_dest):
+    return bool(layer), bool(app_name_dest)
 
 
 # Task to pull the latest Docker image
@@ -307,8 +308,8 @@ with Flow(
     layer = Parameter("layers", default=LAYER_NAME, required=False)
     replace_data = Parameter("replace_data", default=REPLACE_DATA, required=True)
     app_name_dest = Parameter("app_name_dest", default=APP_NAME_DEST, required=False)
-    to_knack = Parameter("to_knack", default=False, required=True)
-    build_geom = Parameter("build_geom", default=False, required=True)
+
+    build_geom, to_knack = determine_task_runs(layer, app_name_dest)
 
     # Get the last time the flow ran for this app/container combo
     date_filter = get_last_exec_time(app_name, container, replace_data)
@@ -371,7 +372,5 @@ if __name__ == "__main__":
             "layers": LAYER_NAME,
             "replace_data": REPLACE_DATA,
             "app_name_dest": APP_NAME_DEST,
-            "to_knack": TO_KNACK,
-            "build_geom": BUILD_GEOM,
         }
     )
