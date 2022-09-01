@@ -52,7 +52,7 @@ docker_env = "production"
 docker_image = f"atddocker/atd-knack-services:{docker_env}"
 
 # Based on inputs, determine if some conditional tasks should run
-@task(name="determine_task_runs")
+@task(name="determine_task_runs", nout=2)
 def determine_task_runs(layer, app_name_dest):
     return bool(layer), bool(app_name_dest)
 
