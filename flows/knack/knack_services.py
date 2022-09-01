@@ -37,6 +37,8 @@ LAYER_NAME = "markings_contractor_work_orders"
 # Parameter that will overwrite all data (ignores date)
 REPLACE_DATA = False
 APP_NAME_DEST = ""
+SOCRATA_FLAG = True
+AGOL_FLAG = True
 
 # Define current environment
 current_environment = "prod"
@@ -303,12 +305,20 @@ with Flow(
     run_config=LocalRun(labels=["atd-data02", "production"]),
     schedule=None,
 ) as flow:
-    app_name = Parameter("apps", default=APP_NAME, required=True)
-    container = Parameter("containers", default=CONTAINER, required=True)
-    layer = Parameter("layers", default=LAYER_NAME, required=False)
-    replace_data = Parameter("replace_data", default=REPLACE_DATA, required=True)
-    app_name_dest = Parameter("app_name_dest", default=APP_NAME_DEST, required=False)
+    # Parameter tasks
+    app_name = Parameter("App Name", default=APP_NAME, required=True)
+    container = Parameter("Knack Container", default=CONTAINER, required=True)
+    layer = Parameter(
+        "AGOL Build Segment Geometry Layer", default=LAYER_NAME, required=False
+    )
+    replace_data = Parameter("Replace all Data", default=REPLACE_DATA, required=True)
+    app_name_dest = Parameter(
+        "Records to Knack: App Name Destination", default=APP_NAME_DEST, required=False
+    )
+    soda_flag = Parameter("Send data to Socrata", default=True, required=True)
+    agol_flag = Parameter("Send data to AGOL", default=True, required=True)
 
+    # Based on provided parameters, skip or run some conditional tasks
     build_geom, to_knack = determine_task_runs(layer, app_name_dest)
 
     # Get the last time the flow ran for this app/container combo
@@ -326,29 +336,32 @@ with Flow(
         environment_variables,
         upstream_tasks=[docker_pull],
     )
-    # 3. Send data from Postgrest to AGOL
-    agol_res = records_to_agol(
-        app_name,
-        container,
-        date_filter,
-        environment_variables,
-        upstream_tasks=[docker_pull, postgrest_res],
-    )
-    # 4. Send data from Postgrest to Socrata
-    socrata_res = records_to_socrata(
-        app_name,
-        container,
-        date_filter,
-        environment_variables,
-        upstream_tasks=[docker_pull, postgrest_res],
-    )
+    # 3. Send data from Postgrest to AGOL (optional)
+    with case(agol_flag, True):
+        agol_res = records_to_agol(
+            app_name,
+            container,
+            date_filter,
+            environment_variables,
+            upstream_tasks=[docker_pull, postgrest_res],
+        )
+
+    # 4. Send data from Postgrest to Socrata (optional)
+    with case(soda_flag, True):
+        socrata_res = records_to_socrata(
+            app_name,
+            container,
+            date_filter,
+            environment_variables,
+            upstream_tasks=[docker_pull, postgrest_res],
+        )
     # 5. Build line geometries in AGOL (optional)
     with case(build_geom, True):
         agol_build_res = agol_build_markings_segment_geometries(
             layer,
             date_filter,
             environment_variables,
-            upstream_tasks=[docker_pull, agol_res],
+            upstream_tasks=[docker_pull, agol_res, build_geom],
         )
     # 6. Send data to another knack app (optional)
     with case(to_knack, True):
@@ -358,7 +371,7 @@ with Flow(
             date_filter,
             app_name_dest,
             environment_variables,
-            upstream_tasks=[docker_pull, postgrest_res],
+            upstream_tasks=[docker_pull, postgrest_res, to_knack],
         )
 
     # 6. (if successful) update exec date
@@ -367,10 +380,12 @@ with Flow(
 if __name__ == "__main__":
     flow.run(
         parameters={
-            "apps": APP_NAME,
-            "containers": CONTAINER,
-            "layers": LAYER_NAME,
-            "replace_data": REPLACE_DATA,
-            "app_name_dest": APP_NAME_DEST,
+            "App Name": APP_NAME,
+            "Knack Container": CONTAINER,
+            "AGOL Build Segment Geometry Layer": LAYER_NAME,
+            "Replace all Data": REPLACE_DATA,
+            "Records to Knack: App Name Destination": APP_NAME_DEST,
+            "Send data to Socrata": SOCRATA_FLAG,
+            "Send data to AGOL": AGOL_FLAG,
         }
     )
