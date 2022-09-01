@@ -31,6 +31,7 @@ from prefect.utilities.notifications import slack_notifier
 
 
 # Default parameters is for Signs/Markings Contractor Work Orders
+FLOW_NAME = "Markings Contractor Work Orders"
 APP_NAME = "signs-markings"
 CONTAINER = "view_3628"
 LAYER_NAME = "markings_contractor_work_orders"
@@ -52,6 +53,15 @@ logger = prefect.context.get("logger")
 # Select the appropriate tag for the Docker Image
 docker_env = "production"
 docker_image = f"atddocker/atd-knack-services:{docker_env}"
+
+# Set flow runtime name from:
+# https://github.com/PrefectHQ/prefect/discussions/3881
+def set_run_name(flow, old_state, new_state):
+    if new_state.is_running():
+        client = prefect.Client()
+        name = f"{flow.name}-{prefect.context.date:%A}"  # use flow-name-day-of-week as the flow run name, for example
+        client.set_flow_run_name(prefect.context.flow_run_id, name)
+
 
 # Based on inputs, determine if some conditional tasks should run
 @task(name="determine_task_runs", nout=2)
@@ -293,7 +303,7 @@ def update_last_exec_time(app, container):
 # Notice we use the label "test" to match this flow to an agent.
 with Flow(
     # Postfix the name of the flow with the environment it belongs to
-    f"knack_services_{current_environment}",
+    f"{flow_name}_knack_services_{current_environment}",
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
@@ -302,8 +312,10 @@ with Flow(
     ),
     run_config=LocalRun(labels=["atd-data02", "production"]),
     schedule=None,
+    state_handlers=[set_run_name],
 ) as flow:
     # Parameter tasks
+    flow_name = Parameter("Flow Name", default=FLOW_NAME, required=True)
     app_name = Parameter("App Name", default=APP_NAME, required=True)
     container = Parameter("Knack Container", default=CONTAINER, required=True)
     layer = Parameter(
@@ -378,6 +390,7 @@ with Flow(
 if __name__ == "__main__":
     flow.run(
         parameters={
+            "Flow Name": FLOW_NAME,
             "App Name": APP_NAME,
             "Knack Container": CONTAINER,
             "AGOL Build Segment Geometry Layer": LAYER_NAME,
