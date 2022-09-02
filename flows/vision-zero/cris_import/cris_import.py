@@ -25,10 +25,7 @@ import psycopg2.extras
 import prefect
 from prefect import task, Flow, Parameter
 from prefect.client import Client
-from prefect.engine.state import Skipped
 from prefect.backend import get_key_value
-from prefect.schedules import Schedule
-from prefect.schedules.clocks import CronClock
 
 import lib.mappings as mappings
 import lib.sql as util
@@ -59,44 +56,6 @@ DB_USER = os.environ.get("DB_USER")
 DB_PASS = os.environ.get("DB_PASS")
 DB_NAME = os.environ.get("DB_NAME")
 DB_IMPORT_SCHEMA = os.environ.get("DB_IMPORT_SCHEMA")
-
-
-def skip_if_running_handler(obj, old_state, new_state):
-    """
-    State management function to prevent a flow executing if it's already running
-
-    See: https://github.com/PrefectHQ/prefect/discussions/5373#discussioncomment-2054536
-    """
-
-    if new_state.is_running():
-        client = Client()
-        query = """
-            query($flow_id: uuid) {
-              flow_run(
-                where: {_and: [{flow_id: {_eq: $flow_id}},
-                {state: {_eq: "Running"}}]}
-                limit: 1
-                offset: 1
-              ) {
-                name
-                state
-                start_time
-              }
-            }
-        """
-        response = client.graphql(
-            query=query, variables=dict(flow_id=prefect.context.flow_id)
-        )
-        active_flow_runs = response["data"]["flow_run"]
-        if active_flow_runs:
-            logger = prefect.context.get("logger")
-            message = "Skipping this flow run since there are already some flow runs in progress"
-            logger.info(message)
-            return Skipped(
-                message
-            )  # or returned Cancelled state if you prefer this state in this use case
-    return new_state
-
 
 @task(
     name="Specify where archive can be found",
@@ -567,7 +526,6 @@ def align_records(typed_token, dry_run):
 
 with Flow(
     "CRIS Crash Import",
-    # state_handlers=[skip_if_running_handler],
 ) as flow:
 
     dry_run = Parameter(
@@ -611,4 +569,4 @@ with Flow(
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
 # flow.register(project_name="vision-zero")
-flow.run(dry_run=True)
+flow.run(dry_run=False)
