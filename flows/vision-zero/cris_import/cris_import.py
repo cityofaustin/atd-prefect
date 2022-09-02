@@ -10,6 +10,8 @@ import datetime
 import tempfile
 from subprocess import Popen, PIPE
 
+import requests
+
 import boto3
 import docker
 import sysrsync
@@ -30,6 +32,7 @@ from prefect.schedules.clocks import CronClock
 
 import lib.mappings as mappings
 import lib.sql as util
+import lib.graphql as graphql
 
 sys.path.insert(0, "/root/cris_import/atd-vz-data/atd-etl/app")
 from process.helpers_import import insert_crash_change_template
@@ -522,11 +525,13 @@ def align_records(typed_token, dry_run):
                     # This execution branch leads to the conflict resolution system in VZ
                     print("\a🛎 Needs to go into conflict resolution system")
                     print("Changed column count: " + str(len(important_changed_columns['changed_columns'])))
-                    print(important_changed_columns['changed_columns'])
+                    #print(important_changed_columns['changed_columns'])
                     
                     all_changed_columns = ", ".join(important_changed_columns["changed_columns"] + changed_columns["changed_columns"])
                     mutation = insert_crash_change_template(new_record_dict=source, differences=all_changed_columns, crash_id=str(source["crash_id"]))
                     print(mutation)
+                    if not dry_run:
+                        graphql.make_hasura_request(query=mutation)
                 else:
                     # This execution branch leads to forming an update statement and executing it
                     
