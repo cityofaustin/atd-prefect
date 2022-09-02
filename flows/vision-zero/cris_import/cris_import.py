@@ -21,7 +21,7 @@ import psycopg2.extras
 
 # Import various prefect packages and helper methods
 import prefect
-from prefect import task, Flow, unmapped
+from prefect import task, Flow, Parameter
 from prefect.client import Client
 from prefect.engine.state import Skipped
 from prefect.backend import get_key_value
@@ -565,7 +565,9 @@ with Flow(
     # state_handlers=[skip_if_running_handler],
 ) as flow:
 
-    dry_run = True
+    dry_run = Parameter(
+        "dry_run", default=True, required=True
+    )
 
     # get a location on disk which contains the zips from the sftp endpoint
     # zip_location = download_extract_archives()
@@ -604,4 +606,4 @@ with Flow(
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
 # flow.register(project_name="vision-zero")
-flow.run()
+flow.run(dry_run=True)
