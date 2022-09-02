@@ -192,6 +192,25 @@ def form_insert_statement(
     return sql
 
 
+def is_change_existing(pg, record_type, record_id):
+    #print(f"\b 🛎 is existing? {record_type}, {record_id}")
+
+    sql = f"""
+    select count(*) as exists
+    from atd_txdot_changes_view
+    where record_id = {record_id}
+    """
+
+    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute(sql)
+    change_request_exists = cursor.fetchone()
+    if change_request_exists["exists"] > 0:
+        return True
+    else:
+        return False
+
+
+
 def try_statement(pg, output_map, table, public_key_sql, sql, dry_run):
     if dry_run:
         print("Dry run; skipping")

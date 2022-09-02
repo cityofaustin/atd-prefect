@@ -482,9 +482,10 @@ def align_records(typed_token, dry_run):
 
                 if len(important_changed_columns['changed_columns']) > 0:
                     # This execution branch leads to the conflict resolution system in VZ
-                    print("\a🛎 Needs to go into conflict resolution system")
                     print("Changed column count: " + str(len(important_changed_columns['changed_columns'])))
-                    #print(important_changed_columns['changed_columns'])
+                    
+                    if util.is_change_existing(pg, table, source["crash_id"]):
+                        continue
                     
                     all_changed_columns = ", ".join(important_changed_columns["changed_columns"] + changed_columns["changed_columns"])
                     mutation = insert_crash_change_template(new_record_dict=source, differences=all_changed_columns, crash_id=str(source["crash_id"]))
