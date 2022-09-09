@@ -487,6 +487,11 @@ def align_records(typed_token, dry_run):
                     if util.is_change_existing(pg, table, source["crash_id"]):
                         continue
                     
+                    if util.has_existing_temporary_record(pg, source["case_id"]):
+                        print("\b🛎: " + str(source["crash_id"]) + " has existing temporary record")
+                        time.sleep(5)
+                        util.remove_existing_temporary_record(pg, source["case_id"])
+                    
                     all_changed_columns = ", ".join(important_changed_columns["changed_columns"] + changed_columns["changed_columns"])
                     mutation = insert_crash_change_template(new_record_dict=source, differences=all_changed_columns, crash_id=str(source["crash_id"]))
                     print(mutation)
