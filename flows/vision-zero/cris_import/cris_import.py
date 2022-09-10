@@ -496,6 +496,7 @@ def align_records(typed_token, dry_run):
                         # Trap the case of a missing case_id key error in the RealDictRow object.
                         # A RealDictRow, returned by the psycopg2 cursor, is a dictionary-like object,
                         # but lacks has_key() and other methods.
+                        print("Skipping checking on existing temporary record for " + str(source["crash_id"]))
                         pass
                     
                     all_changed_columns = ", ".join(important_changed_columns["changed_columns"] + changed_columns["changed_columns"])
