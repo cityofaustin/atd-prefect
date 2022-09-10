@@ -446,6 +446,6 @@ def show_changed_values(
             values[f"import_{column}"] = values[f"import_{column}"].replace("\n", "\\n")
             values[f"import_{column}"] = values[f"import_{column}"].replace("\r", "\\r")
 
-        print(f"For column {column}:")
+        print(f"Column update for {column} in {table}:")
         print(f"  import: '{values[f'import_{column}']}'")
         print(f"  public: '{values[f'public_{column}']}'")

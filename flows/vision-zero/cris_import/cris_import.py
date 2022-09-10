@@ -501,6 +501,7 @@ def align_records(typed_token, dry_run):
                     all_changed_columns = ", ".join(important_changed_columns["changed_columns"] + changed_columns["changed_columns"])
                     mutation = insert_crash_change_template(new_record_dict=source, differences=all_changed_columns, crash_id=str(source["crash_id"]))
                     if not dry_run:
+                        print("Making a mutation for " + str(source["crash_id"]))
                         graphql.make_hasura_request(query=mutation)
                 else:
                     # This execution branch leads to forming an update statement and executing it
