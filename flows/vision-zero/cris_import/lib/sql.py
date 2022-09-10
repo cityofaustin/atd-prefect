@@ -214,7 +214,7 @@ def has_existing_temporary_record(pg, case_id):
     select count(*) as exists
     from atd_txdot_crashes
     where crash_id < 10000
-    and case_id = {case_id}
+    and case_id = '{case_id}'
     """
     cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute(sql)
@@ -228,7 +228,7 @@ def remove_existing_temporary_record(pg, case_id):
     sql = f"""
     delete from atd_txdot_crashes
     where crash_id < 10000
-    and case_id = {case_id}
+    and case_id = '{case_id}'
     """
     cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute(sql)
