@@ -543,8 +543,9 @@ with Flow(
     # OR
 
     zip_location = specify_extract_location(
-        "/root/cris_import/data/2022-ytd.zip",
+        #"/root/cris_import/data/2022-ytd.zip",
         #"/root/cris_import/data/july-2022.zip",
+        "/root/cris_import/data/nov21-sep22.zip",
     )
 
     # iterate over the zips in that location and unarchive them into
