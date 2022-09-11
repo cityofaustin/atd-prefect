@@ -481,10 +481,11 @@ def align_records(typed_token, dry_run):
 
 
                 if len(important_changed_columns['changed_columns']) > 0:
+                    # This execution branch leads to the conflict resolution system in VZ
+
                     if util.is_change_existing(pg, table, source["crash_id"]):
                         continue
 
-                    # This execution branch leads to the conflict resolution system in VZ
                     print("Changed column count: " + str(len(important_changed_columns['changed_columns'])))
                     print("Changed Columns:" + str(changed_columns["changed_columns"]))
                     
@@ -503,7 +504,10 @@ def align_records(typed_token, dry_run):
                         print("Skipping checking on existing temporary record for " + str(source["crash_id"]))
                         pass
                     
+                    # build an comma delimited list of changed columns
                     all_changed_columns = ", ".join(important_changed_columns["changed_columns"] + changed_columns["changed_columns"])
+
+                    # insert_change_template is used from previous version of the ETL to better ensure change system compatibility
                     mutation = insert_change_template(new_record_dict=source, differences=all_changed_columns, crash_id=str(source["crash_id"]))
                     if not dry_run:
                         print("Making a mutation for " + str(source["crash_id"]))
