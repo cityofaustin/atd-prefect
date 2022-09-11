@@ -439,27 +439,27 @@ def align_records(typed_token, dry_run):
         for source in imported_records:
 
             # generate some record specific SQL fragments to identify the record in larger queries
-            public_key_sql, import_key_sql = util.get_key_clauses(table_keys, output_map, table, source, DB_IMPORT_SCHEMA)
+            record_key_sql, import_key_sql = util.get_key_clauses(table_keys, output_map, table, source, DB_IMPORT_SCHEMA)
 
             # To decide to UPDATE, we need to find a matching target record in the output table.
             # This function returns that record as a token of existence or false if none is available
-            if util.fetch_target_record(pg, output_map, table, public_key_sql):
+            if util.fetch_target_record(pg, output_map, table, record_key_sql):
                 # Build 2 sets of 3 arrays of SQL fragments, one element per column which can be `join`ed together in subsequent queries.
                 column_assignments, column_comparisons, column_aggregators, important_column_assignments, important_column_comparisons, important_column_aggregators = util.get_column_operators(target_columns, no_override_columns, source, table, output_map, DB_IMPORT_SCHEMA)
 
                 # Check if the proposed update would result in a non-op, such as if there are no changes between the import and
                 # target record. If this is the case, continue to the next record. There's no changes needed in this case.
-                if util.check_if_update_is_a_non_op(pg, column_comparisons, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA):
-                    #logger.info(f"Skipping update for {output_map[table]} {public_key_sql}")
+                if util.check_if_update_is_a_non_op(pg, column_comparisons, output_map, table, linkage_clauses, record_key_sql, DB_IMPORT_SCHEMA):
+                    #logger.info(f"Skipping update for {output_map[table]} {record_key_sql}")
                     continue
 
                 # For future reporting and debugging purposes: Use SQL to query a list of 
                 # column names which have differing values between the import and target records.
                 # Return these column names as an array and display them in the output.
-                changed_columns = util.get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
+                changed_columns = util.get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, record_key_sql, DB_IMPORT_SCHEMA)
                 
                 # Do the same thing, but this time using the SQL clauses formed from "important" columns.
-                important_changed_columns = util.get_changed_columns(pg, important_column_aggregators, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
+                important_changed_columns = util.get_changed_columns(pg, important_column_aggregators, output_map, table, linkage_clauses, record_key_sql, DB_IMPORT_SCHEMA)
 
 
                 if len(important_changed_columns['changed_columns']) > 0:
@@ -468,7 +468,10 @@ def align_records(typed_token, dry_run):
                     if util.is_change_existing(pg, table, source["crash_id"]):
                         continue
 
-                    print("Changed column count: " + str(len(important_changed_columns['changed_columns'])))
+                    print("Important Changed column count: " + str(len(important_changed_columns['changed_columns'])))
+                    print("Important Changed Columns:" + str(important_changed_columns["changed_columns"]))
+
+                    print("Changed column count: " + str(len(changed_columns['changed_columns'])))
                     print("Changed Columns:" + str(changed_columns["changed_columns"]))
                     
                     try:
@@ -502,14 +505,14 @@ def align_records(typed_token, dry_run):
                         raise "No changed columns? Why are we forming an update? This is a bug."
 
                     # Display the before and after values of the columns which are subject to update
-                    util.show_changed_values(pg, changed_columns, output_map, table, linkage_clauses, public_key_sql, DB_IMPORT_SCHEMA)
+                    util.show_changed_values(pg, changed_columns, output_map, table, linkage_clauses, record_key_sql, DB_IMPORT_SCHEMA)
 
                     # Using all the information we've gathered, form a single SQL update statement to update the target record.
-                    update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, public_key_sql, linkage_sql, changed_columns)
-                    logger.info(f"Executing update in {output_map[table]} for where " + public_key_sql)
+                    update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, record_key_sql, linkage_sql, changed_columns)
+                    logger.info(f"Executing update in {output_map[table]} for where " + record_key_sql)
 
                     # Execute the update statement
-                    util.try_statement(pg, output_map, table, public_key_sql, update_statement, dry_run)
+                    util.try_statement(pg, output_map, table, record_key_sql, update_statement, dry_run)
 
 
             # target does not exist, we're going to insert
@@ -517,10 +520,10 @@ def align_records(typed_token, dry_run):
                 # An insert is always just an vanilla insert, as there is not a pair of records to compare.
                 # Produce the SQL which creates a new VZDB record from a query of the imported data
                 insert_statement = util.form_insert_statement(output_map, table, input_column_names, import_key_sql, DB_IMPORT_SCHEMA)
-                logger.info(f"Executing insert in {output_map[table]} for where " + public_key_sql)
+                logger.info(f"Executing insert in {output_map[table]} for where " + record_key_sql)
 
                 # Execute the insert statement
-                util.try_statement(pg, output_map, table, public_key_sql, insert_statement, dry_run)
+                util.try_statement(pg, output_map, table, record_key_sql, insert_statement, dry_run)
 
     # fmt: on
     return True

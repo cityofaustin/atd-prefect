@@ -424,7 +424,7 @@ def show_changed_values(
     output_map,
     table,
     linkage_clauses,
-    public_key_sql,
+    record_key_sql,
     DB_IMPORT_SCHEMA,
 ):
     for column in changed_columns["changed_columns"]:
@@ -435,7 +435,7 @@ def show_changed_values(
                    public.{output_map[table]}.{column}::text as public_{column}
             from public.{output_map[table]}
             left join {DB_IMPORT_SCHEMA}.{table} on {linkage_sql}
-            where {public_key_sql}
+            where {record_key_sql}
             """
         cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute(sql)
@@ -447,5 +447,6 @@ def show_changed_values(
             values[f"import_{column}"] = values[f"import_{column}"].replace("\r", "\\r")
 
         print(f"Column update for {column} in {table}:")
+        print(f"  entity: {record_key_sql}")
         print(f"  import: '{values[f'import_{column}']}'")
         print(f"  public: '{values[f'public_{column}']}'")
