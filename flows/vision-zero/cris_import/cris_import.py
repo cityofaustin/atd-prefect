@@ -507,7 +507,7 @@ def align_records(typed_token, dry_run):
                     # build an comma delimited list of changed columns
                     all_changed_columns = ", ".join(important_changed_columns["changed_columns"] + changed_columns["changed_columns"])
 
-                    # insert_change_template is used from previous version of the ETL to better ensure change system compatibility
+                    # insert_change_template() is used with minimal changes from previous version of the ETL to better ensure conflict system compatibility
                     mutation = insert_change_template(new_record_dict=source, differences=all_changed_columns, crash_id=str(source["crash_id"]))
                     if not dry_run:
                         print("Making a mutation for " + str(source["crash_id"]))
