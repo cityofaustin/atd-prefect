@@ -186,22 +186,13 @@ def run_docker_image(extracted_data, vz_etl_image, command):
 
 
 @task(name="Cleanup temporary directories", slug="cleanup-temporary-directories")
-def cleanup_temporary_directories(
-    zip_location,
-    extracted_archives,
-    crash_import_tmpdirs,
-    unit_import_tmpdirs,
-    person_import_tmpdirs,
-    primaryperson_import_tmpdirs,
-    charges_import_tmpdirs,
-):
+def cleanup_temporary_directories(zip_location, extracted_archives):
     """
     Remove directories that have accumulated during the flow's execution
 
     Arguments:
         zip_location: A string containing a path to a temporary directory
         extracted_archives: A list of strings each containing a path to a temporary directory
-        crash_import_tmpdirs: A list of strings each containing a path to a temporary directory
         unit_import_tmpdirs: A list of strings each containing a path to a temporary directory
         person_import_tmpdirs: A list of strings each containing a path to a temporary directory
         primaryperson_import_tmpdirs: A list of strings each containing a path to a temporary directory
@@ -214,16 +205,6 @@ def cleanup_temporary_directories(
 
     shutil.rmtree(zip_location)
     for directory in extracted_archives:
-        shutil.rmtree(directory)
-    for directory in crash_import_tmpdirs:
-        shutil.rmtree(directory)
-    for directory in unit_import_tmpdirs:
-        shutil.rmtree(directory)
-    for directory in person_import_tmpdirs:
-        shutil.rmtree(directory)
-    for directory in primaryperson_import_tmpdirs:
-        shutil.rmtree(directory)
-    for directory in charges_import_tmpdirs:
         shutil.rmtree(directory)
 
     return None
@@ -553,15 +534,15 @@ with Flow(
     )
 
     # get a location on disk which contains the zips from the sftp endpoint
-    # zip_location = download_extract_archives()
+    zip_location = download_extract_archives()
 
     # OR
 
-    zip_location = specify_extract_location(
+    #zip_location = specify_extract_location(
         #"/root/cris_import/data/2022-ytd.zip",
         #"/root/cris_import/data/july-2022.zip",
-        "/root/cris_import/data/nov21-sep22.zip",
-    )
+        #"/root/cris_import/data/nov21-sep22.zip",
+    #)
 
     # iterate over the zips in that location and unarchive them into
     # a list of temporary directories containing the files of each
@@ -573,19 +554,19 @@ with Flow(
 
     typed_token = align_db_typing(trimmed_token=trimmed_token)
 
-    align_records(typed_token=typed_token, dry_run=dry_run)
+    align_records_token = align_records(typed_token=typed_token, dry_run=dry_run)
 
     # push up the archives to s3 for archival
-    # uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
+    uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
 
     # remove archives from SFTP endpoint
-    # removal_token = remove_archives_from_sftp_endpoint(zip_location)
+    removal_token = remove_archives_from_sftp_endpoint(zip_location)
 
-    # cleanup = cleanup_temporary_directories(
-    # zip_location,
-    # extracted_archives,
-    # )
-    # cleanup.set_upstream(removal_token)
+    cleanup = cleanup_temporary_directories(
+    zip_location,
+    extracted_archives,
+    upstream_tasks=[align_records_token, removal_token]
+    )
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
