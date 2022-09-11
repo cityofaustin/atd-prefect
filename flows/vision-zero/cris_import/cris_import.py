@@ -32,7 +32,7 @@ import lib.sql as util
 import lib.graphql as graphql
 
 sys.path.insert(0, "/root/cris_import/atd-vz-data/atd-etl/app")
-from process.helpers_import import insert_crash_change_template
+from process.helpers_import import insert_crash_change_template as insert_change_template
 
 kv_store = get_key_value("Vision Zero")
 kv_dictionary = json.loads(kv_store)
@@ -481,14 +481,18 @@ def align_records(typed_token, dry_run):
 
 
                 if len(important_changed_columns['changed_columns']) > 0:
-                    # This execution branch leads to the conflict resolution system in VZ
-                    print("Changed column count: " + str(len(important_changed_columns['changed_columns'])))
-                    
                     if util.is_change_existing(pg, table, source["crash_id"]):
                         continue
+
+                    # This execution branch leads to the conflict resolution system in VZ
+                    print("Changed column count: " + str(len(important_changed_columns['changed_columns'])))
+                    print("Changed Columns:" + str(changed_columns["changed_columns"]))
                     
                     try:
-                        if util.has_existing_temporary_record(pg, source["case_id"]):
+                        # this seemingly violates the principal of treating each record source equally, however, this is 
+                        # really only a reflection that we create incomplete temporary records consisting only of a crash record
+                        # and not holding place entities for units, persons, etc.
+                        if table == "crash" and util.has_existing_temporary_record(pg, source["case_id"]):
                             print("\b🛎: " + str(source["crash_id"]) + " has existing temporary record")
                             time.sleep(5)
                             util.remove_existing_temporary_record(pg, source["case_id"])
@@ -500,14 +504,13 @@ def align_records(typed_token, dry_run):
                         pass
                     
                     all_changed_columns = ", ".join(important_changed_columns["changed_columns"] + changed_columns["changed_columns"])
-                    mutation = insert_crash_change_template(new_record_dict=source, differences=all_changed_columns, crash_id=str(source["crash_id"]))
+                    mutation = insert_change_template(new_record_dict=source, differences=all_changed_columns, crash_id=str(source["crash_id"]))
                     if not dry_run:
                         print("Making a mutation for " + str(source["crash_id"]))
                         graphql.make_hasura_request(query=mutation)
                 else:
                     # This execution branch leads to forming an update statement and executing it
                     
-                    #print("Changed Columns:" + str(changed_columns["changed_columns"]))
                     if len(changed_columns["changed_columns"]) == 0:
                         logger.info(update_statement)
                         raise "No changed columns? Why are we forming an update? This is a bug."
