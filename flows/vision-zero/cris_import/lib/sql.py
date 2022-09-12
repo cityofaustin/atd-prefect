@@ -267,11 +267,20 @@ def get_input_column_names(pg, DB_IMPORT_SCHEMA, table, target_columns):
     cursor.execute(sql)
     input_table_column_types = cursor.fetchall()
 
+    # TODO figure out how to .map() this
     input_column_names = []
-    for column in input_table_column_types:
-        if column in target_columns:
-            input_column_names.append(column["column_name"])
-    return input_column_names
+    for result in input_table_column_types:
+        input_column_names.append(result["column_name"])
+
+    target_column_names = []
+    for result in target_columns:
+        target_column_names.append(result["column_name"])
+
+    valid_input_column_names = []
+    for column in input_column_names:
+        if column in target_column_names:
+            valid_input_column_names.append(column)
+    return valid_input_column_names
 
 
 def get_target_columns(pg, output_map, table):
