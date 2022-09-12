@@ -134,24 +134,6 @@ def unzip_archives(archives_directory):
 
 
 @task(
-    name="Build VZ ETL Docker image (if updated)",
-    slug="docker-build",
-    checkpoint=False,
-)
-def build_docker_image():
-    """
-    Builds (or updates) the VZ ETL.
-    Almost always, this will be a non-op and return almost instantly.
-
-    Returns: Docker object representing the built image; used later to start a containr
-    """
-    logger = prefect.context.get("logger")
-    docker_client = docker.from_env()
-    build_result = docker_client.images.build(path=VZ_ETL_LOCATION, tag="vz-etl")
-    return build_result[0]
-
-
-@task(
     name="Run VZ ETL Docker Image",
 )
 def run_docker_image(extracted_data, vz_etl_image, command):
