@@ -36,7 +36,7 @@ from process.helpers_import import (
     insert_crash_change_template as insert_change_template,
 )
 
-kv_store = get_key_value("Vision Zero")
+kv_store = get_key_value("Vision Zero Development")
 kv_dictionary = json.loads(kv_store)
 
 SFTP_ENDPOINT = kv_dictionary["SFTP_ENDPOINT"]
@@ -53,11 +53,13 @@ AWS_CSV_ARCHIVE_BUCKET_NAME = kv_dictionary["AWS_CSV_ARCHIVE_BUCKET_NAME"]
 AWS_CSV_ARCHIVE_PATH_PRODUCTION = kv_dictionary["AWS_CSV_ARCHIVE_PATH_PRODUCTION"]
 AWS_CSV_ARCHIVE_PATH_STAGING = kv_dictionary["AWS_CSV_ARCHIVE_PATH_STAGING"]
 
-DB_HOST = os.environ.get("DB_HOST")
-DB_USER = os.environ.get("DB_USER")
-DB_PASS = os.environ.get("DB_PASS")
-DB_NAME = os.environ.get("DB_NAME")
-DB_IMPORT_SCHEMA = os.environ.get("DB_IMPORT_SCHEMA")
+DB_HOST = kv_dictionary["DB_HOST"]
+DB_USER = kv_dictionary["DB_USER"]
+DB_PASS = kv_dictionary["DB_PASS"]
+DB_NAME = kv_dictionary["DB_NAME"]
+DB_IMPORT_SCHEMA = kv_dictionary["DB_IMPORT_SCHEMA"]
+
+
 
 
 @task(
