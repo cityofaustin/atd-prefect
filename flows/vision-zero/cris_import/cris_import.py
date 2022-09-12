@@ -32,7 +32,9 @@ import lib.sql as util
 import lib.graphql as graphql
 
 sys.path.insert(0, "/root/cris_import/atd-vz-data/atd-etl/app")
-from process.helpers_import import insert_crash_change_template as insert_change_template
+from process.helpers_import import (
+    insert_crash_change_template as insert_change_template,
+)
 
 kv_store = get_key_value("Vision Zero")
 kv_dictionary = json.loads(kv_store)
@@ -56,6 +58,7 @@ DB_USER = os.environ.get("DB_USER")
 DB_PASS = os.environ.get("DB_PASS")
 DB_NAME = os.environ.get("DB_NAME")
 DB_IMPORT_SCHEMA = os.environ.get("DB_IMPORT_SCHEMA")
+
 
 @task(
     name="Specify where archive can be found",
@@ -132,6 +135,7 @@ def unzip_archives(archives_directory):
         extracted_csv_directories.append(extract_tmpdir)
     return extracted_csv_directories
 
+
 @task(name="Cleanup temporary directories", slug="cleanup-temporary-directories")
 def cleanup_temporary_directories(zip_location, extracted_archives):
     """
@@ -181,8 +185,10 @@ def upload_csv_files_to_s3(extract_directory):
     for filename in os.listdir(extract_directory):
         logger.info("About to upload to s3: " + filename)
         destination_path = (
-            AWS_CSV_ARCHIVE_PATH_STAGING + "/" + str(datetime.date.today())
-            #AWS_CSV_ARCHIVE_PATH_PRODUCTION + "/" + str(datetime.date.today())
+            AWS_CSV_ARCHIVE_PATH_STAGING
+            + "/"
+            + str(datetime.date.today())
+            # AWS_CSV_ARCHIVE_PATH_PRODUCTION + "/" + str(datetime.date.today())
         )
         s3.Bucket(AWS_CSV_ARCHIVE_BUCKET_NAME).upload_file(
             extract_directory + "/" + filename,
@@ -480,20 +486,18 @@ with Flow(
     "CRIS Crash Import",
 ) as flow:
 
-    dry_run = Parameter(
-        "dry_run", default=True, required=True
-    )
+    dry_run = Parameter("dry_run", default=True, required=True)
 
     # get a location on disk which contains the zips from the sftp endpoint
     zip_location = download_extract_archives()
 
     # OR
 
-    #zip_location = specify_extract_location(
-        #"/root/cris_import/data/2022-ytd.zip",
-        #"/root/cris_import/data/july-2022.zip",
-        #"/root/cris_import/data/nov21-sep22.zip",
-    #)
+    # zip_location = specify_extract_location(
+    # "/root/cris_import/data/2022-ytd.zip",
+    # "/root/cris_import/data/july-2022.zip",
+    # "/root/cris_import/data/nov21-sep22.zip",
+    # )
 
     # iterate over the zips in that location and unarchive them into
     # a list of temporary directories containing the files of each
@@ -514,9 +518,9 @@ with Flow(
     removal_token = remove_archives_from_sftp_endpoint(zip_location)
 
     cleanup = cleanup_temporary_directories(
-    zip_location,
-    extracted_archives,
-    upstream_tasks=[align_records_token, removal_token]
+        zip_location,
+        extracted_archives,
+        upstream_tasks=[align_records_token, removal_token],
     )
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
