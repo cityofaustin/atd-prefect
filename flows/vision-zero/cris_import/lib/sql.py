@@ -1,5 +1,4 @@
 import os
-import time
 import psycopg2.extras
 
 import pprint
