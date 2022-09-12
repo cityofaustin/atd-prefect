@@ -132,41 +132,6 @@ def unzip_archives(archives_directory):
         extracted_csv_directories.append(extract_tmpdir)
     return extracted_csv_directories
 
-
-@task(
-    name="Run VZ ETL Docker Image",
-)
-def run_docker_image(extracted_data, vz_etl_image, command):
-    """
-    Execute the VZ ETL Tool which runs in a docker container.
-
-    Arguments:
-        extracted_data: A string denoting a path of a folder containing an unarchived extract
-        vz_etl_image: A docker object referencing an image to run
-        command: The particular command that will be used as the container entrypoint
-    """
-    logger = prefect.context.get("logger")
-
-    docker_tmpdir = tempfile.mkdtemp()
-    # return docker_tmpdir  # this is short circuiting out the rest of this routine (for speed of dev)
-    volumes = {
-        docker_tmpdir: {"bind": "/app/tmp", "mode": "rw"},
-        extracted_data: {"bind": "/data", "mode": "rw"},
-    }
-
-    docker_client = docker.from_env()
-    log = docker_client.containers.run(
-        image=vz_etl_image,
-        command=command,
-        volumes=volumes,
-        network_mode="host",  # This should be doable in bridged network mode. TODO: Investigate
-        remove=True,
-        environment=RAW_AIRFLOW_CONFIG,
-    )
-
-    return docker_tmpdir
-
-
 @task(name="Cleanup temporary directories", slug="cleanup-temporary-directories")
 def cleanup_temporary_directories(zip_location, extracted_archives):
     """
