@@ -25,8 +25,15 @@ kv_store = {
     "OCR_DIAGRAM_TARGET_PATH": os.getenv("OCR_DIAGRAM_TARGET_PATH"),
     "OCR_BATCH_SIZE": os.getenv("OCR_BATCH_SIZE"),
     "OCR_SINGLE_CRASH": os.getenv("OCR_SINGLE_CRASH"),
+    "DB_HOST": os.getenv("DB_HOST"),
+    "DB_USER": os.getenv("DB_USER"),
+    "DB_PASS": os.getenv("DB_PASS"),
+    "DB_NAME": os.getenv("DB_NAME"),
+    "DB_IMPORT_SCHEMA": os.getenv("DB_IMPORT_SCHEMA"),
+    "GRAPHQL_ENDPOINT": os.getenv("GRAPHQL_ENDPOINT"),
+    "GRAPHQL_ENDPOINT_KEY": os.getenv("GRAPHQL_ENDPOINT_KEY"),
 }
 
 json = json.dumps(kv_store)
 
-key_value_uuid = set_key_value(key="Vision Zero", value=json)
+key_value_uuid = set_key_value(key="Vision Zero Development", value=json)
