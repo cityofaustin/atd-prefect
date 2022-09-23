@@ -5,3 +5,6 @@
 	path = flows/moped/test_instance_deployment/atd-moped
 	url = https://github.com/cityofaustin/atd-moped.git
 	branch = md_moped_test_create_flow
+[submodule "flows/vision-zero/cr3_ocr_narrative_extract_diagram/atd-airflow"]
+	path = flows/vision-zero/cr3_ocr_narrative_extract_diagram/atd-airflow
+	url = https://github.com/cityofaustin/atd-airflow.git
