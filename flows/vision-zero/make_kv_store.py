@@ -25,8 +25,19 @@ kv_store = {
     "OCR_DIAGRAM_TARGET_PATH": os.getenv("OCR_DIAGRAM_TARGET_PATH"),
     "OCR_BATCH_SIZE": os.getenv("OCR_BATCH_SIZE"),
     "OCR_SINGLE_CRASH": os.getenv("OCR_SINGLE_CRASH"),
+    "AFD_DB_USERNAME": os.getenv("AFD_DB_USERNAME"),
+    "AFD_DB_PASSWORD": os.getenv("AFD_DB_PASSWORD"),
+    "AFD_DB_HOSTNAME": os.getenv("AFD_DB_HOSTNAME"),
+    "AFD_DB_PORT": os.getenv("AFD_DB_PORT"),
+    "AFD_DB_DATABASE": os.getenv("AFD_DB_DATABASE"),
+    "AWS_ACCESS_KEY_ID": os.getenv("AWS_ACCESS_KEY_ID"),
+    "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY"),
+    "AFD_S3_SOURCE_BUCKET": os.getenv("AFD_S3_SOURCE_BUCKET"),
+    "AFD_S3_ARCHIVE_BUCKET": os.getenv("AFD_S3_ARCHIVE_BUCKET"),
+    "AFD_S3_SOURCE_PREFIX": os.getenv("AFD_S3_SOURCE_PREFIX"),
+    "AFD_S3_ARCHIVE_PREFIX": os.getenv("AFD_S3_ARCHIVE_PREFIX"),
 }
 
 json = json.dumps(kv_store)
 
-key_value_uuid = set_key_value(key="Vision Zero", value=json)
+key_value_uuid = set_key_value(key="Vision Zero Development", value=json)
