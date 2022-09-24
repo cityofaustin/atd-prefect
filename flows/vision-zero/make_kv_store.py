@@ -36,6 +36,10 @@ kv_store = {
     "AFD_S3_ARCHIVE_BUCKET": os.getenv("AFD_S3_ARCHIVE_BUCKET"),
     "AFD_S3_SOURCE_PREFIX": os.getenv("AFD_S3_SOURCE_PREFIX"),
     "AFD_S3_ARCHIVE_PREFIX": os.getenv("AFD_S3_ARCHIVE_PREFIX"),
+    "EMS_S3_SOURCE_BUCKET": os.getenv("EMS_S3_SOURCE_BUCKET"),
+    "EMS_S3_ARCHIVE_BUCKET": os.getenv("EMS_S3_ARCHIVE_BUCKET"),
+    "EMS_S3_SOURCE_PREFIX": os.getenv("EMS_S3_SOURCE_PREFIX"),
+    "EMS_S3_ARCHIVE_PREFIX": os.getenv("EMS_S3_ARCHIVE_PREFIX"),
 }
 
 json = json.dumps(kv_store)
