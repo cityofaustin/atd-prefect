@@ -4,3 +4,6 @@
 [submodule "flows/vision-zero/cr3_ocr_narrative_extract_diagram/atd-airflow"]
 	path = flows/vision-zero/cr3_ocr_narrative_extract_diagram/atd-airflow
 	url = https://github.com/cityofaustin/atd-airflow.git
+[submodule "flows/vision-zero/afd_ems_incidents/atd-vz-data"]
+	path = flows/vision-zero/afd_ems_incidents/atd-vz-data
+	url = https://github.com/cityofaustin/atd-vz-data
