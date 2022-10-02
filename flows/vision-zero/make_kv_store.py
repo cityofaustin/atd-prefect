@@ -25,6 +25,7 @@ kv_store = {
     "OCR_DIAGRAM_TARGET_PATH": os.getenv("OCR_DIAGRAM_TARGET_PATH"),
     "OCR_BATCH_SIZE": os.getenv("OCR_BATCH_SIZE"),
     "OCR_SINGLE_CRASH": os.getenv("OCR_SINGLE_CRASH"),
+
     "AFD_DB_USERNAME": os.getenv("AFD_DB_USERNAME"),
     "AFD_DB_PASSWORD": os.getenv("AFD_DB_PASSWORD"),
     "AFD_DB_HOSTNAME": os.getenv("AFD_DB_HOSTNAME"),
@@ -40,6 +41,14 @@ kv_store = {
     "EMS_S3_ARCHIVE_BUCKET": os.getenv("EMS_S3_ARCHIVE_BUCKET"),
     "EMS_S3_SOURCE_PREFIX": os.getenv("EMS_S3_SOURCE_PREFIX"),
     "EMS_S3_ARCHIVE_PREFIX": os.getenv("EMS_S3_ARCHIVE_PREFIX"),
+
+    "DB_HOST": os.getenv("DB_HOST"),
+    "DB_USER": os.getenv("DB_USER"),
+    "DB_PASS": os.getenv("DB_PASS"),
+    "DB_NAME": os.getenv("DB_NAME"),
+    "DB_IMPORT_SCHEMA": os.getenv("DB_IMPORT_SCHEMA"),
+    "GRAPHQL_ENDPOINT": os.getenv("GRAPHQL_ENDPOINT"),
+    "GRAPHQL_ENDPOINT_KEY": os.getenv("GRAPHQL_ENDPOINT_KEY"),
 }
 
 json = json.dumps(kv_store)
