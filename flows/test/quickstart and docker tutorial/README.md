@@ -29,7 +29,7 @@ with Flow("2-prefect_basic") as flow:
 The purpose of this script is to now register our flow with a local agent we'll start. To start your local agent simply type this in your command line while in the correct Prefect environment:
 
 ```
-prefect agent local start -l youragentname -l local
+prefect agent local start -l youragentname -l local --no-hostname-label
 ```
 
 The word "local" here is slightly confusing, once you start your local agent you can receive flows that are registered to your agent from the Prefect Cloud. It is "local" because it is running your flow as if it is local to your machine's environment that your started it in. So, if you are missing any packages like `pandas`, you'll need to use the `DockerRun` option below. 
