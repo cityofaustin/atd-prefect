@@ -1,5 +1,7 @@
 # Prefect Agent Quickstart with Docker
 
+[Live recording of the tutorial here on DTS Google Drive](https://drive.google.com/file/d/1W3lc-geCZONIxDtEEJerr6MZ1-_PYVlK/view?usp=share_link)
+
 The purpose of this tutorial is for you to learn how to go turn your relatively basic python script to an ETL that can run on a schedule and/or on our on-prem devices.
 
 ## 1. Basic Python Script
