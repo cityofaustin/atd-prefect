@@ -2,7 +2,7 @@ from prefect import task, Flow
 from prefect.run_configs import LocalRun
 
 # Start your local agent with:
-# prefect agent local start -l youragentname -l local
+# prefect agent local start -l youragentname -l local --no-hostname-label
 
 youragentname = "charliesmacbook"
 
