@@ -5,8 +5,8 @@ Name: ATD Knack Services
 Description: This set of tasks publishes data from ATD's various Knack 
  applications to other platforms including a Postgres database, Socrata, 
  and ArcGIS Online (AGOL). 
-Schedule: "30 14,18 * * *"
-Labels: atd-data02, knack
+Schedule: Case-by-case basis
+Labels: atd-data02, production
 """
 
 import os
@@ -41,18 +41,15 @@ APP_NAME_DEST = ""
 SOCRATA_FLAG = True
 AGOL_FLAG = True
 
-# Define current environment
-current_environment = "prod"
+# Select the appropriate tag for the Docker Image
+# docker_env will also be taken as a parameter
+DOCKER_TAG = "production"
 
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed])
 
 # Logger instance
 logger = prefect.context.get("logger")
-
-# Select the appropriate tag for the Docker Image
-docker_env = "production"
-docker_image = f"atddocker/atd-knack-services:{docker_env}"
 
 # Set flow runtime name from:
 # https://github.com/PrefectHQ/prefect/discussions/3881
@@ -75,14 +72,15 @@ def determine_task_runs(layer, app_name_dest):
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
-def pull_docker_image():
+def pull_docker_image(docker_tag):
+    docker_image = f"atddocker/atd-knack-services:{docker_tag}"
     client = docker.from_env()
     response = client.images.pull("atddocker/atd-knack-services", all_tags=True)
-    logger.info(docker_env)
-    return response
+    logger.info(f"Docker Images Pulled, using: {docker_image}")
+    return docker_image
 
 
 # Get the envrioment variables for the given app
@@ -92,7 +90,7 @@ def pull_docker_image():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
 def get_env_vars(app):
@@ -107,7 +105,7 @@ def get_env_vars(app):
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
 def get_last_exec_time(app, container, replace_data):
@@ -141,10 +139,12 @@ def get_last_exec_time(app, container, replace_data):
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
-def records_to_postgrest(app_name, container, date_filter, environment_variables):
+def records_to_postgrest(
+    app_name, container, date_filter, environment_variables, docker_image
+):
     response = (
         docker.from_env()
         .containers.run(
@@ -170,10 +170,12 @@ def records_to_postgrest(app_name, container, date_filter, environment_variables
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
-def records_to_agol(app_name, container, date_filter, environment_variables):
+def records_to_agol(
+    app_name, container, date_filter, environment_variables, docker_image
+):
     response = (
         docker.from_env()
         .containers.run(
@@ -199,10 +201,12 @@ def records_to_agol(app_name, container, date_filter, environment_variables):
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
-def records_to_socrata(app_name, container, date_filter, environment_variables):
+def records_to_socrata(
+    app_name, container, date_filter, environment_variables, docker_image
+):
     response = (
         docker.from_env()
         .containers.run(
@@ -228,10 +232,12 @@ def records_to_socrata(app_name, container, date_filter, environment_variables):
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
-def agol_build_markings_segment_geometries(layer, date_filter, environment_variables):
+def agol_build_markings_segment_geometries(
+    layer, date_filter, environment_variables, docker_image
+):
     response = (
         docker.from_env()
         .containers.run(
@@ -257,11 +263,16 @@ def agol_build_markings_segment_geometries(layer, date_filter, environment_varia
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
 def records_to_knack(
-    app_name_src, container_src, date_filter, app_name_dest, environment_variables
+    app_name_src,
+    container_src,
+    date_filter,
+    app_name_dest,
+    environment_variables,
+    docker_image,
 ):
     response = (
         docker.from_env()
@@ -299,11 +310,9 @@ def update_last_exec_time(app, container):
     set_key_value(key="atd_knack_services_prev_exec", value=prev_execs)
 
 
-# Next, we define the flow (equivalent to a DAG).
-# Notice we use the label "test" to match this flow to an agent.
 with Flow(
-    # Postfix the name of the flow with the environment it belongs to
-    f"knack_services_{current_environment}",
+    # Flow Name
+    "knack_services_production",
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
@@ -326,6 +335,9 @@ with Flow(
     )
     soda_flag = Parameter("Send data to Socrata", default=True, required=True)
     agol_flag = Parameter("Send data to AGOL", default=True, required=True)
+    docker_tag = Parameter(
+        "Tag of the atd-knack-services Docker image", default=DOCKER_TAG, required=True
+    )
 
     # Based on provided parameters, skip or run some conditional tasks
     build_geom, to_knack = determine_task_runs(layer, app_name_dest)
@@ -336,14 +348,15 @@ with Flow(
     environment_variables = get_env_vars(app_name)
 
     # 1. Pull latest docker image
-    docker_pull = pull_docker_image()
+    docker_image = pull_docker_image(docker_tag)
     # 2. Download Knack records and send them to Postgres(t)
     postgrest_res = records_to_postgrest(
         app_name,
         container,
         date_filter,
         environment_variables,
-        upstream_tasks=[docker_pull],
+        docker_image,
+        upstream_tasks=[docker_image],
     )
     # 3. Send data from Postgrest to AGOL (optional)
     with case(agol_flag, True):
@@ -352,7 +365,8 @@ with Flow(
             container,
             date_filter,
             environment_variables,
-            upstream_tasks=[docker_pull, postgrest_res],
+            docker_image,
+            upstream_tasks=[docker_image, postgrest_res],
         )
 
     # 4. Send data from Postgrest to Socrata (optional)
@@ -362,7 +376,8 @@ with Flow(
             container,
             date_filter,
             environment_variables,
-            upstream_tasks=[docker_pull, postgrest_res],
+            docker_image,
+            upstream_tasks=[docker_image, postgrest_res],
         )
     # 5. Build line geometries in AGOL (optional)
     with case(build_geom, True):
@@ -370,7 +385,8 @@ with Flow(
             layer,
             date_filter,
             environment_variables,
-            upstream_tasks=[docker_pull, agol_res, build_geom],
+            docker_image,
+            upstream_tasks=[docker_image, agol_res, build_geom],
         )
     # 6. Send data to another knack app (optional)
     with case(to_knack, True):
@@ -380,7 +396,8 @@ with Flow(
             date_filter,
             app_name_dest,
             environment_variables,
-            upstream_tasks=[docker_pull, postgrest_res, to_knack],
+            docker_image,
+            upstream_tasks=[docker_image, postgrest_res, to_knack],
         )
 
     # 6. (if successful) update exec date
@@ -396,5 +413,6 @@ if __name__ == "__main__":
             "Records to Knack: App Name Destination": APP_NAME_DEST,
             "Send data to Socrata": SOCRATA_FLAG,
             "Send data to AGOL": AGOL_FLAG,
+            "Docker image tag": DOCKER_TAG,
         }
     )
