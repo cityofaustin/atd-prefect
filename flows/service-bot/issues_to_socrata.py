@@ -80,7 +80,7 @@ def get_env_vars():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    # state_handlers=[handler],
     log_stdout=True,
 )
 def sending_issues_to_socrata(environment_variables, docker_image):
