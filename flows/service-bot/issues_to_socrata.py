@@ -111,7 +111,7 @@ with Flow(
         path="flows/service-bot/issues_to_socrata.py",
         ref="ch-atd-service-bot",  # The branch name
     ),
-    run_config=LocalRun(labels=["charliesmacbook", "local"]),
+    run_config=LocalRun(labels=["atd-data02", "test"]),
     schedule=None,
 ) as flow:
     # Parameter task
