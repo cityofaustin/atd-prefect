@@ -2,7 +2,7 @@
 
 """
 Name: ATD Service Bot: Update Issues
-Description: Updates issues in our DTS portal (Knack) with new data from Github
+Description: Updates projects in our DTS portal (Knack) with new data from Github
 Schedule: 13 7 * * * (UTC)
 Labels: WIP
 """
