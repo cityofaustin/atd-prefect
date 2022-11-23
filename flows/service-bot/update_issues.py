@@ -102,7 +102,7 @@ with Flow(
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
-        path="flows/service-bot/intake_issues.py",
+        path="flows/service-bot/update_issues.py",
         ref="ch-atd-service-bot",  # The branch name
     ),
     run_config=LocalRun(labels=["atd-data02", "test"]),
