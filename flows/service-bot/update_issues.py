@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
 """
-Name: ATD Service Bot: Intake Issues
-Description: Sends new issue data from our service portal (knack) to our Github
-Repo atd-data-tech
-Schedule: * * * * * (AKA once every minute)
+Name: ATD Service Bot: Update Issues
+Description: Updates issues in our DTS portal (Knack) with new data from Github
+Schedule: 13 7 * * * (UTC)
 Labels: WIP
 """
 
@@ -71,20 +70,20 @@ def get_env_vars():
 
 # Issues to Socrata
 @task(
-    name="intake_new_issues",
+    name="update_knack_issues",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     # state_handlers=[handler],
     log_stdout=True,
 )
-def intake_new_issues(environment_variables, docker_image):
+def update_knack_issues(environment_variables, docker_image):
     response = (
         docker.from_env()
         .containers.run(
             image=docker_image,
             working_dir=None,
-            command=f"python atd-service-bot/intake.py",
+            command=f"python atd-service-bot/gh_index_issues_to_dts_portal.py",
             environment=environment_variables,
             volumes=None,
             remove=True,
@@ -99,7 +98,7 @@ def intake_new_issues(environment_variables, docker_image):
 
 with Flow(
     # Flow Name
-    "sb_intake_issues_test",
+    "sb_update_issues_test",
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
@@ -120,8 +119,8 @@ with Flow(
     # 2. Pull latest docker image
     docker_image = pull_docker_image(docker_tag)
 
-    # 3. Intake new issues to github
-    res = intake_new_issues(environment_variables, docker_image)
+    # 3. Update our issues
+    res = update_knack_issues(environment_variables, docker_image)
 
 if __name__ == "__main__":
     flow.run(
