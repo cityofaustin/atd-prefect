@@ -42,7 +42,7 @@ logger = prefect.context.get("logger")
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
 def pull_docker_image(docker_tag):
@@ -60,7 +60,7 @@ def pull_docker_image(docker_tag):
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
 def get_env_vars():
@@ -75,7 +75,7 @@ def get_env_vars():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
 def sending_issues_to_socrata(environment_variables, docker_image):
@@ -99,7 +99,7 @@ def sending_issues_to_socrata(environment_variables, docker_image):
 
 with Flow(
     # Flow Name
-    "sb_issues_to_socrata_test",
+    "Service Bot: Issues to Open Data Portal",
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",

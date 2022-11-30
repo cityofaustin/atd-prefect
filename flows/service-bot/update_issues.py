@@ -41,7 +41,7 @@ logger = prefect.context.get("logger")
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
 def pull_docker_image(docker_tag):
@@ -59,7 +59,7 @@ def pull_docker_image(docker_tag):
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
 def get_env_vars():
@@ -68,13 +68,13 @@ def get_env_vars():
     return environment_variables
 
 
-# Issues to Socrata
+# Index Issues to Knack
 @task(
     name="update_knack_issues",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
     log_stdout=True,
 )
 def update_knack_issues(environment_variables, docker_image):
@@ -98,7 +98,7 @@ def update_knack_issues(environment_variables, docker_image):
 
 with Flow(
     # Flow Name
-    "sb_update_issues_test",
+    "Service Bot: Update Issues",
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",

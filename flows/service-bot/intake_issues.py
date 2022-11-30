@@ -39,10 +39,8 @@ logger = prefect.context.get("logger")
 # Task to pull the latest Docker image
 @task(
     name="pull_docker_image",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    timeout=timedelta(minutes=1),
+    state_handlers=[handler],
     log_stdout=True,
 )
 def pull_docker_image(docker_tag):
@@ -56,11 +54,8 @@ def pull_docker_image(docker_tag):
 # Get the envrioment variables based on the given environment
 @task(
     name="get_env_vars",
-    task_run_name="get_env_vars",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    timeout=timedelta(minutes=1),
+    state_handlers=[handler],
     log_stdout=True,
 )
 def get_env_vars():
@@ -69,13 +64,11 @@ def get_env_vars():
     return environment_variables
 
 
-# Issues to Socrata
+# Knack Issues to Github
 @task(
     name="intake_new_issues",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    timeout=timedelta(minutes=1),
+    state_handlers=[handler],
     log_stdout=True,
 )
 def intake_new_issues(environment_variables, docker_image):
@@ -99,7 +92,7 @@ def intake_new_issues(environment_variables, docker_image):
 
 with Flow(
     # Flow Name
-    "sb_intake_issues_test",
+    "Service Bot: Intake Issues",
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
