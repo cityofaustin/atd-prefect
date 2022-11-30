@@ -28,7 +28,7 @@ from prefect.utilities.notifications import slack_notifier
 DOCKER_TAG = "test"
 
 # Envrioment vars
-ENV = "test"
+ENV = "production"
 
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed])
