@@ -93,7 +93,7 @@ with Flow(
     run_config=UniversalRun(labels=["test", "atd-data02"]),
     #schedule=Schedule(clocks=[CronClock("30 12 * * *")]),
 ) as flow:
-    flow.chain(pull_docker_image, s3_to_socrata)
+    flow.chain(pull_docker_image, upload_to_s3)
 
 if __name__ == "__main__":
     flow.run()
