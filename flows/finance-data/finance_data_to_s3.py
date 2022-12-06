@@ -55,9 +55,9 @@ def pull_docker_image():
 
 @task(
     name="upload_to_s3",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
+    #max_retries=1,
+    #timeout=timedelta(minutes=60),
+    #retry_delay=timedelta(minutes=5),
     # state_handlers=[handler],
 )
 def upload_to_s3():
@@ -77,7 +77,30 @@ def upload_to_s3():
     )
     logger.info(response)
     return response
-
+@task(
+    name="upload_to_knack",
+    #max_retries=1,
+    #timeout=timedelta(minutes=60),
+    #retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+)
+def upload_to_knack():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command="python upload_to_s3.py s3_to_knack.py task_orders finance-purchasing",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
 
 with Flow(
     # Postfix the name of the flow with the environment it belongs to
@@ -93,7 +116,7 @@ with Flow(
     run_config=UniversalRun(labels=["test", "atd-data02"]),
     #schedule=Schedule(clocks=[CronClock("30 12 * * *")]),
 ) as flow:
-    flow.chain(pull_docker_image, upload_to_s3)
+    flow.chain(pull_docker_image, upload_to_s3,upload_to_knack)
 
 if __name__ == "__main__":
     flow.run()
