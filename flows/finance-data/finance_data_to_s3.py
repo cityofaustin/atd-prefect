@@ -90,7 +90,7 @@ def upload_to_knack():
         .containers.run(
             image=docker_image,
             working_dir=None,
-            command="python upload_to_s3.py s3_to_knack.py task_orders finance-purchasing",
+            command="python s3_to_knack.py task_orders finance-purchasing",
             environment=environment_variables,
             volumes=None,
             remove=True,
