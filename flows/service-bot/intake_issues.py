@@ -16,8 +16,6 @@ from datetime import timedelta
 # Prefect
 from prefect import Flow, task, Parameter
 from prefect.storage import GitHub
-from prefect.schedules import Schedule
-from prefect.schedules.clocks import CronClock
 from prefect.run_configs import LocalRun
 from prefect.engine.state import Failed
 from prefect.backend import get_key_value
@@ -103,7 +101,6 @@ with Flow(
         access_token_secret="GITHUB_ACCESS_TOKEN",
     ),
     run_config=LocalRun(labels=["atd-data02", "test"]),
-    schedule=Schedule(clocks=[CronClock("*/3 * * * *")]),
 ) as flow:
     # Parameter task
     docker_tag = Parameter(
