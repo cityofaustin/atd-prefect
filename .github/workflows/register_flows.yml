@@ -38,7 +38,7 @@ jobs:
       - name: "Installing Prefect"
         run: |
           sudo apt-get install -y python3-setuptools
-          pip3 install awscli boto3 virtualenv requests prefect
+          pip3 install awscli boto3 virtualenv requests "prefect==1.*"
       # Run the shell commands using the AWS environment variables
       - name: "Register Flows"
         env:
