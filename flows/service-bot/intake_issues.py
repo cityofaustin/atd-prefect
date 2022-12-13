@@ -98,10 +98,10 @@ with Flow(
         repo="cityofaustin/atd-prefect",
         path="flows/service-bot/intake_issues.py",
         ref="ch-atd-service-bot",  # The branch name
-        access_token_secret="GITHUB_ACCESS_TOKEN"
+        access_token_secret="GITHUB_ACCESS_TOKEN",
     ),
     run_config=LocalRun(labels=["atd-data02", "test"]),
-    schedule=None,
+    schedule=Schedule(clocks=[CronClock("*/3 * * * *")]),
 ) as flow:
     # Parameter task
     docker_tag = Parameter(

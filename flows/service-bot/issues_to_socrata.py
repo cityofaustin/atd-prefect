@@ -108,7 +108,7 @@ with Flow(
         access_token_secret="GITHUB_ACCESS_TOKEN",
     ),
     run_config=LocalRun(labels=["atd-data02", "test"]),
-    schedule=None,
+    schedule=Schedule(clocks=[CronClock("21 5 * * *")]),
 ) as flow:
     # Parameter task
     docker_tag = Parameter(
