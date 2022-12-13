@@ -163,21 +163,33 @@ with Flow(
     docker_res = pull_docker_image()
 
     with case(docker_res, True):
-        task_orders_res = upload_to_s3(environment_variables, "task_orders")
-        upload_to_knack(
-            environment_variables, "task_orders", "finance-purchasing", task_orders_res
+        task_orders_res = upload_to_s3(
+            environment_variables["data-tracker"], "task_orders"
         )
         upload_to_knack(
-            environment_variables, "task_orders", "data-tracker", task_orders_res
+            environment_variables["finance-purchasing"],
+            "task_orders",
+            "finance-purchasing",
+            task_orders_res,
         )
-        units_res = upload_to_s3(environment_variables, "units")
-        upload_to_knack(environment_variables, "units", "data-tracker", units_res)
-        objects_res = upload_to_s3(environment_variables, "objects")
-        master_agreements_res = upload_to_s3(environment_variables, "master_agreements")
-        fdus_res = upload_to_s3(environment_variables, "fdus")
+        upload_to_knack(
+            environment_variables["data-tracker"],
+            "task_orders",
+            "data-tracker",
+            task_orders_res,
+        )
+        units_res = upload_to_s3(environment_variables["data-tracker"], "units")
+        upload_to_knack(
+            environment_variables["data-tracker"], "units", "data-tracker", units_res
+        )
+        objects_res = upload_to_s3(environment_variables["data-tracker"], "objects")
+        master_agreements_res = upload_to_s3(
+            environment_variables["data-tracker"], "master_agreements"
+        )
+        fdus_res = upload_to_s3(environment_variables["data-tracker"], "fdus")
 
         socrata_start = merge(task_orders_res, units_res, fdus_res)
-        upload_to_socrata(environment_variables, socrata_start)
+        upload_to_socrata(environment_variables["data-tracker"], socrata_start)
 
 
 if __name__ == "__main__":
