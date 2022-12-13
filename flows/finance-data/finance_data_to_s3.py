@@ -22,6 +22,7 @@ from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
 from prefect.backend import set_key_value, get_key_value
 from prefect.triggers import all_successful
+from prefect.tasks.control_flow import merge
 
 from prefect.utilities.notifications import slack_notifier
 
@@ -116,6 +117,33 @@ def upload_to_knack(environment_variables, name, app, task_orders_res):
     return response
 
 
+@task(
+    name="upload_to_socrata",
+    task_run_name="upload_to_socrata",
+    # max_retries=1,
+    # timeout=timedelta(minutes=60),
+    # retry_delay=timedelta(minutes=5),
+    # state_handlers=[handler],
+)
+def upload_to_socrata(environment_variables, socrata_fl):
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command="python s3_to_socrata.py",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
 with Flow(
     # Postfix the name of the flow with the environment it belongs to
     f"Finance Data Publishing",
@@ -139,6 +167,18 @@ with Flow(
         upload_to_knack(
             environment_variables, "task_orders", "finance-purchasing", task_orders_res
         )
+        upload_to_knack(
+            environment_variables, "task_orders", "data-tracker", task_orders_res
+        )
+        units_res = upload_to_s3(environment_variables, "units")
+        upload_to_knack(environment_variables, "units", "data-tracker", units_res)
+        objects_res = upload_to_s3(environment_variables, "objects")
+        master_agreements_res = upload_to_s3(environment_variables, "master_agreements")
+        fdus_res = upload_to_s3(environment_variables, "fdus")
+
+        socrata_start = merge(task_orders_res, units_res, fdus_res)
+        upload_to_socrata(environment_variables, socrata_start)
+
 
 if __name__ == "__main__":
     flow.run()
