@@ -105,6 +105,7 @@ with Flow(
         repo="cityofaustin/atd-prefect",
         path="flows/service-bot/issues_to_socrata.py",
         ref="ch-atd-service-bot",  # The branch name
+        access_token_secret="GITHUB_ACCESS_TOKEN",
     ),
     run_config=LocalRun(labels=["atd-data02", "test"]),
     schedule=None,
