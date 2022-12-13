@@ -64,6 +64,7 @@ def pull_docker_image():
 
 @task(
     name="upload_to_s3",
+    task_run_name="upload_to_s3: {name}",
     # max_retries=1,
     # timeout=timedelta(minutes=60),
     # retry_delay=timedelta(minutes=5),
@@ -90,6 +91,7 @@ def upload_to_s3(environment_variables, name):
 
 @task(
     name="upload_to_knack",
+    task_run_name="upload_to_knack: {name}, {app}",
     # max_retries=1,
     # timeout=timedelta(minutes=60),
     # retry_delay=timedelta(minutes=5),
