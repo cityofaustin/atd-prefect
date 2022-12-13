@@ -16,6 +16,7 @@ from datetime import timedelta
 # Prefect
 from prefect import Flow, task, Parameter
 from prefect.storage import GitHub
+from prefect.schedules import Schedule
 from prefect.run_configs import LocalRun
 from prefect.engine.state import Failed
 from prefect.backend import get_key_value
