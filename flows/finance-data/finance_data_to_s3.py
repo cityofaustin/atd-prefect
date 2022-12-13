@@ -36,8 +36,6 @@ logger = prefect.context.get("logger")
 docker_env = "test"
 docker_image = f"atddocker/atd-finance-data:{docker_env}"
 
-github_token = get_key_value(key=f"github_access_token")
-
 
 @task(
     name="get_env_vars",
@@ -154,7 +152,7 @@ with Flow(
         repo="cityofaustin/atd-prefect",
         path="flows/finance-data/finance_data_to_s3.py",
         ref="ch-finance-data",  # The branch name
-        access_token_secret=github_token["GITHUB_ACCESS_TOKEN"],
+        access_token_secret="GITHUB_ACCESS_TOKEN",
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
