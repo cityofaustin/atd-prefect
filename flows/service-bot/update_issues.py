@@ -104,7 +104,8 @@ with Flow(
         repo="cityofaustin/atd-prefect",
         path="flows/service-bot/update_issues.py",
         ref="main",  # The branch name
-        access_token_secret="GITHUB_ACCESS_TOKEN",
+        access_token_secret="GITHUB_ACCESS_TOKEN",  # Key in our Prefect secrets
+        # Configured at: https://cloud.prefect.io/team/secrets
     ),
     run_config=LocalRun(labels=["atd-data02", "test"]),
 ) as flow:
