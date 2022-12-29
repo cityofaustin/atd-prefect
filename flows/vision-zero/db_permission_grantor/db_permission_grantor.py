@@ -38,7 +38,6 @@ SCHEMAS = SCHEMAS_CDL.split(", ")
 STAFF = STAFF_CDL.split(", ")
 
 @task
-
 def grant_permissions():
     pg = psycopg2.connect(
         user=DB_USER,
