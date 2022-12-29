@@ -19,7 +19,7 @@ DB_NAME = None
 SCHEMAS_CDL = None
 STAFF_CDL = None
 
-if True:
+if False:
     DB_HOST = os.getenv("DB_HOST")
     DB_USER = os.getenv("DB_USER")
     DB_PASS = os.getenv("DB_PASS")
