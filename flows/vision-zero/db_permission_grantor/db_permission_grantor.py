@@ -18,7 +18,7 @@ DB_PASS = None
 DB_NAME = None
 SCHEMAS_CDL = None
 
-if True:
+if False:
     DB_HOST = os.getenv("DB_HOST")
     DB_USER = os.getenv("DB_USER")
     DB_PASS = os.getenv("DB_PASS")
@@ -65,5 +65,5 @@ with Flow(
     logger = prefect.context.get("logger")
     result = grant_permissions()
 
-flow.run()
-#flow.register(project_name="vision-zero")
+#flow.run()
+flow.register(project_name="vision-zero")
