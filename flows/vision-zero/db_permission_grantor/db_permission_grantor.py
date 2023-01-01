@@ -17,25 +17,21 @@ DB_USER = None
 DB_PASS = None
 DB_NAME = None
 SCHEMAS_CDL = None
-STAFF_CDL = None
 
-if False:
+if True:
     DB_HOST = os.getenv("DB_HOST")
     DB_USER = os.getenv("DB_USER")
     DB_PASS = os.getenv("DB_PASS")
     DB_NAME = os.getenv("DB_NAME")
     SCHEMAS_CDL = os.getenv("DB_PERMISSION_SCHEMAS")
-    STAFF_CDL = os.getenv("DB_PERMISSION_STAFF")
 else:
     DB_HOST = kv_dictionary["DB_HOST"]
     DB_USER = kv_dictionary["DB_USER"]
     DB_PASS = kv_dictionary["DB_PASS"]
     DB_NAME = kv_dictionary["DB_NAME"]
     SCHEMAS_CDL = kv_dictionary["DB_PERMISSION_SCHEMAS"]
-    STAFF_CDL = kv_dictionary["DB_PERMISSION_STAFF"]
 
 SCHEMAS = SCHEMAS_CDL.split(", ")
-STAFF = STAFF_CDL.split(", ")
 
 @task
 def grant_permissions():
@@ -50,12 +46,15 @@ def grant_permissions():
 
     logger = prefect.context.get("logger")
 
-    for staffMember in STAFF:
-        for schema in SCHEMAS:
+    for schema in SCHEMAS:
 
-            sql = f'GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO {staffMember}'
-            logger.info(sql)
-            cursor.execute(sql)
+        sql = f'GRANT USAGE ON SCHEMA {schema} TO staff'
+        logger.info(sql)
+        cursor.execute(sql)
+
+        sql = f'GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO staff'
+        logger.info(sql)
+        cursor.execute(sql)
     
     pg.commit()
 
@@ -66,5 +65,5 @@ with Flow(
     logger = prefect.context.get("logger")
     result = grant_permissions()
 
-# flow.run()
-flow.register(project_name="vision-zero")
+flow.run()
+#flow.register(project_name="vision-zero")
