@@ -27,7 +27,7 @@ from prefect.tasks.docker import PullImage
 from prefect.utilities.notifications import slack_notifier
 
 # Define current environment
-current_environment = "production"
+current_environment = "test"
 
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed])
@@ -51,14 +51,14 @@ prev_execution_date_success = get_key_value(prev_execution_key)
 
 
 def get_start_date(prev_execution_date_success):
-    """Creates a start date 7 days before the date of the last successful run of the flow 
+    """Creates a start date 7 days before the date of the last successful run of the flow
 
     Args:
-        prev_execution_date_success (string): Date of the last successful run of the flow 
-        
+        prev_execution_date_success (string): Date of the last successful run of the flow
+
     Returns:
-        list: The start date (string) which is 7 days before the last run. 
-        Defaults to 2021-12-25 if none were previously successful. 
+        list: The start date (string) which is 7 days before the last run.
+        Defaults to 2021-12-25 if none were previously successful.
     """
     if prev_execution_date_success:
         # parse CLI arg date
@@ -79,13 +79,24 @@ start_date = get_start_date(prev_execution_date_success)
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
-    log_stdout=True
+    log_stdout=True,
 )
 def pull_docker_image():
     client = docker.from_env()
     client.images.pull("atddocker/atd-parking-data-meters", all_tags=True)
 
     return
+
+
+# Get the envrioment variables
+@task(
+    name="get_env_vars",
+    state_handlers=[handler],
+    log_stdout=True,
+)
+def get_env_vars():
+    environment_variables = get_key_value(key=f"atd_parking_data_meters")
+    return environment_variables
 
 
 # Retrieve smartfolio transaction data
@@ -95,9 +106,9 @@ def pull_docker_image():
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
-    log_stdout=True
+    log_stdout=True,
 )
-def parking_transaction_history_to_s3():
+def parking_transaction_history_to_s3(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -124,9 +135,9 @@ def parking_transaction_history_to_s3():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
-    log_stdout=True
+    log_stdout=True,
 )
-def parking_payment_history_to_s3():
+def parking_payment_history_to_s3(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -153,9 +164,9 @@ def parking_payment_history_to_s3():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
-    log_stdout=True
+    log_stdout=True,
 )
-def pard_payment_history_to_s3():
+def pard_payment_history_to_s3(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -182,9 +193,9 @@ def pard_payment_history_to_s3():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
-    log_stdout=True
+    log_stdout=True,
 )
-def app_txn_history_to_s3():
+def app_txn_history_to_s3(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -202,6 +213,7 @@ def app_txn_history_to_s3():
     logger.info(response)
     return response
 
+
 # Update last exec key value
 @task(trigger=all_successful)
 def update_last_exec_time():
@@ -217,20 +229,21 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/parking/atd_parking_data_meters_txn_history.py",
-        ref="production",  # The branch name, staging is not being used here
+        ref="ch-parking-data-secrets",  # The branch name, staging is not being used here
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
     run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
     schedule=Schedule(clocks=[CronClock("35 3 * * *")]),
 ) as flow:
+    environment_variables = get_env_vars()
     flow.chain(
-        pull_docker_image,
-        parking_transaction_history_to_s3,
-        parking_payment_history_to_s3,
-        pard_payment_history_to_s3,
-        app_txn_history_to_s3,
-        update_last_exec_time,
+        pull_docker_image(),
+        parking_transaction_history_to_s3(environment_variables),
+        parking_payment_history_to_s3(environment_variables),
+        pard_payment_history_to_s3(environment_variables),
+        app_txn_history_to_s3(environment_variables),
+        update_last_exec_time(),
     )
 
 
