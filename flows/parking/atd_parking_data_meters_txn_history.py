@@ -103,7 +103,7 @@ def get_env_vars():
 @task(
     name="parking_transaction_history_to_s3",
     max_retries=1,
-    timeout=timedelta(minutes=60),
+    timeout=timedelta(minutes=180),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     log_stdout=True,
@@ -131,7 +131,7 @@ def parking_transaction_history_to_s3(environment_variables):
 @task(
     name="parking_payment_history_to_s3",
     max_retries=1,
-    timeout=timedelta(minutes=60),
+    timeout=timedelta(minutes=180),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
@@ -160,7 +160,7 @@ def parking_payment_history_to_s3(environment_variables):
 @task(
     name="pard_payment_history_to_s3",
     max_retries=1,
-    timeout=timedelta(minutes=60),
+    timeout=timedelta(minutes=180),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
@@ -189,7 +189,7 @@ def pard_payment_history_to_s3(environment_variables):
 @task(
     name="app_txn_history_to_s3",
     max_retries=1,
-    timeout=timedelta(minutes=60),
+    timeout=timedelta(minutes=180),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
