@@ -43,22 +43,19 @@ docker_image = f"{docker_path}:{docker_tag}"
 # Logger instance
 logger = prefect.context.get("logger")
 
-# Notice how test_kv is an object that contains our data as a dictionary:
-environment_variables = get_key_value(key="trail_counters")
-
 # Last execution date
 prev_execution_key = "trail_counters_prev_exec"
 prev_execution_date_success = get_key_value(prev_execution_key)
 
 
 def get_start_date(prev_execution_date_success):
-    """Creates a start date 3 days before the date of the last successful run of the flow 
+    """Creates a start date 3 days before the date of the last successful run of the flow
     Args:
-        prev_execution_date_success (string): Date of the last successful run of the flow 
-        
+        prev_execution_date_success (string): Date of the last successful run of the flow
+
     Returns:
-        list: The start date (string) which is 3 days before the last run. 
-        Defaults to 2014-01-01 if none were previously successful. 
+        list: The start date (string) which is 3 days before the last run.
+        Defaults to 2014-01-01 if none were previously successful.
     """
     if prev_execution_date_success:
         # parse CLI arg date
@@ -87,6 +84,17 @@ def pull_docker_image():
     return
 
 
+# Get the envrioment variables
+@task(
+    name="get_env_vars",
+    state_handlers=[handler],
+    log_stdout=True,
+)
+def get_env_vars():
+    environment_variables = get_key_value(key=f"trail_counters")
+    return environment_variables
+
+
 # This script does everything, gets data and puts it in socrata.
 @task(
     name="trail_counter_task",
@@ -95,7 +103,7 @@ def pull_docker_image():
     retry_delay=timedelta(minutes=5),
     # state_handlers=[handler],
 )
-def trail_counter_task():
+def trail_counter_task(environment_variables):
     print("what")
     response = (
         docker.from_env()
@@ -138,8 +146,10 @@ with Flow(
     # run_config=UniversalRun(labels=["test", "ATD-JRWJXM2-D1.coacd.org"]),
     schedule=Schedule(clocks=[CronClock("00 12 * * *")]),
 ) as flow:
+    environment_variables = get_env_vars()
     flow.chain(
-        pull_docker_image, trail_counter_task,
+        pull_docker_image,
+        trail_counter_task(environment_variables),
     )
 
 if __name__ == "__main__":
