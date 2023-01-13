@@ -35,7 +35,7 @@ logger = prefect.context.get("logger")
 
 # Task to pull the latest Docker image
 @task(
-    name="pull_docker_image",
+    name="send_knack_message_to_esb_pull_docker_image",
     timeout=timedelta(minutes=1),
     state_handlers=[handler],
     log_stdout=True,
@@ -50,7 +50,7 @@ def pull_docker_image(env):
 
 # Get the envrioment variables based on the given environment
 @task(
-    name="get_env_vars",
+    name="send_knack_message_to_esb_get_env_vars",
     timeout=timedelta(minutes=1),
     state_handlers=[handler],
     log_stdout=True,
@@ -63,7 +63,7 @@ def get_env_vars(env, app_name):
 
 # Knack Issues to Github
 @task(
-    name="intake_new_issues",
+    name="send_knack_message_to_esb_main",
     timeout=timedelta(minutes=1),
     state_handlers=[handler],
     log_stdout=True,
