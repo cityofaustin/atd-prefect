@@ -87,7 +87,7 @@ def pull_docker_image():
 # Get the envrioment variables
 @task(
     name="get_env_vars",
-    state_handlers=[handler],
+    # state_handlers=[handler],
     log_stdout=True,
 )
 def get_env_vars():
