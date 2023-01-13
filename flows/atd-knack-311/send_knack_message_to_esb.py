@@ -90,6 +90,12 @@ def send_knack_messages_to_esb(*, env_vars, app_name, docker_image):
 with Flow(
     # Flow Name
     "atd-knack-311-send-knack-message-to-esb",
+    storage=GitHub(
+        repo="cityofaustin/atd-prefect",
+        path="flows/atd-knack-311/send_knack_message_esb.py",
+        ref="jc-knack-311",  # The branch name
+        access_token_secret="GITHUB_ACCESS_TOKEN",
+    ),
     run_config=LocalRun(labels=["atd-data02", "test"]),
 ) as flow:
     # Parameter task
