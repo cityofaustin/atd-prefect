@@ -24,7 +24,7 @@ from prefect.backend import get_key_value
 from prefect.utilities.notifications import slack_notifier
 
 
-DEFAULT_ENV = "test"
+DEFAULT_ENV = "staging"
 DOCKER_BASE_IMAGE = "atddocker/atd-knack-311"
 
 # Set up slack fail handler
@@ -89,13 +89,13 @@ def send_knack_messages_to_esb(*, env_vars, app_name, docker_image):
 
 with Flow(
     # Flow Name
-    "atd-knack-311: Send a Knack message to 311 via the ESB",
+    "atd-knack-311-send-knack-message-to-esb",
     run_config=LocalRun(labels=["atd-data02", "test"]),
 ) as flow:
     # Parameter task
     env = Parameter("env", default=DEFAULT_ENV, required=True)
 
-    app_name = Parameter("app_name", required=True)
+    app_name = Parameter("app_name",  default="data-tracker", required=True)
 
     # 1. Get secrets from Prefect KV Store
     env_vars = get_env_vars(env, app_name)
