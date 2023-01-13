@@ -92,7 +92,7 @@ with Flow(
     "atd-knack-311-send-knack-message-to-esb",
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
-        path="flows/atd-knack-311/send_knack_message_esb.py",
+        path="flows/atd-knack-311/send_knack_message_to_esb.py",
         ref="jc-knack-311",  # The branch name
         access_token_secret="GITHUB_ACCESS_TOKEN",
     ),
