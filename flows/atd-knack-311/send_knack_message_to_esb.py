@@ -61,7 +61,7 @@ def get_env_vars(env, app_name):
     return keys[app_name][env]
 
 
-# Knack Issues to Github
+# Run the main script
 @task(
     name="send_knack_message_to_esb_main",
     timeout=timedelta(minutes=1),
@@ -93,10 +93,10 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/atd-knack-311/send_knack_message_to_esb.py",
-        ref="jc-knack-311",  # The branch name
+        ref="main",  # The branch name
         access_token_secret="GITHUB_ACCESS_TOKEN",
     ),
-    run_config=LocalRun(labels=["atd-data02", "test"]),
+    run_config=LocalRun(labels=["atd-data02", "production"]),
 ) as flow:
     # Parameter task
     env = Parameter("env", default=DEFAULT_ENV, required=True)
@@ -115,4 +115,4 @@ with Flow(
     )
 
 if __name__ == "__main__":
-    flow.run(parameters={"env": "staging", "app_name": "data-tracker"})
+    flow.run(parameters={"env": DEFAULT_ENV, "app_name": "data-tracker"})
