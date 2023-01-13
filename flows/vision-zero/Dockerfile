@@ -6,7 +6,7 @@ RUN apt-get update && \
     ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata
 RUN apt-get upgrade -y
-RUN apt-get install -y vim magic-wormhole aptitude python3-pip docker.io rsync p7zip-full black poppler-utils tesseract-ocr wget postgresql-client
+RUN apt-get install -y vim magic-wormhole aptitude python3-pip docker.io rsync p7zip-full black poppler-utils tesseract-ocr wget postgresql-client postgresql-common libpq-dev
 COPY ./requirements.txt /root/requirements.txt
 RUN pip install -r /root/requirements.txt
 COPY ./prefect_bootstrap/ssh_config /root/.ssh/config
