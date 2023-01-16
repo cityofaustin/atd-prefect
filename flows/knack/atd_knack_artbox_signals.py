@@ -397,7 +397,7 @@ with Flow(
             environment_variables,
             dest_environment_variables,
             docker_image,
-            upstream_tasks=[dest_postgrest_res, postgrest_res, to_knack],
+            upstream_tasks=[postgrest_res, to_knack],
         )
 
     # 6. (if successful) update exec date
