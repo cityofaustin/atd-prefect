@@ -7,6 +7,8 @@ Description: This set of tasks publishes data from ATD's various Knack
  and ArcGIS Online (AGOL). 
 Schedule: Case-by-case basis
 Labels: atd-data02, production
+
+
 """
 
 import os
@@ -322,7 +324,7 @@ with Flow(
         ref="atd-knack-services",  # The branch name
     ),
     run_config=LocalRun(labels=["atd-data02", "production"]),
-    schedule=Schedule(clocks=[CronClock("30 0,20 * * *")]),,
+    schedule=Schedule(clocks=[CronClock("30 0,20 * * *")]),
     state_handlers=[set_run_name],
 ) as flow:
     # Parameter tasks
