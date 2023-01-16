@@ -8,6 +8,8 @@ Description: This set of tasks publishes data from ATD's various Knack
 Schedule: Case-by-case basis
 Labels: atd-data02, production
 
+Re-Register with:
+$ prefect register --project knack -p atd_knack_artbox_signals.py -n "ATD-Knack-Services: Signals to Artbox Knack App" -f
 
 """
 
@@ -271,14 +273,18 @@ def records_to_knack(
     date_filter,
     app_name_dest,
     environment_variables,
-    dest_environment_variables
+    dest_environment_variables,
     docker_image,
 ):
     # Merging the two env variables
     environment_variables["KNACK_APP_ID_SRC"] = environment_variables["KNACK_APP_ID"]
-    environment_variables["KNACK_APP_ID_DEST"] = dest_environment_variables["KNACK_APP_ID"]
-    environment_variables["KNACK_API_KEY_DEST"] = dest_environment_variables["KNACK_API_KEY"]
-    
+    environment_variables["KNACK_APP_ID_DEST"] = dest_environment_variables[
+        "KNACK_APP_ID"
+    ]
+    environment_variables["KNACK_API_KEY_DEST"] = dest_environment_variables[
+        "KNACK_API_KEY"
+    ]
+
     response = (
         docker.from_env()
         .containers.run(

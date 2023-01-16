@@ -8,6 +8,8 @@ Description: This set of tasks publishes data from ATD's various Knack
 Schedule: Case-by-case basis
 Labels: atd-data02, production
 
+Re-Register with: 
+$ prefect register --project knack -p atd_knack_markings_contractor_work_orders.py -n "ATD-Knack-Services: Markings Contractor Work Orders" -f
 
 """
 
