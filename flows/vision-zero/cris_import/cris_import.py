@@ -59,9 +59,6 @@ DB_PASS = kv_dictionary["DB_PASS"]
 DB_NAME = kv_dictionary["DB_NAME"]
 DB_IMPORT_SCHEMA = kv_dictionary["DB_IMPORT_SCHEMA"]
 
-
-
-
 @task(
     name="Specify where archive can be found",
     slug="locate-zips",
@@ -139,7 +136,7 @@ def unzip_archives(archives_directory):
 
 
 @task(name="Cleanup temporary directories", slug="cleanup-temporary-directories")
-def cleanup_temporary_directories(zip_location, extracted_archives):
+def cleanup_temporary_directories(zip_location, pgloader_command_files, extracted_archives):
     """
     Remove directories that have accumulated during the flow's execution
 
@@ -157,6 +154,11 @@ def cleanup_temporary_directories(zip_location, extracted_archives):
     logger = prefect.context.get("logger")
 
     shutil.rmtree(zip_location)
+
+    print(pgloader_command_files)
+    for directory in pgloader_command_files:
+        shutil.rmtree(directory)
+
     for directory in extracted_archives:
         shutil.rmtree(directory)
 
@@ -219,6 +221,51 @@ def remove_archives_from_sftp_endpoint(zip_location):
 
     return None
 
+@task(name="pgloader CSV into DB")
+def pgloader_csvs_into_database(directory):
+    # Walk the directory and find all the CSV files
+    pgloader_command_files_tmpdir = tempfile.mkdtemp()
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            if filename.endswith(".csv"):
+                # Extract the table name from the filename. They are named `crash`, `unit`, `person`, `primaryperson`, & `charges`.
+                table = re.search("extract_[\d_]+(.*)_[\d].*\.csv", filename).group(1)
+
+                headers_line_with_newline = None
+
+                with open(directory + "/" + filename, "r") as file:
+                    headers_line_with_newline = file.readline()
+                headers_line = headers_line_with_newline.strip()
+
+
+                headers = headers_line.split(',')
+                command_file = pgloader_command_files_tmpdir + "/" + table + ".load"
+                print(f'Command file: {command_file}')
+
+                CONNECTION_STRING = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}'
+
+                with open(command_file, 'w') as file:
+                    file.write(f"""
+LOAD CSV
+    FROM '{directory}/{filename}' ({headers_line})
+    INTO  {CONNECTION_STRING}?import.{table} ({headers_line})
+    WITH truncate,
+        skip header = 1
+    BEFORE LOAD DO 
+    $$ drop table if exists import.{table}; $$,
+    $$ create table import.{table} (\n""")
+                    fields = []
+                    for field in headers:
+                        fields.append(f'       {field} character varying') 
+                    file.write(',\n'.join(fields))
+                    file.write(f"""
+    );
+$$;\n""")
+                cmd = f'pgloader {command_file}'
+                os.system(cmd)
+
+    return pgloader_command_files_tmpdir
+
 
 @task(name="Futter CSV into DB")
 def futter_csvs_into_database(directory):
@@ -255,13 +302,14 @@ def futter_csvs_into_database(directory):
 
                 # Build the futter command with correct credentials
                 cmd = (
-                    f"{futter} --host {DB_HOST} --username {DB_USER} --pw {DB_PASS} --dbname {DB_NAME} --schema {DB_IMPORT_SCHEMA} --table "
+                    f"{futter} --ssl --host {DB_HOST} --username {DB_USER} --pw {DB_PASS} --dbname {DB_NAME} --schema {DB_IMPORT_SCHEMA} --table "
                     + table
                     + " csv "
                     + directory
                     + "/"
                     + filename
                 )
+                time.sleep(10)
                 # execute the futter command
                 os.system(cmd)
 
@@ -272,7 +320,7 @@ def futter_csvs_into_database(directory):
 @task(name="Remove trailing carriage returns from imported data")
 def remove_trailing_carriage_returns(futter_token):
 
-    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
+    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
 
     columns = util.get_input_tables_and_columns(pg, DB_IMPORT_SCHEMA)
     for column in columns:
@@ -298,7 +346,7 @@ def align_db_typing(trimmed_token):
     # I believe it's more readable to not have it wrap long lists of function arguments. 
 
 
-    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
+    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
 
     # query list of the tables which were created by the pgfutter import process
     imported_tables = util.get_imported_tables(pg, DB_IMPORT_SCHEMA)
@@ -362,7 +410,7 @@ def align_records(typed_token, dry_run):
     logger = prefect.context.get("logger")
 
     # fmt: off
-    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
+    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
     print("Finding updated records")
 
     output_map = mappings.get_table_map()
@@ -503,9 +551,10 @@ with Flow(
     # a list of temporary directories containing the files of each
     extracted_archives = unzip_archives(zip_location)
 
-    futter_token = futter_csvs_into_database.map(extracted_archives)
+    pgloader_command_files = pgloader_csvs_into_database.map(extracted_archives)
+    #futter_token = futter_csvs_into_database.map(extracted_archives)
 
-    trimmed_token = remove_trailing_carriage_returns(futter_token)
+    trimmed_token = remove_trailing_carriage_returns(pgloader_command_files)
 
     typed_token = align_db_typing(trimmed_token=trimmed_token)
 
@@ -520,6 +569,7 @@ with Flow(
     cleanup = cleanup_temporary_directories(
         zip_location,
         extracted_archives,
+        pgloader_command_files,
         upstream_tasks=[align_records_token, removal_token],
     )
 
