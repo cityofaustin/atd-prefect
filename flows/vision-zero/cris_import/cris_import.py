@@ -36,7 +36,7 @@ from process.helpers_import import (
     insert_crash_change_template as insert_change_template,
 )
 
-kv_store = get_key_value("Vision Zero Development")
+kv_store = get_key_value("Vision Zero")
 kv_dictionary = json.loads(kv_store)
 
 SFTP_ENDPOINT = kv_dictionary["SFTP_ENDPOINT"]
