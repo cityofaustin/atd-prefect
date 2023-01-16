@@ -351,7 +351,7 @@ with Flow(
         docker_image,
     )
     # 3. Send data from Postgrest to AGOL (optional)
-    with case(agol_flag, True):
+    with case(AGOL_FLAG, True):
         agol_res = records_to_agol(
             APP_NAME,
             CONTAINER,
@@ -362,7 +362,7 @@ with Flow(
         )
 
     # 4. Send data from Postgrest to Socrata (optional)
-    with case(soda_flag, True):
+    with case(SOCRATA_FLAG, True):
         socrata_res = records_to_socrata(
             APP_NAME,
             CONTAINER,
