@@ -247,22 +247,22 @@ def pgloader_csvs_into_database(directory):
                 CONNECTION_STRING = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}'
 
                 with open(command_file, 'w') as file:
-                   file.write(f"""
+                    file.write(f"""
 LOAD CSV
     FROM '{directory}/{filename}' ({headers_line})
     INTO  {CONNECTION_STRING}?import.{table} ({headers_line})
     WITH truncate,
         skip header = 1
     BEFORE LOAD DO 
-     $$ drop table if exists import.{table}; $$,
-     $$ create table import.{table} (\n""")
-                   fields = []
-                   for field in headers:
+    $$ drop table if exists import.{table}; $$,
+    $$ create table import.{table} (\n""")
+                    fields = []
+                    for field in headers:
                         fields.append(f'       {field} character varying') 
-                   file.write(',\n'.join(fields))
-                   file.write(f"""
-       );
-  $$;\n""")
+                    file.write(',\n'.join(fields))
+                    file.write(f"""
+    );
+$$;\n""")
                 cmd = f'pgloader {command_file}'
                 os.system(cmd)
 
