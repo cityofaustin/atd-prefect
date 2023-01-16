@@ -42,6 +42,7 @@ LAYER_NAME = (
     ""  # If provided, will be used in agol_build_markings_segment_geometries.py
 )
 APP_NAME_DEST = "smart-mobility"  # If provided, will be used in records_to_knack.py
+CONTAINER_DEST = "view_396"  # Needed in order to use records_to_knack.py
 SOCRATA_FLAG = True  # If True, will run records_to_socrata.py
 AGOL_FLAG = True  # If True, will run records_to_agol.py
 REPLACE_DATA = False  # Flag that will overwrite all data (ignores date)
@@ -270,8 +271,14 @@ def records_to_knack(
     date_filter,
     app_name_dest,
     environment_variables,
+    dest_environment_variables
     docker_image,
 ):
+    # Merging the two env variables
+    environment_variables["KNACK_APP_ID_SRC"] = environment_variables["KNACK_APP_ID"]
+    environment_variables["KNACK_APP_ID_DEST"] = dest_environment_variables["KNACK_APP_ID"]
+    environment_variables["KNACK_API_KEY_DEST"] = dest_environment_variables["KNACK_API_KEY"]
+    
     response = (
         docker.from_env()
         .containers.run(
@@ -375,14 +382,16 @@ with Flow(
         )
     # 6. Send data to another knack app (optional)
     with case(to_knack, True):
+        dest_environment_variables = get_env_vars(APP_NAME_DEST)
         knack_res = records_to_knack(
             APP_NAME,
             CONTAINER,
             date_filter,
             APP_NAME_DEST,
             environment_variables,
+            dest_environment_variables,
             docker_image,
-            upstream_tasks=[postgrest_res, to_knack],
+            upstream_tasks=[dest_postgrest_res, postgrest_res, to_knack],
         )
 
     # 6. (if successful) update exec date

@@ -40,6 +40,7 @@ CONTAINER = "view_3628"
 # Optional Services
 LAYER_NAME = "markings_contractor_work_orders"  # If provided, will be used in agol_build_markings_segment_geometries.py
 APP_NAME_DEST = ""  # If provided, will be used in records_to_knack.py
+CONTAINER_DEST = ""
 SOCRATA_FLAG = True  # If True, will run records_to_socrata.py
 AGOL_FLAG = True  # If True, will run records_to_agol.py
 REPLACE_DATA = False  # Flag that will overwrite all data (ignores date)
