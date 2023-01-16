@@ -12,6 +12,7 @@ services:
       - ./cris_import:/root/cris_import
       - ./afd_ems_incidents:/root/afd_ems_incidents
       - ./cr3_ocr_narrative_extract_diagram:/root/cr3_ocr_narrative_extract_diagram
+      - ./db_permission_grantor:/root/db_permission_grantor
       - /var/run/docker.sock:/var/run/docker.sock
     env_file:
       - ./prefect_agent_environment_variables.env

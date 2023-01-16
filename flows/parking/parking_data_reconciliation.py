@@ -3,7 +3,7 @@
 """
 Name: Parking Data Reconciliation Flows
 Description: Parse Fiserv emails then upsert the CSVs to a postgres DB.
-    Grab the payment data retrived from flowbird and upsert tha to a postgres DB.
+    Grab the payment data retrived from flowbird and upsert that to a postgres DB.
     Then, compare them before uploading the data to Socrata.
 Schedule: "30 5 * * *"
 Labels: atd-data02, parking
@@ -24,11 +24,13 @@ from prefect.schedules import Schedule
 from prefect.schedules.clocks import CronClock
 from prefect.backend import set_key_value, get_key_value
 from prefect.triggers import all_successful
+from prefect.tasks.docker import PullImage
+
 
 from prefect.utilities.notifications import slack_notifier
 
-# First, we must always define the current environment, and default to staging:
-current_environment = os.getenv("PREFECT_CURRENT_ENVIRONMENT", "staging")
+# Define current environment
+current_environment = "production"
 
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed])
@@ -36,9 +38,10 @@ handler = slack_notifier(only_states=[Failed])
 # Logger instance
 logger = prefect.context.get("logger")
 
-# Notice how test_kv is an object that contains our data as a dictionary:
-env = "prod"  # if current_environment == "production" else "staging"
-docker_image = f"atddocker/atd-parking-data-meters:{current_environment}"
+# Select the appropriate tag for the Docker Image
+docker_env = "production"
+docker_image = f"atddocker/atd-parking-data-meters:{docker_env}"
+
 environment_variables = get_key_value(key=f"atd_parking_data_meters")
 
 # Last execution date
@@ -64,7 +67,9 @@ def decide_prev_month(prev_execution_date_success):
     """
     if prev_execution_date_success:
         last_date = datetime.strptime(prev_execution_date_success, "%Y-%m-%d")
-        if last_date.day < 8:
+        # If in the first 8 days of the month of last few days of the month re-run
+        # the previous month's data to make sure it is complete.
+        if last_date.day < 8 or last_date.day > 26:
             return True
         else:
             return False
@@ -73,13 +78,30 @@ def decide_prev_month(prev_execution_date_success):
 
 prev_month = decide_prev_month(prev_execution_date_success)
 
-# First, process the latest emails from Fiserv
+# Task to pull the latest Docker image
+@task(
+    name="pull_docker_image",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
+    log_stdout=True
+)
+def pull_docker_image():
+    client = docker.from_env()
+    client.images.pull("atddocker/atd-parking-data-meters", all_tags=True)
+    logger.info(docker_env)
+    return
+
+
+# First, process the latest emails from Fiserv in S3
 @task(
     name="fiserv_email_parse",
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
+    log_stdout=True
 )
 def fiserv_email_parse():
     response = (
@@ -108,6 +130,7 @@ def fiserv_email_parse():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def fiserv_emails_to_db():
     response = (
@@ -128,7 +151,7 @@ def fiserv_emails_to_db():
     return response
 
 
-# Upload the payment CSVs to postgres
+# Upload the ATD payment CSVs to postgres
 @task(
     name="payment_csv_to_db",
     max_retries=1,
@@ -136,6 +159,7 @@ def fiserv_emails_to_db():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def payment_csv_to_db():
     response = (
@@ -144,6 +168,92 @@ def payment_csv_to_db():
             image=docker_image,
             working_dir=None,
             command=f"python payments_s3.py --lastmonth {prev_month}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+# Upload the PARD payment CSVs to postgres
+@task(
+    name="pard_payment_csv_to_db",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
+    trigger=all_successful,
+    log_stdout=True
+)
+def pard_payment_csv_to_db():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python payments_s3.py --lastmonth {prev_month} --user pard",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
+# Upload the Passport app data CSVs to postgres
+@task(
+    name="app_data_to_db",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
+    trigger=all_successful,
+    log_stdout=True
+)
+def app_data_to_db():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python passport_DB.py --lastmonth {prev_month}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
+# Upload the smartfolio transactions CSVs to postgres
+@task(
+    name="smartfolio_csv_to_db",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
+    trigger=all_successful,
+    log_stdout=True
+)
+def smartfolio_csv_to_db():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python smartfolio_s3.py --lastmonth {prev_month}",
             environment=environment_variables,
             volumes=None,
             remove=True,
@@ -164,6 +274,7 @@ def payment_csv_to_db():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def matching_transactions():
     response = (
@@ -192,6 +303,7 @@ def matching_transactions():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def payments_to_socrata():
     response = (
@@ -220,6 +332,7 @@ def payments_to_socrata():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
+    log_stdout=True
 )
 def fiserv_to_socrata():
     response = (
@@ -228,6 +341,35 @@ def fiserv_to_socrata():
             image=docker_image,
             working_dir=None,
             command=f"python parking_socrata.py --dataset fiserv",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
+# Uploading Parking transactions records to public socrata dataset
+@task(
+    name="transactions_to_socrata",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
+    trigger=all_successful,
+    log_stdout=True
+)
+def transactions_to_socrata():
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python parking_socrata.py --dataset transactions",
             environment=environment_variables,
             volumes=None,
             remove=True,
@@ -255,7 +397,7 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/parking/parking_data_reconciliation.py",
-        ref=current_environment.replace("staging", "main"),  # The branch name
+        ref="production",  # The branch name
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
@@ -263,12 +405,17 @@ with Flow(
     schedule=Schedule(clocks=[CronClock("00 5 * * *")]),
 ) as flow:
     flow.chain(
+        pull_docker_image,
         fiserv_email_parse,
         fiserv_emails_to_db,
         payment_csv_to_db,
+        pard_payment_csv_to_db,
+        app_data_to_db,
         matching_transactions,
+        smartfolio_csv_to_db,
         payments_to_socrata,
         fiserv_to_socrata,
+        transactions_to_socrata,
         update_last_exec_time,
     )
 
