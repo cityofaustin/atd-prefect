@@ -327,7 +327,7 @@ with Flow(
     # Let's configure the agents to download the file from this repo
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
-        path="flows/knack/atd_knack_markings_contractor_work_orders.py",
+        path="flows/knack/atd_knack_artbox_signals.py",
         ref="atd-knack-services",  # The branch name
     ),
     run_config=LocalRun(labels=["atd-data02", "production"]),
