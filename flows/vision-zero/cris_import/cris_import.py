@@ -187,10 +187,8 @@ def upload_csv_files_to_s3(extract_directory):
     for filename in os.listdir(extract_directory):
         logger.info("About to upload to s3: " + filename)
         destination_path = (
-            AWS_CSV_ARCHIVE_PATH_STAGING
-            + "/"
-            + str(datetime.date.today())
-            # AWS_CSV_ARCHIVE_PATH_PRODUCTION + "/" + str(datetime.date.today())
+            #AWS_CSV_ARCHIVE_PATH_STAGING + "/" + str(datetime.date.today())
+            AWS_CSV_ARCHIVE_PATH_PRODUCTION + "/" + str(datetime.date.today())
         )
         s3.Bucket(AWS_CSV_ARCHIVE_BUCKET_NAME).upload_file(
             extract_directory + "/" + filename,
