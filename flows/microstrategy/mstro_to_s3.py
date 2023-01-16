@@ -25,12 +25,6 @@ environment_variables = get_key_value(key=f"atd_microstrategy")
 
 ENV = "prod"
 
-# Microstrategy Credentials
-PROJECT_ID = environment_variables["PROJECT_ID"]
-BASE_URL = environment_variables["BASE_URL"]
-MSTRO_USERNAME = environment_variables["MSTRO_USERNAME"]
-MSTRO_PASSWORD = environment_variables["MSTRO_PASSWORD"]
-
 # List dicts of default reports to be retrived
 # To find report ID, go to the report in Microstrategy then:
 ## Go to Tools > Report Details Page or Document Details Page.
@@ -41,25 +35,33 @@ REPORTS = [
     {"name": "All bonds Expenses Obligated", "id": "6B0DE57644C7C9912AAAE48392873233"},
 ]
 
-## AWS Credentials
-AWS_ACCESS_ID = environment_variables["AWS_ACCESS_ID"]
-AWS_PASS = environment_variables["AWS_PASS"]
-BUCKET_NAME = environment_variables["BUCKET"]
-
 # Report names and ids separated from dicts
 report_names = [i["name"] for i in REPORTS]
 report_ids = [i["id"] for i in REPORTS]
 
+# Get the envrioment variables based on the given environment
+@task(
+    name="get_env_vars",
+    state_handlers=[handler],
+    log_stdout=True,
+)
+def get_env_vars():
+    environment_variables = get_key_value(key=f"atd_microstrategy")
+    return environment_variables
+
+
 # Returns a connection object for interacting with the microstrategy API
 @task(
-    max_retries=2, retry_delay=datetime.timedelta(minutes=10), state_handlers=[handler],
+    max_retries=2,
+    retry_delay=datetime.timedelta(minutes=10),
+    state_handlers=[handler],
 )
-def connect_to_mstro():
+def connect_to_mstro(environment_variables):
     conn = Connection(
-        base_url=BASE_URL,
-        username=MSTRO_USERNAME,
-        password=MSTRO_PASSWORD,
-        project_id=PROJECT_ID,
+        base_url=environment_variables["BASE_URL"],
+        username=environment_variables["MSTRO_USERNAME"],
+        password=environment_variables["MSTRO_PASSWORD"],
+        project_id=environment_variables["PROJECT_ID"],
         login_mode=1,
     )
     return conn
@@ -67,11 +69,14 @@ def connect_to_mstro():
 
 # Returns a s3 object for interacting with the boto3 AWS S3 API
 @task(
-    max_retries=2, retry_delay=datetime.timedelta(minutes=10), state_handlers=[handler],
+    max_retries=2,
+    retry_delay=datetime.timedelta(minutes=10),
+    state_handlers=[handler],
 )
-def connect_to_AWS():
+def connect_to_AWS(environment_variables):
     session = boto3.Session(
-        aws_access_key_id=AWS_ACCESS_ID, aws_secret_access_key=AWS_PASS,
+        aws_access_key_id=environment_variables["AWS_ACCESS_ID"],
+        aws_secret_access_key=environment_variables["AWS_PASS"],
     )
     s3_res = session.resource("s3")
 
@@ -81,7 +86,8 @@ def connect_to_AWS():
 # Downloads a report from microstrategy with a given report_id
 # returns it as a pandas dataframe
 @task(
-    max_retries=3, retry_delay=datetime.timedelta(minutes=2),
+    max_retries=3,
+    retry_delay=datetime.timedelta(minutes=2),
 )
 def download_report(report_id, conn):
     my_report = Report(connection=conn, id=report_id, parallel=False)
@@ -92,13 +98,15 @@ def download_report(report_id, conn):
 # Uses the report_name.csv as a file name
 # report_name should be unique or it'll overwrite another report
 @task(
-    max_retries=2, retry_delay=datetime.timedelta(minutes=10), state_handlers=[handler],
+    max_retries=2,
+    retry_delay=datetime.timedelta(minutes=10),
+    state_handlers=[handler],
 )
-def report_to_s3(df, report_name, s3):
+def report_to_s3(df, report_name, s3, bucket):
     csv_buffer = StringIO()
     df.to_csv(csv_buffer, index=False)
     file_name = f"{report_name}.csv"
-    s3.Object(BUCKET_NAME, file_name).put(Body=csv_buffer.getvalue())
+    s3.Object(bucket, file_name).put(Body=csv_buffer.getvalue())
 
 
 # Define prefect flow
@@ -108,22 +116,26 @@ with Flow(
     # DockerRun needs a docker agent
     run_config=DockerRun(labels=[ENV, "docker", "atd-data03"]),
 ) as flow:
+    # Get secrets
+    environment_variables = get_env_vars()
+    bucket = environment_variables["BUCKET"]
+
     # Mapping parameters
     ids = Parameter("report_ids", default=report_ids, required=True)
     names = Parameter("report_names", default=report_names, required=True)
     flow.add_task(names)
 
     # 1. Get microstrategy connection
-    conn = connect_to_mstro()
+    conn = connect_to_mstro(environment_variables)
 
     # 2. Connect using boto3 to our S3
-    s3 = connect_to_AWS()
+    s3 = connect_to_AWS(environment_variables)
 
     # 3. Download report to df (for each report_id)
     df = download_report.map(ids, unmapped(conn))
 
     # 4. Send file to S3 bucket (for each report_id)
-    report_to_s3.map(df, names, unmapped(s3))
+    report_to_s3.map(df, names, unmapped(s3), unmapped(bucket))
 
 flow.storage = Docker(
     registry_url="atddocker",

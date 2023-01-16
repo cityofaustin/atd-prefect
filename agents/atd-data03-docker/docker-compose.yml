@@ -1,0 +1,13 @@
+version: '3.7'
+services:
+  prefect-docker-agent:
+    container_name: prefect-docker-agent
+    command: ["/root/start_agent.sh"]
+    build: .
+    restart: always
+    volumes:
+      - /tmp:/tmp
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./start_agent.sh:/root/start_agent.sh
+    env_file:
+      - ./prefect_agent_environment_variables.env
