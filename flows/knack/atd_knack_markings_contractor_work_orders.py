@@ -55,14 +55,6 @@ handler = slack_notifier(only_states=[Failed])
 # Logger instance
 logger = prefect.context.get("logger")
 
-# Set flow runtime name from:
-# https://github.com/PrefectHQ/prefect/discussions/3881
-def set_run_name(flow, old_state, new_state):
-    if new_state.is_running():
-        client = prefect.Client()
-        name = f"{prefect.context.parameters['App Name']}:{prefect.context.parameters['Knack Container']}-{prefect.context.date}"  # use flow-name-day-of-week as the flow run name, for example
-        client.set_flow_run_name(prefect.context.flow_run_id, name)
-
 
 # Based on inputs, determine if some conditional tasks should run
 @task(name="determine_task_runs", nout=2)
@@ -325,7 +317,6 @@ with Flow(
     ),
     run_config=LocalRun(labels=["atd-data02", "production"]),
     schedule=Schedule(clocks=[CronClock("30 0,20 * * *")]),
-    state_handlers=[set_run_name],
 ) as flow:
     # Parameter tasks
     docker_tag = Parameter(
