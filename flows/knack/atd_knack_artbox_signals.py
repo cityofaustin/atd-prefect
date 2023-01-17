@@ -274,6 +274,7 @@ def records_to_knack(
     app_name_dest,
     environment_variables,
     dest_environment_variables,
+    postgrest_res_des,
     docker_image,
 ):
     # Merging the two env variables
@@ -384,7 +385,7 @@ with Flow(
     # 6. Send data to another knack app (optional)
     with case(to_knack, True):
         dest_environment_variables = get_env_vars(APP_NAME_DEST)
-        des_postgrest = records_to_postgrest(
+        postgrest_res_des = records_to_postgrest(
             APP_NAME_DEST,
             CONTAINER_DEST,
             date_filter,
@@ -398,8 +399,9 @@ with Flow(
             APP_NAME_DEST,
             environment_variables,
             dest_environment_variables,
+            postgrest_res_des,
             docker_image,
-            upstream_tasks=[dest_postgrest, postgrest_res, to_knack],
+            upstream_tasks=[postgrest_res, to_knack],
         )
 
     # 6. (if successful) update exec date
