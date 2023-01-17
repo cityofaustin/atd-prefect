@@ -271,8 +271,17 @@ def records_to_knack(
     date_filter,
     app_name_dest,
     environment_variables,
+    dest_environment_variables,
     docker_image,
 ):
+    # Merging the two env variables
+    environment_variables["KNACK_APP_ID_SRC"] = environment_variables["KNACK_APP_ID"]
+    environment_variables["KNACK_APP_ID_DEST"] = dest_environment_variables[
+        "KNACK_APP_ID"
+    ]
+    environment_variables["KNACK_API_KEY_DEST"] = dest_environment_variables[
+        "KNACK_API_KEY"
+    ]
     response = (
         docker.from_env()
         .containers.run(
@@ -321,11 +330,6 @@ with Flow(
     run_config=LocalRun(labels=["atd-data02", "production"]),
     schedule=Schedule(clocks=[CronClock("30 0,20 * * *")]),
 ) as flow:
-    # Parameter tasks
-    docker_tag = Parameter(
-        "Tag of the atd-knack-services Docker image", default=DOCKER_TAG, required=True
-    )
-
     # Based on provided parameters, skip or run some conditional tasks
     build_geom, to_knack = determine_task_runs(LAYER_NAME, APP_NAME_DEST)
 
@@ -335,7 +339,7 @@ with Flow(
     environment_variables = get_env_vars(APP_NAME)
 
     # 1. Pull latest docker image
-    docker_image = pull_docker_image(docker_tag)
+    docker_image = pull_docker_image(DOCKER_TAG)
     # 2. Download Knack records and send them to Postgres(t)
     postgrest_res = records_to_postgrest(
         APP_NAME,
@@ -376,12 +380,14 @@ with Flow(
         )
     # 6. Send data to another knack app (optional)
     with case(to_knack, True):
+        dest_environment_variables = get_env_vars(APP_NAME_DEST)
         knack_res = records_to_knack(
             APP_NAME,
             CONTAINER,
             date_filter,
             APP_NAME_DEST,
             environment_variables,
+            dest_environment_variables,
             docker_image,
             upstream_tasks=[postgrest_res, to_knack],
         )
@@ -390,8 +396,4 @@ with Flow(
     update_last_exec_time(APP_NAME, CONTAINER)
 
 if __name__ == "__main__":
-    flow.run(
-        parameters={
-            "Docker image tag": DOCKER_TAG,
-        }
-    )
+    flow.run()

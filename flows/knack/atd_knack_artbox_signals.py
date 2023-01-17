@@ -333,11 +333,6 @@ with Flow(
     run_config=LocalRun(labels=["atd-data02", "production"]),
     schedule=Schedule(clocks=[CronClock("30 0,20 * * *")]),
 ) as flow:
-    # Parameter tasks
-    docker_tag = Parameter(
-        "Tag of the atd-knack-services Docker image", default=DOCKER_TAG, required=True
-    )
-
     # Based on provided parameters, skip or run some conditional tasks
     build_geom, to_knack = determine_task_runs(LAYER_NAME, APP_NAME_DEST)
 
@@ -347,7 +342,7 @@ with Flow(
     environment_variables = get_env_vars(APP_NAME)
 
     # 1. Pull latest docker image
-    docker_image = pull_docker_image(docker_tag)
+    docker_image = pull_docker_image(DOCKER_TAG)
     # 2. Download Knack records and send them to Postgres(t)
     postgrest_res = records_to_postgrest(
         APP_NAME,
@@ -404,8 +399,4 @@ with Flow(
     update_last_exec_time(APP_NAME, CONTAINER)
 
 if __name__ == "__main__":
-    flow.run(
-        parameters={
-            "Docker image tag": DOCKER_TAG,
-        }
-    )
+    flow.run()
