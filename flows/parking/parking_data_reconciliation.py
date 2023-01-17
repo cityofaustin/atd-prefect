@@ -51,7 +51,7 @@ prev_execution_date_success = get_key_value(prev_execution_key)
 
 def decide_prev_month(prev_execution_date_success):
     """
-    Determines if the current month or the current plus previous month S3 
+    Determines if the current month or the current plus previous month S3
         folders are needed. If it is within a week of the previous month,
         also upsert that months data.
     Parameters
@@ -85,13 +85,24 @@ prev_month = decide_prev_month(prev_execution_date_success)
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
-    log_stdout=True
+    log_stdout=True,
 )
 def pull_docker_image():
     client = docker.from_env()
     client.images.pull("atddocker/atd-parking-data-meters", all_tags=True)
     logger.info(docker_env)
     return
+
+
+# Get the envrioment variables
+@task(
+    name="get_env_vars",
+    state_handlers=[handler],
+    log_stdout=True,
+)
+def get_env_vars():
+    environment_variables = get_key_value(key=f"atd_parking_data_meters")
+    return environment_variables
 
 
 # First, process the latest emails from Fiserv in S3
@@ -101,9 +112,9 @@ def pull_docker_image():
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
-    log_stdout=True
+    log_stdout=True,
 )
-def fiserv_email_parse():
+def fiserv_email_parse(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -130,9 +141,9 @@ def fiserv_email_parse():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
-    log_stdout=True
+    log_stdout=True,
 )
-def fiserv_emails_to_db():
+def fiserv_emails_to_db(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -159,9 +170,9 @@ def fiserv_emails_to_db():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
-    log_stdout=True
+    log_stdout=True,
 )
-def payment_csv_to_db():
+def payment_csv_to_db(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -179,6 +190,7 @@ def payment_csv_to_db():
     logger.info(response)
     return response
 
+
 # Upload the PARD payment CSVs to postgres
 @task(
     name="pard_payment_csv_to_db",
@@ -187,9 +199,9 @@ def payment_csv_to_db():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
-    log_stdout=True
+    log_stdout=True,
 )
-def pard_payment_csv_to_db():
+def pard_payment_csv_to_db(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -216,9 +228,9 @@ def pard_payment_csv_to_db():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
-    log_stdout=True
+    log_stdout=True,
 )
-def app_data_to_db():
+def app_data_to_db(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -245,9 +257,9 @@ def app_data_to_db():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
-    log_stdout=True
+    log_stdout=True,
 )
-def smartfolio_csv_to_db():
+def smartfolio_csv_to_db(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -274,9 +286,9 @@ def smartfolio_csv_to_db():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
-    log_stdout=True
+    log_stdout=True,
 )
-def matching_transactions():
+def matching_transactions(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -303,9 +315,9 @@ def matching_transactions():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
-    log_stdout=True
+    log_stdout=True,
 )
-def payments_to_socrata():
+def payments_to_socrata(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -332,9 +344,9 @@ def payments_to_socrata():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
-    log_stdout=True
+    log_stdout=True,
 )
-def fiserv_to_socrata():
+def fiserv_to_socrata(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -361,9 +373,9 @@ def fiserv_to_socrata():
     retry_delay=timedelta(minutes=5),
     state_handlers=[handler],
     trigger=all_successful,
-    log_stdout=True
+    log_stdout=True,
 )
-def transactions_to_socrata():
+def transactions_to_socrata(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
@@ -397,26 +409,27 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/parking/parking_data_reconciliation.py",
-        ref="production",  # The branch name
+        ref="main",  # The branch name
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
     run_config=UniversalRun(labels=[current_environment, "atd-data02"]),
     schedule=Schedule(clocks=[CronClock("00 5 * * *")]),
 ) as flow:
+    environment_variables = get_env_vars()
     flow.chain(
-        pull_docker_image,
-        fiserv_email_parse,
-        fiserv_emails_to_db,
-        payment_csv_to_db,
-        pard_payment_csv_to_db,
-        app_data_to_db,
-        matching_transactions,
-        smartfolio_csv_to_db,
-        payments_to_socrata,
-        fiserv_to_socrata,
-        transactions_to_socrata,
-        update_last_exec_time,
+        pull_docker_image(),
+        fiserv_email_parse(environment_variables),
+        fiserv_emails_to_db(environment_variables),
+        payment_csv_to_db(environment_variables),
+        pard_payment_csv_to_db(environment_variables),
+        app_data_to_db(environment_variables),
+        matching_transactions(environment_variables),
+        smartfolio_csv_to_db(environment_variables),
+        payments_to_socrata(environment_variables),
+        fiserv_to_socrata(environment_variables),
+        transactions_to_socrata(environment_variables),
+        update_last_exec_time(),
     )
 
 
