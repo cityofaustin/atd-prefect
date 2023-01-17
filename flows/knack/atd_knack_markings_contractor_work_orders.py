@@ -42,7 +42,7 @@ CONTAINER = "view_3628"
 # Optional Services
 LAYER_NAME = "markings_contractor_work_orders"  # If provided, will be used in agol_build_markings_segment_geometries.py
 APP_NAME_DEST = ""  # If provided, will be used in records_to_knack.py
-CONTAINER_DEST = ""
+CONTAINER_DEST = ""  # Needed in order to use records_to_knack.py
 SOCRATA_FLAG = True  # If True, will run records_to_socrata.py
 AGOL_FLAG = True  # If True, will run records_to_agol.py
 REPLACE_DATA = False  # Flag that will overwrite all data (ignores date)
@@ -381,6 +381,13 @@ with Flow(
     # 6. Send data to another knack app (optional)
     with case(to_knack, True):
         dest_environment_variables = get_env_vars(APP_NAME_DEST)
+        dest_postgrest = records_to_postgrest(
+            APP_NAME_DEST,
+            CONTAINER_DEST,
+            date_filter,
+            dest_environment_variables,
+            docker_image,
+        )
         knack_res = records_to_knack(
             APP_NAME,
             CONTAINER,
@@ -389,7 +396,7 @@ with Flow(
             environment_variables,
             dest_environment_variables,
             docker_image,
-            upstream_tasks=[postgrest_res, to_knack],
+            upstream_tasks=[dest_postgrest, postgrest_res, to_knack],
         )
 
     # 6. (if successful) update exec date
