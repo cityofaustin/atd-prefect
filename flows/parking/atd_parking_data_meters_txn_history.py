@@ -27,7 +27,7 @@ from prefect.tasks.docker import PullImage
 from prefect.utilities.notifications import slack_notifier
 
 # Define current environment
-current_environment = "test"
+current_environment = "production"
 
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed])
@@ -229,7 +229,7 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/parking/atd_parking_data_meters_txn_history.py",
-        ref="ch-parking-data-secrets",  # The branch name, staging is not being used here
+        ref="main",  # The branch name, staging is not being used here
     ),
     # Run config will always need the current_environment
     # plus whatever labels you need to attach to this flow
