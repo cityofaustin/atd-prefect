@@ -45,8 +45,8 @@ LAYER_NAME = (
 )
 APP_NAME_DEST = "smart-mobility"  # If provided, will be used in records_to_knack.py
 CONTAINER_DEST = "view_396"  # Needed in order to use records_to_knack.py
-SOCRATA_FLAG = True  # If True, will run records_to_socrata.py
-AGOL_FLAG = True  # If True, will run records_to_agol.py
+SOCRATA_FLAG = False  # If True, will run records_to_socrata.py
+AGOL_FLAG = False  # If True, will run records_to_agol.py
 REPLACE_DATA = False  # Flag that will overwrite all data (ignores date)
 
 
