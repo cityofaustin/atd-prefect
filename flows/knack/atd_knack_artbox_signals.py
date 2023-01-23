@@ -332,7 +332,7 @@ with Flow(
         ref="atd-knack-services",  # The branch name
     ),
     run_config=LocalRun(labels=["atd-data02", "production"]),
-    schedule=Schedule(clocks=[CronClock("30 0,20 * * *")]),
+    schedule=Schedule(clocks=[CronClock("30 0 * * *")]),
 ) as flow:
     # Based on provided parameters, skip or run some conditional tasks
     build_geom, to_knack = determine_task_runs(LAYER_NAME, APP_NAME_DEST)
