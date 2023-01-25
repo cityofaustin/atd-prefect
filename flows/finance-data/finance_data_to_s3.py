@@ -2,7 +2,8 @@
 
 """
 Name: ATD Finance Data Flow
-Description: Gets finance data from S3 and places it in a Socrata dataset.
+Description: Gets Finance data from a database, places it in an S3 bucket, 
+             then moves it along to Knack and socrata.
 Schedule: "30 12 * * *"
 Labels: atd-data02, moped
 """
@@ -33,16 +34,16 @@ handler = slack_notifier(only_states=[Failed])
 logger = prefect.context.get("logger")
 
 # Docker settings
-docker_env = "test"
+docker_env = "production"
 docker_image = f"atddocker/atd-finance-data:{docker_env}"
 
 
 @task(
     name="get_env_vars",
-    max_retries=1,
+    max_retries=10,
     timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    retry_delay=timedelta(seconds=15),
+    state_handlers=[handler],
 )
 def get_env_vars():
     # Environment Variables from KV Store in Prefect
@@ -54,7 +55,7 @@ def get_env_vars():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    state_handlers=[handler],
 )
 def pull_docker_image():
     client = docker.from_env()
@@ -66,10 +67,10 @@ def pull_docker_image():
 @task(
     name="upload_to_s3",
     task_run_name="upload_to_s3: {name}",
-    # max_retries=1,
-    # timeout=timedelta(minutes=60),
-    # retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
 )
 def upload_to_s3(environment_variables, name):
     response = (
@@ -93,10 +94,10 @@ def upload_to_s3(environment_variables, name):
 @task(
     name="upload_to_knack",
     task_run_name="upload_to_knack: {name}, {app}",
-    # max_retries=1,
-    # timeout=timedelta(minutes=60),
-    # retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    max_retries=1,
+    timeout=timedelta(minutes=180),
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
 )
 def upload_to_knack(environment_variables, name, app, task_orders_res):
     response = (
@@ -120,10 +121,10 @@ def upload_to_knack(environment_variables, name, app, task_orders_res):
 @task(
     name="upload_to_socrata",
     task_run_name="upload_to_socrata",
-    # max_retries=1,
-    # timeout=timedelta(minutes=60),
-    # retry_delay=timedelta(minutes=5),
-    # state_handlers=[handler],
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
 )
 def upload_to_socrata(environment_variables, socrata_fl):
     response = (
@@ -151,7 +152,7 @@ with Flow(
     storage=GitHub(
         repo="cityofaustin/atd-prefect",
         path="flows/finance-data/finance_data_to_s3.py",
-        ref="ch-finance-data",  # The branch name
+        ref="main",  # The branch name
         access_token_secret="GITHUB_ACCESS_TOKEN",
     ),
     # Run config will always need the current_environment
