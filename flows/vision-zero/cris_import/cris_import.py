@@ -300,7 +300,7 @@ def align_db_typing(trimmed_token):
 
     pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
 
-    # query list of the tables which were created by the pgfutter import process
+    # query list of the tables which were created by the pgloader import process
     imported_tables = util.get_imported_tables(pg, DB_IMPORT_SCHEMA)
 
     # pull our map which connects the names of imported tables to the target tables in VZDB
