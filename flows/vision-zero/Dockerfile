@@ -15,10 +15,6 @@ COPY ./prefect_bootstrap/id_rsa.pub /root/.ssh/id_rsa.pub
 RUN chmod 600 /root/.ssh/id_rsa
 RUN chmod 644 /root/.ssh/id_rsa.pub
 WORKDIR /root/
-RUN wget -O pgfutter_arm https://github.com/lukasmartinelli/pgfutter/releases/download/v1.2/pgfutter_linux_arm
-RUN wget -O pgfutter_x64 https://github.com/lukasmartinelli/pgfutter/releases/download/v1.2/pgfutter_linux_amd64
-RUN chmod a+x /root/pgfutter_arm
-RUN chmod a+x /root/pgfutter_x64
 
 # The following two lines inflate build times and image size, but they provide man pages in the image.
 # If, in the future, we find ourselves motivated to crush down this image size, such as if it were to be
