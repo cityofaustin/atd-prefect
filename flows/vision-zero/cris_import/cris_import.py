@@ -269,58 +269,8 @@ $$;\n""")
     return pgloader_command_files_tmpdir
 
 
-@task(name="Futter CSV into DB")
-def futter_csvs_into_database(directory):
-
-    """
-    Use `pgfutter` to import each CSV file received from CRIS into the database. These tables created
-    are found in the `import` schema, which can be configured via KV store or environment variable.
-    The tables are DROPed and CREATED before each import, and the names used for each table are drawn
-    from the filename provided by CRIS, extracted by a regex.
-
-    Arguments:
-        directory: String representing the path of the temporary directory containing the CSV files
-
-    Returns: Boolean, as a prefect task token representing the import
-    """
-
-    # The program is distributed from GitHub compiled for multiple architectures. This utility checks the system
-    # running the task and uses the correct one.
-    futter = util.get_pgfutter_path()
-
-    # print(f"Futtering: {directory}")
-
-    # Walk the directory and find all the CSV files
-    for root, dirs, files in os.walk(directory):
-        for filename in files:
-            if filename.endswith(".csv"):
-
-                # Extract the table name from the filename. They are named `crash`, `unit`, `person`, `primaryperson`, & `charges`.
-                table = re.search("extract_[\d_]+(.*)_[\d].*\.csv", filename).group(1)
-
-                # Request the database drop any existing table with the same name
-                cmd = f'echo "drop table {DB_IMPORT_SCHEMA}.{table};" | PGPASSWORD={DB_PASS} psql -h {DB_HOST} -U {DB_USER} {DB_NAME}'
-                os.system(cmd)
-
-                # Build the futter command with correct credentials
-                cmd = (
-                    f"{futter} --ssl --host {DB_HOST} --username {DB_USER} --pw {DB_PASS} --dbname {DB_NAME} --schema {DB_IMPORT_SCHEMA} --table "
-                    + table
-                    + " csv "
-                    + directory
-                    + "/"
-                    + filename
-                )
-                time.sleep(10)
-                # execute the futter command
-                os.system(cmd)
-
-    # return a token for prefect to hand off to subsequent tasks in the Flow
-    return True
-
-
 @task(name="Remove trailing carriage returns from imported data")
-def remove_trailing_carriage_returns(futter_token):
+def remove_trailing_carriage_returns(data_loaded_token):
 
     pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
 
@@ -338,7 +288,7 @@ def align_db_typing(trimmed_token):
     and will raise an exception if CRIS begins feeding the system data it's not ready to parse and handle.
 
     Arguments:
-        futter_token: Boolean value received from the previously ran task which imported the CSV files into the database.
+        data_loaded_token: Boolean value received from the previously ran task which imported the CSV files into the database.
 
     Returns: Boolean representing the completion of the import table type alignment
     """
@@ -554,7 +504,6 @@ with Flow(
     extracted_archives = unzip_archives(zip_location)
 
     pgloader_command_files = pgloader_csvs_into_database.map(extracted_archives)
-    #futter_token = futter_csvs_into_database.map(extracted_archives)
 
     trimmed_token = remove_trailing_carriage_returns(pgloader_command_files)
 
