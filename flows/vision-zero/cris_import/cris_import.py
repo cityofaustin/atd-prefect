@@ -485,15 +485,17 @@ with Flow(
     dry_run = Parameter("dry_run", default=True, required=True)
 
     # get a location on disk which contains the zips from the sftp endpoint
-    zip_location = download_extract_archives()
+    # zip_location = download_extract_archives()
 
     # OR
 
-    # zip_location = specify_extract_location(
+    zip_location = specify_extract_location(
+    "/Users/frank/Development/atd-prefect/flows/vision-zero/cris_import/example_extracts/july-2022.zip"
+    )
+
     # "/root/cris_import/data/2022-ytd.zip",
     # "/root/cris_import/data/july-2022.zip",
     # "/root/cris_import/data/nov21-sep22.zip",
-    # )
 
     # iterate over the zips in that location and unarchive them into
     # a list of temporary directories containing the files of each
