@@ -10,12 +10,8 @@ import datetime
 import tempfile
 from subprocess import Popen, PIPE
 
-import requests
-
 import boto3
-import docker
 import sysrsync
-from git import Repo
 
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
