@@ -524,5 +524,5 @@ with Flow(
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
-flow.register(project_name="vision-zero")
-#flow.run(dry_run=False)
+#flow.register(project_name="vision-zero")
+flow.run(dry_run=False)
