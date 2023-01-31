@@ -15,23 +15,9 @@ import prefect
 from datetime import datetime, timedelta
 
 # Prefect
-from prefect import Flow, task, case
-from prefect.storage import GitHub
-from prefect.run_configs import UniversalRun
-from prefect.engine.state import Failed
-from prefect.schedules import Schedule
-from prefect.schedules.clocks import CronClock
-from prefect.backend import set_key_value, get_key_value
-from prefect.triggers import all_successful
-from prefect.tasks.control_flow import merge
+from prefect import flow, task, get_run_logger
+from prefect.blocks.system import JSON
 
-from prefect.utilities.notifications import slack_notifier
-
-# Set up slack fail handler
-handler = slack_notifier(only_states=[Failed])
-
-# Logger instance
-logger = prefect.context.get("logger")
 
 # Docker settings
 docker_env = "production"
@@ -40,37 +26,29 @@ docker_image = f"atddocker/atd-finance-data:{docker_env}"
 
 @task(
     name="get_env_vars",
-    max_retries=10,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(seconds=15),
-    state_handlers=[handler],
+    retries=10,
+    retry_delay_seconds=timedelta(seconds=15).seconds,
 )
 def get_env_vars():
-    # Environment Variables from KV Store in Prefect
-    return get_key_value(key=f"atd_finance_data")
+    # Environment Variables stored in JSON block in Prefect
+    return JSON.load("atd-finance-data")
 
 
 @task(
     name="pull_docker_image",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    retries=1,
+    retry_delay_seconds=timedelta(minutes=5).seconds,
 )
 def pull_docker_image():
     client = docker.from_env()
-    client.images.pull("atddocker/atd-finance-data", all_tags=True)
-    logger.info(docker_image)
+    client.images.pull("atddocker/atd-finance-data", tag=docker_env)
     return True
 
 
 @task(
     name="upload_to_s3",
-    task_run_name="upload_to_s3: {name}",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    retries=1,
+    retry_delay_seconds=timedelta(minutes=5).seconds,
 )
 def upload_to_s3(environment_variables, name):
     response = (
@@ -87,17 +65,13 @@ def upload_to_s3(environment_variables, name):
         )
         .decode("utf-8")
     )
-    logger.info(response)
     return response
 
 
 @task(
     name="upload_to_knack",
-    task_run_name="upload_to_knack: {name}, {app}",
-    max_retries=1,
-    timeout=timedelta(minutes=180),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    retries=1,
+    retry_delay_seconds=timedelta(minutes=5).seconds,
 )
 def upload_to_knack(environment_variables, name, app, task_orders_res):
     response = (
@@ -114,17 +88,13 @@ def upload_to_knack(environment_variables, name, app, task_orders_res):
         )
         .decode("utf-8")
     )
-    logger.info(response)
     return response
 
 
 @task(
     name="upload_to_socrata",
-    task_run_name="upload_to_socrata",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
+    retries=1,
+    retry_delay_seconds=timedelta(minutes=5).seconds,
 )
 def upload_to_socrata(environment_variables, socrata_fl):
     response = (
@@ -141,58 +111,25 @@ def upload_to_socrata(environment_variables, socrata_fl):
         )
         .decode("utf-8")
     )
-    logger.info(response)
+
     return response
 
 
-with Flow(
-    # Postfix the name of the flow with the environment it belongs to
-    f"Finance Data Publishing",
-    # Let's configure the agents to download the file from this repo
-    storage=GitHub(
-        repo="cityofaustin/atd-prefect",
-        path="flows/finance-data/finance_data_to_s3.py",
-        ref="main",  # The branch name
-        access_token_secret="GITHUB_ACCESS_TOKEN",
-    ),
-    # Run config will always need the current_environment
-    # plus whatever labels you need to attach to this flow
-    run_config=UniversalRun(labels=["test", "atd-data02"]),
-    schedule=Schedule(clocks=[CronClock("13 7 * * *")]),
-) as flow:
+@flow(name=f"Finance Data Publishing")
+def finance_data_flow():
+    # Logger instance
+    logger = get_run_logger()
+
     # Start: get env vars and pull the latest docker image
     environment_variables = get_env_vars()
     docker_res = pull_docker_image()
 
-    with case(docker_res, True):
+    if docker_res:
         task_orders_res = upload_to_s3(
-            environment_variables["data-tracker"], "task_orders"
+            environment_variables.value["data-tracker"], "task_orders"
         )
-        upload_to_knack(
-            environment_variables["finance-purchasing"],
-            "task_orders",
-            "finance-purchasing",
-            task_orders_res,
-        )
-        upload_to_knack(
-            environment_variables["data-tracker"],
-            "task_orders",
-            "data-tracker",
-            task_orders_res,
-        )
-        units_res = upload_to_s3(environment_variables["data-tracker"], "units")
-        upload_to_knack(
-            environment_variables["data-tracker"], "units", "data-tracker", units_res
-        )
-        objects_res = upload_to_s3(environment_variables["data-tracker"], "objects")
-        master_agreements_res = upload_to_s3(
-            environment_variables["data-tracker"], "master_agreements"
-        )
-        fdus_res = upload_to_s3(environment_variables["data-tracker"], "fdus")
-
-        socrata_start = merge(task_orders_res, units_res, fdus_res)
-        upload_to_socrata(environment_variables["data-tracker"], socrata_start)
+        logger.info(task_orders_res)
 
 
 if __name__ == "__main__":
-    flow.run()
+    finance_data_flow()
