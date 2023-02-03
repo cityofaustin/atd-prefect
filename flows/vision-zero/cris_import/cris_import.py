@@ -32,28 +32,55 @@ from process.helpers_import import (
     insert_crash_change_template as insert_change_template,
 )
 
-kv_store = get_key_value("Vision Zero Development")
-kv_dictionary = json.loads(kv_store)
 
-SFTP_ENDPOINT = kv_dictionary["SFTP_ENDPOINT"]
-ZIP_PASSWORD = kv_dictionary["ZIP_PASSWORD"]
-VZ_ETL_LOCATION = kv_dictionary["VZ_ETL_LOCATION"]
 
-RAW_AIRFLOW_CONFIG_JSON = kv_dictionary["RAW_AIRFLOW_CONFIG"]
-RAW_AIRFLOW_CONFIG = json.loads(RAW_AIRFLOW_CONFIG_JSON)
 
-AWS_DEFAULT_REGION = kv_dictionary["AWS_DEFAULT_REGION"]
-AWS_ACCESS_KEY_ID = kv_dictionary["AWS_ACCESS_KEY_ID"]
-AWS_SECRET_ACCESS_KEY = kv_dictionary["AWS_SECRET_ACCESS_KEY"]
-AWS_CSV_ARCHIVE_BUCKET_NAME = kv_dictionary["AWS_CSV_ARCHIVE_BUCKET_NAME"]
-AWS_CSV_ARCHIVE_PATH_PRODUCTION = kv_dictionary["AWS_CSV_ARCHIVE_PATH_PRODUCTION"]
-AWS_CSV_ARCHIVE_PATH_STAGING = kv_dictionary["AWS_CSV_ARCHIVE_PATH_STAGING"]
+if False:
+    kv_store = get_key_value("Vision Zero Development")
+    kv_dictionary = json.loads(kv_store)
 
-DB_HOST = kv_dictionary["DB_HOST"]
-DB_USER = kv_dictionary["DB_USER"]
-DB_PASS = kv_dictionary["DB_PASS"]
-DB_NAME = kv_dictionary["DB_NAME"]
-DB_IMPORT_SCHEMA = kv_dictionary["DB_IMPORT_SCHEMA"]
+    SFTP_ENDPOINT = kv_dictionary["SFTP_ENDPOINT"]
+    ZIP_PASSWORD = kv_dictionary["ZIP_PASSWORD"]
+    VZ_ETL_LOCATION = kv_dictionary["VZ_ETL_LOCATION"]
+
+    RAW_AIRFLOW_CONFIG_JSON = kv_dictionary["RAW_AIRFLOW_CONFIG"]
+    RAW_AIRFLOW_CONFIG = json.loads(RAW_AIRFLOW_CONFIG_JSON)
+
+    AWS_DEFAULT_REGION = kv_dictionary["AWS_DEFAULT_REGION"]
+    AWS_ACCESS_KEY_ID = kv_dictionary["AWS_ACCESS_KEY_ID"]
+    AWS_SECRET_ACCESS_KEY = kv_dictionary["AWS_SECRET_ACCESS_KEY"]
+    AWS_CSV_ARCHIVE_BUCKET_NAME = kv_dictionary["AWS_CSV_ARCHIVE_BUCKET_NAME"]
+    AWS_CSV_ARCHIVE_PATH_PRODUCTION = kv_dictionary["AWS_CSV_ARCHIVE_PATH_PRODUCTION"]
+    AWS_CSV_ARCHIVE_PATH_STAGING = kv_dictionary["AWS_CSV_ARCHIVE_PATH_STAGING"]
+
+    DB_HOST = kv_dictionary["DB_HOST"]
+    DB_USER = kv_dictionary["DB_USER"]
+    DB_PASS = kv_dictionary["DB_PASS"]
+    DB_NAME = kv_dictionary["DB_NAME"]
+    DB_IMPORT_SCHEMA = kv_dictionary["DB_IMPORT_SCHEMA"]
+    DB_SSL_REQUIREMENT = kv_dictionary["DB_SSL_REQUIREMENT"]
+else:
+    SFTP_ENDPOINT = os.getenv("SFTP_ENDPOINT")
+    ZIP_PASSWORD = os.getenv("ZIP_PASSWORD")
+    VZ_ETL_LOCATION = os.getenv("VZ_ETL_LOCATION")
+
+    RAW_AIRFLOW_CONFIG_JSON = os.getenv("RAW_AIRFLOW_CONFIG")
+    RAW_AIRFLOW_CONFIG = json.loads(RAW_AIRFLOW_CONFIG_JSON)
+
+    AWS_DEFAULT_REGION = os.getenv("AWS_DEFAULT_REGION")
+    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+    AWS_CSV_ARCHIVE_BUCKET_NAME = os.getenv("AWS_CSV_ARCHIVE_BUCKET_NAME")
+    AWS_CSV_ARCHIVE_PATH_PRODUCTION = os.getenv("AWS_CSV_ARCHIVE_PATH_PRODUCTION")
+    AWS_CSV_ARCHIVE_PATH_STAGING = os.getenv("AWS_CSV_ARCHIVE_PATH_STAGING")
+
+    DB_HOST = os.getenv("DB_HOST")
+    DB_USER = os.getenv("DB_USER")
+    DB_PASS = os.getenv("DB_PASS")
+    DB_NAME = os.getenv("DB_NAME")
+    DB_IMPORT_SCHEMA = os.getenv("DB_IMPORT_SCHEMA")
+    DB_SSL_REQUIREMENT = os.getenv("DB_SSL_REQUIREMENT")
+
 
 @task(
     name="Specify where archive can be found",
