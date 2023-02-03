@@ -23,7 +23,7 @@ def get_pgfutter_path():
 
 
 def get_column_operators(
-    target_columns, no_override_columns, source, table, output_map, DB_IMPORT_SCHEMA
+    target_columns, source, table, output_map, DB_IMPORT_SCHEMA
 ):
     column_assignments = {}
     column_comparisons = []
@@ -59,17 +59,12 @@ def get_column_operators(
                 , false) then '{column['column_name']}' else null end
             """
 
-            if column["column_name"] in no_override_columns:
-                important_column_assignments[ column["column_name"] ] = column_assignment
-                important_column_comparisons.append(comparison_clause)
-                important_column_aggregators.append(column_aggregator)
-            else:
-                column_assignments[ column["column_name"] ] = column_assignment
-                column_comparisons.append(comparison_clause)
-                column_aggregators.append(column_aggregator)
+            column_assignments[ column["column_name"] ] = column_assignment
+            column_comparisons.append(comparison_clause)
+            column_aggregators.append(column_aggregator)
 
         # fmt: on
-    return column_assignments, column_comparisons, column_aggregators, important_column_assignments, important_column_comparisons, important_column_aggregators
+    return column_assignments, column_comparisons, column_aggregators
 
 
 def check_if_update_is_a_non_op(
