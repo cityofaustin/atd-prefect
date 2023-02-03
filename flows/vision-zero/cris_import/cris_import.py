@@ -396,9 +396,6 @@ def align_records(typed_token, dry_run):
         # Query the list of columns in the target table
         target_columns = util.get_target_columns(pg, output_map, table)
 
-        # Get the list of columns which are designated to to be protected from updates
-        no_override_columns = mappings.no_override_columns()[output_map[table]]
-
         # Load up the list of imported records to iterate over. 
         imported_records = util.load_input_data_for_keying(pg, DB_IMPORT_SCHEMA, table)
 
@@ -421,7 +418,7 @@ def align_records(typed_token, dry_run):
             # This function returns that record as a token of existence or false if none is available
             if util.fetch_target_record(pg, output_map, table, record_key_sql):
                 # Build 2 sets of 3 arrays of SQL fragments, one element per column which can be `join`ed together in subsequent queries.
-                column_assignments, column_comparisons, column_aggregators, important_column_assignments, important_column_comparisons, important_column_aggregators = util.get_column_operators(target_columns, no_override_columns, source, table, output_map, DB_IMPORT_SCHEMA)
+                column_assignments, column_comparisons, column_aggregators = util.get_column_operators(target_columns, source, table, output_map, DB_IMPORT_SCHEMA)
 
                 # Check if the proposed update would result in a non-op, such as if there are no changes between the import and
                 # target record. If this is the case, continue to the next record. There's no changes needed in this case.
@@ -434,61 +431,21 @@ def align_records(typed_token, dry_run):
                 # Return these column names as an array and display them in the output.
                 changed_columns = util.get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, record_key_sql, DB_IMPORT_SCHEMA)
                 
-                # Do the same thing, but this time using the SQL clauses formed from "important" columns.
-                important_changed_columns = util.get_changed_columns(pg, important_column_aggregators, output_map, table, linkage_clauses, record_key_sql, DB_IMPORT_SCHEMA)
 
+                # Here we're forming an update statement and executing it
+                if len(changed_columns["changed_columns"]) == 0:
+                    logger.info(update_statement)
+                    raise "No changed columns? Why are we forming an update? This is a bug."
 
-                if len(important_changed_columns['changed_columns']) > 0:
-                    # This execution branch leads to the conflict resolution system in VZ
+                # Display the before and after values of the columns which are subject to update
+                util.show_changed_values(pg, changed_columns, output_map, table, linkage_clauses, record_key_sql, DB_IMPORT_SCHEMA)
 
-                    if util.is_change_existing(pg, table, source["crash_id"]):
-                        continue
+                # Using all the information we've gathered, form a single SQL update statement to update the target record.
+                update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, record_key_sql, linkage_sql, changed_columns)
+                logger.info(f"Executing update in {output_map[table]} for where " + record_key_sql)
 
-                    print("Important Changed column count: " + str(len(important_changed_columns['changed_columns'])))
-                    print("Important Changed Columns:" + str(important_changed_columns["changed_columns"]))
-
-                    print("Changed column count: " + str(len(changed_columns['changed_columns'])))
-                    print("Changed Columns:" + str(changed_columns["changed_columns"]))
-                    
-                    try:
-                        # this seemingly violates the principal of treating each record source equally, however, this is 
-                        # really only a reflection that we create incomplete temporary records consisting only of a crash record
-                        # and not holding place entities for units, persons, etc.
-                        if table == "crash" and util.has_existing_temporary_record(pg, source["case_id"]):
-                            print("\b🛎: " + str(source["crash_id"]) + " has existing temporary record")
-                            time.sleep(5)
-                            util.remove_existing_temporary_record(pg, source["case_id"])
-                    except:
-                        # Trap the case of a missing case_id key error in the RealDictRow object.
-                        # A RealDictRow, returned by the psycopg2 cursor, is a dictionary-like object,
-                        # but lacks has_key() and other methods.
-                        print("Skipping checking on existing temporary record for " + str(source["crash_id"]))
-                        pass
-                    
-                    # build an comma delimited list of changed columns
-                    all_changed_columns = ", ".join(important_changed_columns["changed_columns"] + changed_columns["changed_columns"])
-
-                    # insert_change_template() is used with minimal changes from previous version of the ETL to better ensure conflict system compatibility
-                    mutation = insert_change_template(new_record_dict=source, differences=all_changed_columns, crash_id=str(source["crash_id"]))
-                    if not dry_run:
-                        print("Making a mutation for " + str(source["crash_id"]))
-                        graphql.make_hasura_request(query=mutation)
-                else:
-                    # This execution branch leads to forming an update statement and executing it
-                    
-                    if len(changed_columns["changed_columns"]) == 0:
-                        logger.info(update_statement)
-                        raise "No changed columns? Why are we forming an update? This is a bug."
-
-                    # Display the before and after values of the columns which are subject to update
-                    util.show_changed_values(pg, changed_columns, output_map, table, linkage_clauses, record_key_sql, DB_IMPORT_SCHEMA)
-
-                    # Using all the information we've gathered, form a single SQL update statement to update the target record.
-                    update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, record_key_sql, linkage_sql, changed_columns)
-                    logger.info(f"Executing update in {output_map[table]} for where " + record_key_sql)
-
-                    # Execute the update statement
-                    util.try_statement(pg, output_map, table, record_key_sql, update_statement, dry_run)
+                # Execute the update statement
+                util.try_statement(pg, output_map, table, record_key_sql, update_statement, dry_run)
 
 
             # target does not exist, we're going to insert
