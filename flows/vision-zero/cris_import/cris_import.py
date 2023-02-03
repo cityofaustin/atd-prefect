@@ -33,8 +33,6 @@ from process.helpers_import import (
 )
 
 
-
-
 if False:
     kv_store = get_key_value("Vision Zero Development")
     kv_dictionary = json.loads(kv_store)
@@ -159,7 +157,9 @@ def unzip_archives(archives_directory):
 
 
 @task(name="Cleanup temporary directories", slug="cleanup-temporary-directories")
-def cleanup_temporary_directories(zip_location, pgloader_command_files, extracted_archives):
+def cleanup_temporary_directories(
+    zip_location, pgloader_command_files, extracted_archives
+):
     """
     Remove directories that have accumulated during the flow's execution
 
@@ -246,6 +246,7 @@ def remove_archives_from_sftp_endpoint(zip_location):
 
     return None
 
+
 @task(name="pgloader CSV into DB")
 def pgloader_csvs_into_database(directory):
     # Walk the directory and find all the CSV files
@@ -262,15 +263,17 @@ def pgloader_csvs_into_database(directory):
                     headers_line_with_newline = file.readline()
                 headers_line = headers_line_with_newline.strip()
 
-
-                headers = headers_line.split(',')
+                headers = headers_line.split(",")
                 command_file = pgloader_command_files_tmpdir + "/" + table + ".load"
-                print(f'Command file: {command_file}')
+                print(f"Command file: {command_file}")
 
-                CONNECTION_STRING = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}'
+                CONNECTION_STRING = (
+                    f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}"
+                )
 
-                with open(command_file, 'w') as file:
-                    file.write(f"""
+                with open(command_file, "w") as file:
+                    file.write(
+                        f"""
 LOAD CSV
     FROM '{directory}/{filename}' ({headers_line})
     INTO  {CONNECTION_STRING}?import.{table} ({headers_line})
@@ -278,15 +281,18 @@ LOAD CSV
         skip header = 1
     BEFORE LOAD DO 
     $$ drop table if exists import.{table}; $$,
-    $$ create table import.{table} (\n""")
+    $$ create table import.{table} (\n"""
+                    )
                     fields = []
                     for field in headers:
-                        fields.append(f'       {field} character varying') 
-                    file.write(',\n'.join(fields))
-                    file.write(f"""
+                        fields.append(f"       {field} character varying")
+                    file.write(",\n".join(fields))
+                    file.write(
+                        f"""
     );
-$$;\n""")
-                cmd = f'pgloader {command_file}'
+$$;\n"""
+                    )
+                cmd = f"pgloader {command_file}"
                 os.system(cmd)
 
     return pgloader_command_files_tmpdir
@@ -295,7 +301,14 @@ $$;\n""")
 @task(name="Remove trailing carriage returns from imported data")
 def remove_trailing_carriage_returns(data_loaded_token):
 
-    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode=DB_SSL_REQUIREMENT, sslrootcert="/root/rds-combined-ca-bundle.pem")
+    pg = psycopg2.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASS,
+        dbname=DB_NAME,
+        sslmode=DB_SSL_REQUIREMENT,
+        sslrootcert="/root/rds-combined-ca-bundle.pem",
+    )
 
     columns = util.get_input_tables_and_columns(pg, DB_IMPORT_SCHEMA)
     for column in columns:
@@ -473,9 +486,7 @@ with Flow(
 
     # OR
 
-    zip_location = specify_extract_location(
-    "/root/cris_import/data/july-2022.zip"
-    )
+    zip_location = specify_extract_location("/root/cris_import/data/july-2022.zip")
 
     # "/root/cris_import/data/2022-ytd.zip",
     # "/root/cris_import/data/july-2022.zip",
@@ -508,5 +519,5 @@ with Flow(
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
-#flow.register(project_name="vision-zero")
+# flow.register(project_name="vision-zero")
 flow.run(dry_run=True)
