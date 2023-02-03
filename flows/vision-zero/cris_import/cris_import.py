@@ -295,7 +295,7 @@ $$;\n""")
 @task(name="Remove trailing carriage returns from imported data")
 def remove_trailing_carriage_returns(data_loaded_token):
 
-    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
+    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode=DB_SSL_REQUIREMENT, sslrootcert="/root/rds-combined-ca-bundle.pem")
 
     columns = util.get_input_tables_and_columns(pg, DB_IMPORT_SCHEMA)
     for column in columns:
@@ -321,7 +321,7 @@ def align_db_typing(trimmed_token):
     # I believe it's more readable to not have it wrap long lists of function arguments. 
 
 
-    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
+    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode=DB_SSL_REQUIREMENT, sslrootcert="/root/rds-combined-ca-bundle.pem")
 
     # query list of the tables which were created by the pgloader import process
     imported_tables = util.get_imported_tables(pg, DB_IMPORT_SCHEMA)
@@ -385,7 +385,7 @@ def align_records(typed_token, dry_run):
     logger = prefect.context.get("logger")
 
     # fmt: off
-    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
+    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode=DB_SSL_REQUIREMENT, sslrootcert="/root/rds-combined-ca-bundle.pem")
     print("Finding updated records")
 
     output_map = mappings.get_table_map()
@@ -517,7 +517,7 @@ with Flow(
     # OR
 
     zip_location = specify_extract_location(
-    "/Users/frank/Development/atd-prefect/flows/vision-zero/cris_import/example_extracts/july-2022.zip"
+    "/root/cris_import/data/july-2022.zip"
     )
 
     # "/root/cris_import/data/2022-ytd.zip",
@@ -537,7 +537,7 @@ with Flow(
     align_records_token = align_records(typed_token=typed_token, dry_run=dry_run)
 
     # push up the archives to s3 for archival
-    uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
+    # uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
 
     # remove archives from SFTP endpoint
     removal_token = remove_archives_from_sftp_endpoint(zip_location)
@@ -552,4 +552,4 @@ with Flow(
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
 #flow.register(project_name="vision-zero")
-flow.run(dry_run=False)
+flow.run(dry_run=True)
