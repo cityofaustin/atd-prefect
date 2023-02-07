@@ -55,6 +55,10 @@ def grant_permissions():
         sql = f'GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO staff'
         logger.info(sql)
         cursor.execute(sql)
+
+        sql = f'GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema} TO staff'
+        logger.info(sql)
+        cursor.execute(sql)
     
     pg.commit()
 
