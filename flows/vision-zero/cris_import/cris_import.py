@@ -482,11 +482,11 @@ with Flow(
     dry_run = Parameter("dry_run", default=True, required=True)
 
     # get a location on disk which contains the zips from the sftp endpoint
-    # zip_location = download_extract_archives()
+    zip_location = download_extract_archives()
 
     # OR
 
-    zip_location = specify_extract_location("/root/cris_import/data/july-2022.zip")
+    #zip_location = specify_extract_location("/root/cris_import/data/july-2022.zip")
 
     # "/root/cris_import/data/2022-ytd.zip",
     # "/root/cris_import/data/july-2022.zip",
@@ -519,5 +519,5 @@ with Flow(
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
-# flow.register(project_name="vision-zero")
-flow.run(dry_run=True)
+flow.register(project_name="vision-zero")
+# flow.run(dry_run=True)
