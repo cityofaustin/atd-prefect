@@ -19,5 +19,5 @@ WORKDIR /root/
 # The following two lines inflate build times and image size, but they provide man pages in the image.
 # If, in the future, we find ourselves motivated to crush down this image size, such as if it were to be
 # useful to the public at large and accumulating lots of downloads, we can disable these lines.
-RUN apt-get install -y man-db
-RUN yes | unminimize
+#RUN apt-get install -y man-db
+#RUN yes | unminimize
