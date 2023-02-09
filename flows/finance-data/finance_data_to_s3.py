@@ -4,8 +4,11 @@
 Name: ATD Finance Data Flow
 Description: Gets Finance data from a database, places it in an S3 bucket, 
              then moves it along to Knack and socrata.
-Schedule: "30 12 * * *"
-Labels: atd-data02, moped
+
+Build Deployment yaml file:
+$ prefect deployment build flows/finance-data/finance_data_to_s3.py:main --name "Finance Data Publishing" -q ch-test-queue -sb github/github-atd-prefect
+Then, apply this deployment
+$ prefect deployment apply finance_data_flow-deployment.yaml
 """
 
 import os
