@@ -162,7 +162,7 @@ def main():
         )
         logger.info(master_agreements_res)
 
-        fdus_res = upload_to_s3(environment_variables["data-tracker"], "fdus")\
+        fdus_res = upload_to_s3(environment_variables["data-tracker"], "fdus")
         logger.info(fdus_res)
 
         socrata_start = if(all([task_orders_res, units_res, fdus_res]):
