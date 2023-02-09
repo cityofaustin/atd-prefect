@@ -3,7 +3,7 @@
 ###
 name: Finance Data Publishing
 description: null
-version: 5235fd03bbe0427dc3220623afbcfce4
+version: 44b91765bebf41affabb0e2ab1bbbff2
 # The work queue that will handle this deployment's runs
 work_queue_name: ch-test-queue
 work_pool_name: default-agent-pool
@@ -51,4 +51,4 @@ parameter_openapi_schema:
   properties: {}
   required: null
   definitions: null
-timestamp: '2023-02-09T19:11:41.877290+00:00'
+timestamp: '2023-02-09T19:19:24.782290+00:00'
