@@ -130,43 +130,43 @@ def main():
         )
         logger.info(task_orders_res)
 
-        # finance_purchasing_res = upload_to_knack(
-        #     environment_variables.value["finance-purchasing"],
-        #     "task_orders",
-        #     "finance-purchasing",
-        #     task_orders_res,
-        # )
-        # logger.info(finance_purchasing_res)
+        finance_purchasing_res = upload_to_knack(
+            environment_variables.value["finance-purchasing"],
+            "task_orders",
+            "finance-purchasing",
+            task_orders_res,
+        )
+        logger.info(finance_purchasing_res)
 
-        # data_tracker_res = upload_to_knack(
-        #     environment_variables.value["data-tracker"],
-        #     "task_orders",
-        #     "data-tracker",
-        #     task_orders_res,
-        # )
-        # logger.info(data_tracker_res)
+        data_tracker_res = upload_to_knack(
+            environment_variables.value["data-tracker"],
+            "task_orders",
+            "data-tracker",
+            task_orders_res,
+        )
+        logger.info(data_tracker_res)
 
-        # units_res = upload_to_s3(environment_variables.value["data-tracker"], "units")
-        # logger.info(units_res)
+        units_res = upload_to_s3(environment_variables.value["data-tracker"], "units")
+        logger.info(units_res)
 
-        # data_tracker_res = upload_to_knack(
-        #     environment_variables.value["data-tracker"], "units", "data-tracker", units_res
-        # )
-        # logger.info(data_tracker_res)
+        data_tracker_res = upload_to_knack(
+            environment_variables.value["data-tracker"], "units", "data-tracker", units_res
+        )
+        logger.info(data_tracker_res)
 
-        # objects_res = upload_to_s3(environment_variables.value["data-tracker"], "objects")
-        # logger.info(objects_res)
+        objects_res = upload_to_s3(environment_variables.value["data-tracker"], "objects")
+        logger.info(objects_res)
 
-        # master_agreements_res = upload_to_s3(
-        #     environment_variables.value["data-tracker"], "master_agreements"
-        # )
-        # logger.info(master_agreements_res)
+        master_agreements_res = upload_to_s3(
+            environment_variables.value["data-tracker"], "master_agreements"
+        )
+        logger.info(master_agreements_res)
 
-        # fdus_res = upload_to_s3(environment_variables.value["data-tracker"], "fdus")
-        # logger.info(fdus_res)
+        fdus_res = upload_to_s3(environment_variables.value["data-tracker"], "fdus")
+        logger.info(fdus_res)
 
-        # if(all([task_orders_res, units_res, fdus_res])):
-        #     upload_to_socrata(environment_variables.value["data-tracker"])
+        if(all([task_orders_res, units_res, fdus_res])):
+            upload_to_socrata(environment_variables.value["data-tracker"])
 
 
 if __name__ == "__main__":
