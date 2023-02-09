@@ -34,25 +34,25 @@ from prefect.tasks.docker import PullImage
 from prefect.utilities.notifications import slack_notifier
 
 
-# Signs/Markings Contractor Work Orders Config
+# Location Updater for Data-Tracker Config
 FLOW_NAME_UNIQUE = "Signals to Artbox Knack App"
-APP_NAME = "data-tracker"
-CONTAINER = "view_197"
+APP_NAME = "data-tracker-test"
+CONTAINER = "view_1201"
 
 # Optional Services
 LAYER_NAME = (
     ""  # If provided, will be used in agol_build_markings_segment_geometries.py
 )
-APP_NAME_DEST = "smart-mobility"  # If provided, will be used in records_to_knack.py
-CONTAINER_DEST = "view_396"  # Needed in order to use records_to_knack.py
+APP_NAME_DEST = ""  # If provided, will be used in records_to_knack.py
+CONTAINER_DEST = ""  # Needed in order to use records_to_knack.py
 SOCRATA_FLAG = False  # If True, will run records_to_socrata.py
 AGOL_FLAG = False  # If True, will run records_to_agol.py
 REPLACE_DATA = False  # Flag that will overwrite all data (ignores date)
-
+LOCATION_UPDATE = True # Runs location_updater
 
 # Select the appropriate tag for the Docker Image
 # docker_env will also be taken as a parameter
-DOCKER_TAG = "production"
+DOCKER_TAG = "test"
 
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed])
@@ -214,6 +214,36 @@ def records_to_socrata(
             image=docker_image,
             working_dir=None,
             command=f"python atd-knack-services/services/records_to_socrata.py -a {app_name} -c {container} -d {date_filter}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+# Update Knack Locations
+@task(
+    name="location_updater",
+    task_run_name="location_updater (app: {app_name}, container: {container}, date_filter: {date_filter})",
+    max_retries=1,
+    timeout=timedelta(minutes=60),
+    retry_delay=timedelta(minutes=5),
+    state_handlers=[handler],
+    log_stdout=True,
+)
+def records_to_socrata(
+    app_name, container, date_filter, environment_variables, docker_image
+):
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=docker_image,
+            working_dir=None,
+            command=f"python atd-knack-services/services/knack_location_updater.py -a {app_name} -c {container} -d {date_filter}",
             environment=environment_variables,
             volumes=None,
             remove=True,
