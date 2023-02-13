@@ -225,6 +225,7 @@ def remove_archives_from_sftp_endpoint(zip_location):
 
 @task(name="pgloader CSV into DB")
 def pgloader_csvs_into_database(directory):
+    logger = prefect.context.get("logger")
     # Walk the directory and find all the CSV files
     pgloader_command_files_tmpdir = tempfile.mkdtemp()
     for root, dirs, files in os.walk(directory):
@@ -265,7 +266,8 @@ LOAD CSV
     );
 $$;\n""")
                 cmd = f'pgloader {command_file}'
-                os.system(cmd)
+                if os.system(cmd) != 0:
+                  logger.info('Unable to execute pgloader command')
 
     return pgloader_command_files_tmpdir
 
