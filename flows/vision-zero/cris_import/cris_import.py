@@ -244,13 +244,14 @@ def pgloader_csvs_into_database(directory):
                 command_file = pgloader_command_files_tmpdir + "/" + table + ".load"
                 print(f'Command file: {command_file}')
 
-                CONNECTION_STRING = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}'
+                # See https://github.com/dimitri/pgloader/issues/768#issuecomment-693390290
+                CONNECTION_STRING = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}?sslmode=allow'
 
                 with open(command_file, 'w') as file:
                     file.write(f"""
 LOAD CSV
     FROM '{directory}/{filename}' ({headers_line})
-    INTO  {CONNECTION_STRING}?import.{table} ({headers_line})
+    INTO  {CONNECTION_STRING}&import.{table} ({headers_line})
     WITH truncate,
         skip header = 1
     BEFORE LOAD DO 
