@@ -3,15 +3,21 @@
 ###
 name: 'Knack Services: SM Contractor Work Orders'
 description: null
-version: 2cbb39c5b0ab384dd65349ed7cb5fa55
+version: 78000539d87430a72bd550dcce3717a8
 # The work queue that will handle this deployment's runs
 work_queue_name: ch-test-queue
-work_pool_name: null
+work_pool_name: default-agent-pool
 tags: []
-parameters: {}
+parameters: {"commands":['atd-knack-services/services/records_to_postgrest.py -a signs-markings -c view_3628', 'atd-knack-services/services/records_to_agol.py -a signs-markings -c view_3628', 'atd-knack-services/services/records_to_socrata.py -a signs-markings -c view_3628', 'atd-knack-services/services/agol_build_markings_segment_geometries.py -l markings_contractor_work_orders']}
 schedule: null
-is_schedule_active: null
+is_schedule_active: true
 infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: 'Knack Services: Signs Markings Contractor Work Orders'
+manifest_path: null
 infrastructure:
   type: process
   env: {}
@@ -20,14 +26,11 @@ infrastructure:
   command: null
   stream_output: true
   working_dir: null
+  _block_document_id: 94db8c96-2455-453a-b143-845ffa98ea2a
+  _block_document_name: anonymous-3dd57c23-aaf4-4ebb-9353-ec6d51f79176
+  _is_anonymous: true
   block_type_slug: process
   _block_type_slug: process
-
-###
-### DO NOT EDIT BELOW THIS LINE
-###
-flow_name: 'Knack Services: Signs Markings Contractor Work Orders'
-manifest_path: null
 storage:
   repository: https://github.com/cityofaustin/atd-prefect
   reference: ch-prefect2-atd-knack-services
@@ -50,4 +53,4 @@ parameter_openapi_schema:
   required:
   - commands
   definitions: null
-timestamp: '2023-02-14T16:58:34.220710+00:00'
+timestamp: '2023-02-14T17:06:10.167776+00:00'
