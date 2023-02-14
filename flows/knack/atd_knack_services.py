@@ -98,6 +98,17 @@ def docker_commands(environment_variables, commands):
         output.append(response)
     return output
 
+@task(
+    name="update_exec_date",
+    retries=10,
+    retry_delay_seconds=timedelta(seconds=15).seconds,
+)
+def update_exec_date():
+    # Update our JSON block with the updated date of last flow execution 
+    block = JSON.load(json_block)
+    block.value['PREV_EXEC']=datetime.today().strftime("%Y-%m-%d")
+    block.save(name = json_block, overwrite = True)
+
 @flow(name=f"Knack Services: Signs Markings Contractor Work Orders")
 def main(commands):
     # Logger instance
@@ -116,6 +127,9 @@ def main(commands):
             environment_variables, commands
         )
         logger.info(commands_res)
+
+    if commands_res:
+        update_exec_date()
 
 
 if __name__ == "__main__":
