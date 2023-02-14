@@ -27,16 +27,12 @@ from prefect.blocks.system import JSON
 docker_env = "production"
 docker_image = f"atddocker/atd-knack-services:{docker_env}"
 
-# Environment Variable Storage Block Name
-json_block = "atd-knack-services-sm-contractor-work-orders"
-
-
 @task(
     name="get_env_vars",
     retries=10,
     retry_delay_seconds=timedelta(seconds=15).seconds,
 )
-def get_env_vars():
+def get_env_vars(json_block):
     # Environment Variables stored in JSON block in Prefect
     return JSON.load(json_block).dict()["value"]
 
@@ -103,19 +99,19 @@ def docker_commands(environment_variables, commands):
     retries=10,
     retry_delay_seconds=timedelta(seconds=15).seconds,
 )
-def update_exec_date():
+def update_exec_date(json_block):
     # Update our JSON block with the updated date of last flow execution 
     block = JSON.load(json_block)
     block.value['PREV_EXEC']=datetime.today().strftime("%Y-%m-%d")
     block.save(name = json_block, overwrite = True)
 
 @flow(name=f"Knack Services: Signs Markings Contractor Work Orders")
-def main(commands):
+def main(commands, block):
     # Logger instance
     logger = get_run_logger()
 
     # Start: get env vars and pull the latest docker image
-    environment_variables = get_env_vars()
+    environment_variables = get_env_vars(block)
     docker_res = pull_docker_image()
 
     # Append date argument to our commands list 
@@ -129,7 +125,7 @@ def main(commands):
         logger.info(commands_res)
 
     if commands_res:
-        update_exec_date()
+        update_exec_date(block)
 
 
 if __name__ == "__main__":
@@ -145,5 +141,8 @@ if __name__ == "__main__":
         f"atd-knack-services/services/records_to_socrata.py -a {app_name} -c {container}",
         f"atd-knack-services/services/agol_build_markings_segment_geometries.py -l {layer_name}",
         ]
-    
-    main(commands)
+
+    # Environment Variable Storage Block Name
+    block = "atd-knack-services-sm-contractor-work-orders"
+
+    main(commands, block)
