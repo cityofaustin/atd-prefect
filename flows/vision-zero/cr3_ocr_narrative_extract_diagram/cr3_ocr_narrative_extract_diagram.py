@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 
-import os
 import json
-from subprocess import Popen, PIPE
 
 import prefect
 from prefect import Flow

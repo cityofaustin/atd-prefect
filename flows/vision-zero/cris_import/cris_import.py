@@ -26,6 +26,8 @@ import prefect
 from prefect import task, Flow, Parameter
 from prefect.client import Client
 from prefect.backend import get_key_value
+from prefect.engine.state import Failed, TriggerFailed, Retrying
+from prefect.utilities.notifications import slack_notifier
 
 import lib.mappings as mappings
 import lib.sql as util
@@ -59,14 +61,15 @@ DB_PASS = kv_dictionary["DB_PASS"]
 DB_NAME = kv_dictionary["DB_NAME"]
 DB_IMPORT_SCHEMA = kv_dictionary["DB_IMPORT_SCHEMA"]
 
-
-
+# Set up slack fail handler
+handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
 
 @task(
     name="Specify where archive can be found",
     slug="locate-zips",
     max_retries=3,
     retry_delay=datetime.timedelta(minutes=2),
+    state_handlers=[handler],
 )
 def specify_extract_location(file):
     zip_tmpdir = tempfile.mkdtemp()
@@ -79,6 +82,7 @@ def specify_extract_location(file):
     slug="get-zips",
     max_retries=3,
     retry_delay=datetime.timedelta(minutes=2),
+    state_handlers=[handler],
 )
 def download_extract_archives():
     """
@@ -115,6 +119,7 @@ def download_extract_archives():
     max_retries=3,
     retry_delay=datetime.timedelta(minutes=2),
     nout=1,
+    state_handlers=[handler],
 )
 def unzip_archives(archives_directory):
     """
@@ -138,8 +143,8 @@ def unzip_archives(archives_directory):
     return extracted_csv_directories
 
 
-@task(name="Cleanup temporary directories", slug="cleanup-temporary-directories")
-def cleanup_temporary_directories(zip_location, extracted_archives):
+@task(name="Cleanup temporary directories", slug="cleanup-temporary-directories", state_handlers=[handler],)
+def cleanup_temporary_directories(zip_location, pgloader_command_files, extracted_archives):
     """
     Remove directories that have accumulated during the flow's execution
 
@@ -157,13 +162,18 @@ def cleanup_temporary_directories(zip_location, extracted_archives):
     logger = prefect.context.get("logger")
 
     shutil.rmtree(zip_location)
+
+    print(pgloader_command_files)
+    for directory in pgloader_command_files:
+        shutil.rmtree(directory)
+
     for directory in extracted_archives:
         shutil.rmtree(directory)
 
     return None
 
 
-@task(name="Upload CSV files on s3 for archival")
+@task(name="Upload CSV files on s3 for archival", state_handlers=[handler],)
 def upload_csv_files_to_s3(extract_directory):
     """
     Upload CSV files which came from CRIS exports up to S3 for archival
@@ -199,7 +209,7 @@ def upload_csv_files_to_s3(extract_directory):
     return extract_directory
 
 
-@task(name="Remove archive from SFTP Endpoint")
+@task(name="Remove archive from SFTP Endpoint", state_handlers=[handler],)
 def remove_archives_from_sftp_endpoint(zip_location):
     """
     Delete the archives which have been processed from the SFTP endpoint
@@ -221,67 +231,65 @@ def remove_archives_from_sftp_endpoint(zip_location):
 
     return None
 
-
-@task(name="Futter CSV into DB")
-def futter_csvs_into_database(directory):
-
-    """
-    Use `pgfutter` to import each CSV file received from CRIS into the database. These tables created
-    are found in the `import` schema, which can be configured via KV store or environment variable.
-    The tables are DROPed and CREATED before each import, and the names used for each table are drawn
-    from the filename provided by CRIS, extracted by a regex.
-
-    Arguments:
-        directory: String representing the path of the temporary directory containing the CSV files
-
-    Returns: Boolean, as a prefect task token representing the import
-    """
-
-    # The program is distributed from GitHub compiled for multiple architectures. This utility checks the system
-    # running the task and uses the correct one.
-    futter = util.get_pgfutter_path()
-
-    # print(f"Futtering: {directory}")
-
+@task(name="pgloader CSV into DB", max_retries=2, retry_delay=datetime.timedelta(minutes=1), state_handlers=[handler],)
+def pgloader_csvs_into_database(directory):
     # Walk the directory and find all the CSV files
+    pgloader_command_files_tmpdir = tempfile.mkdtemp()
     for root, dirs, files in os.walk(directory):
         for filename in files:
             if filename.endswith(".csv"):
-
                 # Extract the table name from the filename. They are named `crash`, `unit`, `person`, `primaryperson`, & `charges`.
                 table = re.search("extract_[\d_]+(.*)_[\d].*\.csv", filename).group(1)
 
-                # Request the database drop any existing table with the same name
-                cmd = f'echo "drop table {DB_IMPORT_SCHEMA}.{table};" | PGPASSWORD={DB_PASS} psql -h {DB_HOST} -U {DB_USER} {DB_NAME}'
-                os.system(cmd)
+                headers_line_with_newline = None
 
-                # Build the futter command with correct credentials
-                cmd = (
-                    f"{futter} --host {DB_HOST} --username {DB_USER} --pw {DB_PASS} --dbname {DB_NAME} --schema {DB_IMPORT_SCHEMA} --table "
-                    + table
-                    + " csv "
-                    + directory
-                    + "/"
-                    + filename
-                )
-                # execute the futter command
-                os.system(cmd)
-
-    # return a token for prefect to hand off to subsequent tasks in the Flow
-    return True
+                with open(directory + "/" + filename, "r") as file:
+                    headers_line_with_newline = file.readline()
+                headers_line = headers_line_with_newline.strip()
 
 
-@task(name="Remove trailing carriage returns from imported data")
-def remove_trailing_carriage_returns(futter_token):
+                headers = headers_line.split(',')
+                command_file = pgloader_command_files_tmpdir + "/" + table + ".load"
+                print(f'Command file: {command_file}')
 
-    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
+                # See https://github.com/dimitri/pgloader/issues/768#issuecomment-693390290
+                CONNECTION_STRING = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}?sslmode=allow'
+
+                with open(command_file, 'w') as file:
+                    file.write(f"""
+LOAD CSV
+    FROM '{directory}/{filename}' ({headers_line})
+    INTO  {CONNECTION_STRING}&import.{table} ({headers_line})
+    WITH truncate,
+        skip header = 1
+    BEFORE LOAD DO 
+    $$ drop table if exists import.{table}; $$,
+    $$ create table import.{table} (\n""")
+                    fields = []
+                    for field in headers:
+                        fields.append(f'       {field} character varying') 
+                    file.write(',\n'.join(fields))
+                    file.write(f"""
+    );
+$$;\n""")
+                cmd = f'pgloader {command_file}'
+                if os.system(cmd) != 0:
+                  raise Exception("pgloader did not execute successfully")
+
+    return pgloader_command_files_tmpdir
+
+
+@task(name="Remove trailing carriage returns from imported data", state_handlers=[handler],)
+def remove_trailing_carriage_returns(data_loaded_token):
+
+    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
 
     columns = util.get_input_tables_and_columns(pg, DB_IMPORT_SCHEMA)
     for column in columns:
         util.trim_trailing_carriage_returns(pg, DB_IMPORT_SCHEMA, column)
 
 
-@task(name="Align DB Types")
+@task(name="Align DB Types", state_handlers=[handler],)
 def align_db_typing(trimmed_token):
 
     """
@@ -290,7 +298,7 @@ def align_db_typing(trimmed_token):
     and will raise an exception if CRIS begins feeding the system data it's not ready to parse and handle.
 
     Arguments:
-        futter_token: Boolean value received from the previously ran task which imported the CSV files into the database.
+        data_loaded_token: Boolean value received from the previously ran task which imported the CSV files into the database.
 
     Returns: Boolean representing the completion of the import table type alignment
     """
@@ -300,9 +308,9 @@ def align_db_typing(trimmed_token):
     # I believe it's more readable to not have it wrap long lists of function arguments. 
 
 
-    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
+    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
 
-    # query list of the tables which were created by the pgfutter import process
+    # query list of the tables which were created by the pgloader import process
     imported_tables = util.get_imported_tables(pg, DB_IMPORT_SCHEMA)
 
     # pull our map which connects the names of imported tables to the target tables in VZDB
@@ -344,7 +352,7 @@ def align_db_typing(trimmed_token):
     return True
 
 
-@task(name="Insert / Update records in target schema")
+@task(name="Insert / Update records in target schema", state_handlers=[handler],)
 def align_records(typed_token, dry_run):
 
     """
@@ -364,7 +372,7 @@ def align_records(typed_token, dry_run):
     logger = prefect.context.get("logger")
 
     # fmt: off
-    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME)
+    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
     print("Finding updated records")
 
     output_map = mappings.get_table_map()
@@ -505,9 +513,9 @@ with Flow(
     # a list of temporary directories containing the files of each
     extracted_archives = unzip_archives(zip_location)
 
-    futter_token = futter_csvs_into_database.map(extracted_archives)
+    pgloader_command_files = pgloader_csvs_into_database.map(extracted_archives)
 
-    trimmed_token = remove_trailing_carriage_returns(futter_token)
+    trimmed_token = remove_trailing_carriage_returns(pgloader_command_files)
 
     typed_token = align_db_typing(trimmed_token=trimmed_token)
 
@@ -522,6 +530,7 @@ with Flow(
     cleanup = cleanup_temporary_directories(
         zip_location,
         extracted_archives,
+        pgloader_command_files,
         upstream_tasks=[align_records_token, removal_token],
     )
 
