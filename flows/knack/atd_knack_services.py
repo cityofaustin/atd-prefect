@@ -125,11 +125,11 @@ if __name__ == "__main__":
 
     # List of commands to be sent to the docker image, 
     # Note that the date filter arg is added last in determine_date_args task 
-    cmds = [
+    commands = [
         f"atd-knack-services/services/records_to_postgrest.py -a {app_name} -c {container}",
         f"atd-knack-services/services/records_to_agol.py -a {app_name} -c {container}",
         f"atd-knack-services/services/records_to_socrata.py -a {app_name} -c {container}",
         f"atd-knack-services/services/agol_build_markings_segment_geometries.py -l {layer_name}",
         ]
     
-    main(cmds)
+    main(commands)
