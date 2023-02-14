@@ -67,7 +67,7 @@ def determine_date_args(environment_variables, commands):
             output.append(f"{c} -d 1970-01-01")
         return output
 
-    prev_exec = environment_variables.value("PREV_EXEC")
+    prev_exec = environment_variables["PREV_EXEC"]
     for c in commands:
         output.append(f"{c} -d {prev_exec}")
     return output
