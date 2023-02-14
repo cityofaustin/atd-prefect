@@ -38,7 +38,7 @@ json_block = "atd-knack-services-sm-contractor-work-orders"
 )
 def get_env_vars():
     # Environment Variables stored in JSON block in Prefect
-    return JSON.load(json_block).json()
+    return JSON.load(json_block).dict()["value"]
 
 
 @task(
