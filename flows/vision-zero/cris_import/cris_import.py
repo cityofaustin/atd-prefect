@@ -223,7 +223,7 @@ def remove_archives_from_sftp_endpoint(zip_location):
 
     return None
 
-@task(name="pgloader CSV into DB")
+@task(name="pgloader CSV into DB", max_retries=2, retry_delay=datetime.timedelta(minutes=1))
 def pgloader_csvs_into_database(directory):
     logger = prefect.context.get("logger")
     # Walk the directory and find all the CSV files
