@@ -25,7 +25,7 @@ from prefect.blocks.system import JSON
 
 # Docker settings
 docker_env = "production"
-docker_image = f"atddocker/atd-knack-services:{docker_tag}"
+docker_image = f"atddocker/atd-knack-services:{docker_env}"
 
 # Environment Variable Storage Block Name
 json_block = "atd-knack-services-sm-contractor-work-orders"
