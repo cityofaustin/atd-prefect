@@ -36,7 +36,7 @@ from prefect.utilities.notifications import slack_notifier
 
 # Location Updater for Data-Tracker Config
 FLOW_NAME_UNIQUE = "Signals to Artbox Knack App"
-APP_NAME = "data-tracker-test"
+APP_NAME = "data-tracker"
 CONTAINER = "view_1201"
 
 # Optional Services
