@@ -6,7 +6,7 @@ Description: Gets Finance data from a database, places it in an S3 bucket,
              then moves it along to Knack and socrata.
 
 Build Deployment yaml file:
-$ prefect deployment build flows/finance-data/finance_data_to_s3.py:main --name "Finance Data Publishing" -q ch-test-queue -sb github/github-atd-prefect
+$ prefect deployment build flows/finance-data/finance_data_to_s3.py:finance_data --name "Finance Data Publishing" --pool atd-data-03 -q default -sb github/github-atd-prefect
 Then, apply this deployment
 $ prefect deployment apply main-deployment.yaml
 """
@@ -119,7 +119,7 @@ def upload_to_socrata(environment_variables):
 
 
 @flow(name=f"Finance Data Publishing")
-def main():
+def finance_data():
     # Logger instance
     logger = get_run_logger()
 
@@ -153,11 +153,16 @@ def main():
         logger.info(units_res)
 
         data_tracker_res = upload_to_knack(
-            environment_variables.value["data-tracker"], "units", "data-tracker", units_res
+            environment_variables.value["data-tracker"],
+            "units",
+            "data-tracker",
+            units_res,
         )
         logger.info(data_tracker_res)
 
-        objects_res = upload_to_s3(environment_variables.value["data-tracker"], "objects")
+        objects_res = upload_to_s3(
+            environment_variables.value["data-tracker"], "objects"
+        )
         logger.info(objects_res)
 
         master_agreements_res = upload_to_s3(
@@ -168,9 +173,9 @@ def main():
         fdus_res = upload_to_s3(environment_variables.value["data-tracker"], "fdus")
         logger.info(fdus_res)
 
-        if(all([task_orders_res, units_res, fdus_res])):
+        if all([task_orders_res, units_res, fdus_res]):
             upload_to_socrata(environment_variables.value["data-tracker"])
 
 
 if __name__ == "__main__":
-    main()
+    finance_data()
