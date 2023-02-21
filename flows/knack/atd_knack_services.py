@@ -6,7 +6,7 @@ Description: Wrapper ETL for the atd-knack-services docker image
              with defined commands for the contractor work orders flow
 
 Create Deployment:
-$ prefect deployment build flows/knack/atd_knack_services.py:main --name "Knack Services: SM Contractor Work Orders" -q ch-test-queue -sb github/knack-services-wip
+$ prefect deployment build flows/knack/atd_knack_services.py:main --name "Knack Services: SM Contractor Work Orders" --pool atd-data-03 -q default -sb github/knack-services-wip
 
 Apply Deployment:
 $ prefect deployment apply main-deployment.yaml
@@ -26,6 +26,7 @@ from prefect.blocks.system import JSON
 # Docker settings
 docker_env = "production"
 docker_image = f"atddocker/atd-knack-services:{docker_env}"
+
 
 @task(
     name="get_env_vars",
@@ -58,7 +59,7 @@ def determine_date_args(environment_variables, commands):
     # Completely replace data on 15th day of every month,
     # to catch records potentially missed by incremental refreshes
     output = []
-    if datetime.today().day == 15: 
+    if datetime.today().day == 15:
         for c in commands:
             output.append(f"{c} -d 1970-01-01")
         return output
@@ -67,6 +68,7 @@ def determine_date_args(environment_variables, commands):
     for c in commands:
         output.append(f"{c} -d {prev_exec}")
     return output
+
 
 @task(
     name="docker_commands",
@@ -93,19 +95,21 @@ def docker_commands(environment_variables, commands):
         logger.info(response)
     return output
 
+
 @task(
     name="update_exec_date",
     retries=10,
     retry_delay_seconds=timedelta(seconds=15).seconds,
 )
 def update_exec_date(json_block):
-    # Update our JSON block with the updated date of last flow execution 
+    # Update our JSON block with the updated date of last flow execution
     block = JSON.load(json_block)
-    block.value['PREV_EXEC']=datetime.today().strftime("%Y-%m-%d")
-    block.save(name = json_block, overwrite = True)
+    block.value["PREV_EXEC"] = datetime.today().strftime("%Y-%m-%d")
+    block.save(name=json_block, overwrite=True)
+
 
 @flow(name=f"Knack Services: Signs Markings Contractor Work Orders")
-def main(commands, block):
+def atd_knack_services_sm_contractors(commands, block):
     # Logger instance
     logger = get_run_logger()
 
@@ -113,33 +117,31 @@ def main(commands, block):
     environment_variables = get_env_vars(block)
     docker_res = pull_docker_image()
 
-    # Append date argument to our commands list 
+    # Append date argument to our commands list
     commands = determine_date_args(environment_variables, commands)
 
     # Run our commands
     if docker_res:
-        commands_res = docker_commands(
-            environment_variables, commands, logger
-        )
+        commands_res = docker_commands(environment_variables, commands, logger)
     if commands_res:
         update_exec_date(block)
 
 
 if __name__ == "__main__":
-    app_name = "signs-markings" # Name of knack app
-    container = "view_3628" # Container of contractor work orders
-    layer_name = "markings_contractor_work_orders" # AGOL layer name for building segment geometries
+    app_name = "signs-markings"  # Name of knack app
+    container = "view_3628"  # Container of contractor work orders
+    layer_name = "markings_contractor_work_orders"  # AGOL layer name for building segment geometries
 
-    # List of commands to be sent to the docker image, 
-    # Note that the date filter arg is added last in determine_date_args task 
+    # List of commands to be sent to the docker image,
+    # Note that the date filter arg is added last in determine_date_args task
     commands = [
         f"atd-knack-services/services/records_to_postgrest.py -a {app_name} -c {container}",
         f"atd-knack-services/services/records_to_agol.py -a {app_name} -c {container}",
         f"atd-knack-services/services/records_to_socrata.py -a {app_name} -c {container}",
         f"atd-knack-services/services/agol_build_markings_segment_geometries.py -l {layer_name}",
-        ]
+    ]
 
     # Environment Variable Storage Block Name
     block = "atd-knack-services-sm-contractor-work-orders"
 
-    main(commands, block)
+    atd_knack_services_sm_contractors(commands, block)
