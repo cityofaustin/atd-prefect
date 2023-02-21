@@ -6,7 +6,7 @@ Description: Wrapper ETL for the atd-knack-services docker image
              with defined commands for updating location fields in data tracker. 
 
 Create Deployment:
-$ prefect deployment build flows/knack/atd_knack_services_data_tracker_location_updater.py:atd_knack_services_dt_locations --name "Knack Services: ATD Knack Services: Data Tracker Location Updater" -q ch-test-queue -sb github/knack-services-wip
+$ prefect deployment build flows/knack/atd_knack_services_data_tracker_location_updater.py:atd_knack_services_dt_locations --name "Knack Services: ATD Knack Services: Data Tracker Location Updater" --pool atd-data-03 -q default -sb github/knack-services-wip
 
 Apply Deployment:
 $ prefect deployment apply atd_knack_services_dt_locations-deployment.yaml

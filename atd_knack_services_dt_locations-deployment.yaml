@@ -1,0 +1,61 @@
+###
+### A complete description of a Prefect Deployment for flow 'ATD Knack Services: Data Tracker Location Updater'
+###
+name: 'Knack Services: ATD Knack Services: Data Tracker Location Updater'
+description: null
+version: f1c150cfcebb47cf5a17e3dabb4671a0
+# The work queue that will handle this deployment's runs
+work_queue_name: ch-test-queue
+work_pool_name: default-agent-pool
+tags: []
+parameters: 
+  commands:
+    - atd-knack-services/services/records_to_postgrest.py -a data-tracker -c view_1201
+    - atd-knack-services/services/knack_location_updater.py -a data-tracker -c view_1201
+  block : 'atd-knack-services-data-tracker-test-location-updater'
+schedule: null
+is_schedule_active: null
+infra_overrides: {}
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  block_type_slug: process
+  _block_type_slug: process
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: 'ATD Knack Services: Data Tracker Location Updater'
+manifest_path: null
+storage:
+  repository: https://github.com/cityofaustin/atd-prefect
+  reference: ch-prefect2-atd-knack-services
+  access_token: null
+  include_git_objects: true
+  _block_document_id: a404f1cd-6b78-49ca-a0ca-ada4d56f3482
+  _block_document_name: knack-services-wip
+  _is_anonymous: false
+  block_type_slug: github
+  _block_type_slug: github
+path: ''
+entrypoint: flows/knack/atd_knack_services_data_tracker_location_updater.py:atd_knack_services_dt_locations
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties:
+    commands:
+      title: commands
+      position: 0
+    block:
+      title: block
+      position: 1
+  required:
+  - commands
+  - block
+  definitions: null
+timestamp: '2023-02-21T15:39:44.994268+00:00'
