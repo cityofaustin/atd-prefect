@@ -75,7 +75,7 @@ def determine_date_args(environment_variables, commands):
     retries=1,
     retry_delay_seconds=timedelta(minutes=5).seconds,
 )
-def docker_commands(environment_variables, commands):
+def docker_commands(environment_variables, commands, logger):
     # list ex: ["atd-knack-services/services/records_to_postgrest.py -a {app_name} -c {container} -d {date_filter}"]
     for c in commands:
         response = (
