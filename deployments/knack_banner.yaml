@@ -3,7 +3,7 @@
 ###
 name: HR Knack Banner
 description: null
-version: 24cf2f1baa0bb7a1ffd5f6407058d3e3
+version: 7167d8ebe8099fb6d815d255df90f5d9
 # The work queue that will handle this deployment's runs
 work_queue_name: atd-data-03
 work_pool_name: default-agent-pool
@@ -53,4 +53,4 @@ parameter_openapi_schema:
   properties: {}
   required: null
   definitions: null
-timestamp: '2023-02-22T17:10:25.580787+00:00'
+timestamp: '2023-02-22T20:38:01.896521+00:00'
