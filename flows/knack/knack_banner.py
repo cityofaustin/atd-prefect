@@ -4,6 +4,11 @@
 Name: Knack Banner HR App integration
 Description: Update knack HR app based on records in Banner and CTM
 Schedule: "45 13 * * *"
+
+prefect deployment build flows/knack/knack_banner.py:knack_hr_banner_flow -t production \
+    --cron "45 13 * * *" -q atd-data-03 --name "HR Knack Banner" -o "deployments/knack_banner.yaml" \
+    -sb github/atd-prefect-main-branch --apply
+
 """
 
 import prefect
@@ -52,7 +57,6 @@ def knack_banner_update_employees(environment_variables):
 
 @flow(name=f"Knack HR Banner")
 def knack_hr_banner_flow():
-    logger = get_run_logger()
     environment_variables = get_env_vars()
     knack_banner_update_employees(environment_variables)
 
