@@ -45,7 +45,7 @@ def get_env_vars(json_block):
 )
 def pull_docker_image():
     client = docker.from_env()
-    client.images.pull("atddocker/atd-finance-data", tag=docker_env)
+    client.images.pull("atddocker/atd-knack-services", tag=docker_env)
     return True
 
 
