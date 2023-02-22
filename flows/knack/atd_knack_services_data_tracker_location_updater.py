@@ -9,7 +9,7 @@ Create Deployment:
 $ prefect deployment build flows/knack/atd_knack_services_data_tracker_location_updater.py:main --name "Knack Services: ATD Knack Services: Data Tracker Location Updater" --pool atd-data-03 -q default -sb github/knack-services-wip -o "deployments/atd_knack_services_data_tracker_location_updater.yaml"
 
 Apply Deployment:
-$ prefect deployment apply atd_knack_services_sm_contractors.yaml
+$ prefect deployment apply deployments/atd_knack_services_data_tracker_location_updater.yaml
 """
 
 import os
