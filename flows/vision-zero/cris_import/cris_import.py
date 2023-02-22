@@ -122,7 +122,7 @@ def download_extract_archives():
     # complete successfully.
     # see: https://www.gnu.org/software/libc/manual/html_node/Exit-Status.html
     if rsync.returncode != 0:
-        return false
+        return False
     logger.info("Temp Directory: " + zip_tmpdir)
     return zip_tmpdir
 
@@ -482,11 +482,11 @@ with Flow(
     dry_run = Parameter("dry_run", default=True, required=True)
 
     # get a location on disk which contains the zips from the sftp endpoint
-    zip_location = download_extract_archives()
+    #zip_location = download_extract_archives()
 
     # OR
 
-    #zip_location = specify_extract_location("/root/cris_import/data/july-2022.zip")
+    zip_location = specify_extract_location("/root/cris_import/data/july-2022.zip")
 
     # "/root/cris_import/data/2022-ytd.zip",
     # "/root/cris_import/data/july-2022.zip",
@@ -505,7 +505,7 @@ with Flow(
     align_records_token = align_records(typed_token=typed_token, dry_run=dry_run)
 
     # push up the archives to s3 for archival
-    uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
+    #uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
 
     # remove archives from SFTP endpoint
     removal_token = remove_archives_from_sftp_endpoint(zip_location)
@@ -514,10 +514,10 @@ with Flow(
         zip_location,
         extracted_archives,
         pgloader_command_files,
-        upstream_tasks=[align_records_token, removal_token, uploaded_archives_csvs],
+        upstream_tasks=[align_records_token, removal_token],
     )
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
-flow.register(project_name="vision-zero")
-# flow.run(dry_run=True)
+# flow.register(project_name="vision-zero")
+flow.run(dry_run=True)
