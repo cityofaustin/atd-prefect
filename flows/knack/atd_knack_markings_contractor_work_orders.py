@@ -6,10 +6,9 @@ Description: Wrapper ETL for the atd-knack-services docker image
              with defined commands for the contractor work orders flow
 
 Create Deployment:
-$ prefect deployment build flows/knack/atd_knack_markings_contractor_work_orders.py:atd_knack_services_sm_contractors --name "Knack Services: SM Contractor Work Orders" --pool atd-data-03 --cron "5 7 * * *" -q default -sb github/knack-services-wip --params=\`{"commands":"[atd-knack-services/services/records_to_postgrest.py -a signs-markings -c view_3628,atd-knack-services/services/records_to_agol.py -a signs-markings -c view_3628,atd-knack-services/services/records_to_socrata.py -a signs-markings -c view_3628,atd-knack-services/services/agol_build_markings_segment_geometries.py -l markings_contractor_work_orders]","block":"atd-knack-services-sm-contractor-work-orders"}\`
-
-Apply Deployment:
-$ prefect deployment apply main-deployment.yaml
+$ prefect deployment build flows/knack/atd_knack_markings_contractor_work_orders.py:atd_knack_services_sm_contractors --name "Knack Services: SM Contractor Work Orders" --pool atd-data-03 --cron "5 7 * * *" -q default -sb github/knack-services-wip -o "deployments/atd_knack_services_sm_contractors.yaml"
+ 
+$ prefect deployment apply deployments/atd_knack_services_sm_contractors.yaml
 """
 
 import os
@@ -93,7 +92,7 @@ def docker_commands(environment_variables, commands, logger):
             .decode("utf-8")
         )
         logger.info(response)
-    return output
+    return response
 
 
 @task(
