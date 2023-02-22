@@ -505,7 +505,7 @@ with Flow(
     align_records_token = align_records(typed_token=typed_token, dry_run=dry_run)
 
     # push up the archives to s3 for archival
-    # uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
+    uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
 
     # remove archives from SFTP endpoint
     removal_token = remove_archives_from_sftp_endpoint(zip_location)
@@ -514,7 +514,7 @@ with Flow(
         zip_location,
         extracted_archives,
         pgloader_command_files,
-        upstream_tasks=[align_records_token, removal_token],
+        upstream_tasks=[align_records_token, removal_token, uploaded_archives_csvs],
     )
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
