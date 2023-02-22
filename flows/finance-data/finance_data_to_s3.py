@@ -6,9 +6,9 @@ Description: Gets Finance data from a database, places it in an S3 bucket,
              then moves it along to Knack and socrata.
 
 Build Deployment yaml file:
-$ prefect deployment build flows/finance-data/finance_data_to_s3.py:finance_data --name "Finance Data Publishing" --cron "13 7 * * *" --pool atd-data-03 -q default -sb github/finance-data-wip
+$ prefect deployment build flows/finance-data/finance_data_to_s3.py:main --name "Finance Data Publishing" --cron "13 7 * * *" --pool atd-data-03 -q default -sb github/finance-data-wip -o "deployments/finance_data_to_s3.yaml" 
 Then, apply this deployment
-$ prefect deployment apply finance_data-deployment.yaml
+$ prefect deployment apply finance_data_to_s3.yaml
 """
 
 import os
@@ -119,7 +119,7 @@ def upload_to_socrata(environment_variables):
 
 
 @flow(name=f"Finance Data Publishing")
-def finance_data():
+def main():
     # Logger instance
     logger = get_run_logger()
 
@@ -178,4 +178,4 @@ def finance_data():
 
 
 if __name__ == "__main__":
-    finance_data()
+    main()

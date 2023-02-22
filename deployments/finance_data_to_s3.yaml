@@ -3,7 +3,7 @@
 ###
 name: Finance Data Publishing
 description: null
-version: 94f33a0c90322c0cedd29fc122fb1fd4
+version: a1804d9dd517dc9375e9b17a99cd8df2
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
@@ -45,11 +45,11 @@ storage:
   block_type_slug: github
   _block_type_slug: github
 path: ''
-entrypoint: flows/finance-data/finance_data_to_s3.py:finance_data
+entrypoint: flows/finance-data/finance_data_to_s3.py:main
 parameter_openapi_schema:
   title: Parameters
   type: object
   properties: {}
   required: null
   definitions: null
-timestamp: '2023-02-22T16:43:03.646270+00:00'
+timestamp: '2023-02-22T17:49:06.736197+00:00'
