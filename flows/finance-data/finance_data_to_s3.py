@@ -6,9 +6,9 @@ Description: Gets Finance data from a database, places it in an S3 bucket,
              then moves it along to Knack and socrata.
 
 Build Deployment yaml file:
-$ prefect deployment build flows/finance-data/finance_data_to_s3.py:finance_data --name "Finance Data Publishing" --pool atd-data-03 -q default -sb github/github-atd-prefect
+$ prefect deployment build flows/finance-data/finance_data_to_s3.py:finance_data --name "Finance Data Publishing" --cron "13 7 * * *" --pool atd-data-03 -q default -sb github/finance-data-wip
 Then, apply this deployment
-$ prefect deployment apply main-deployment.yaml
+$ prefect deployment apply finance_data-deployment.yaml
 """
 
 import os

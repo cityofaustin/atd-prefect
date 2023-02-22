@@ -7,11 +7,12 @@ version: 94f33a0c90322c0cedd29fc122fb1fd4
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
-tags:
-- finance
-- test
+tags: []
 parameters: {}
-schedule: null
+schedule:
+  cron: 13 7 * * *
+  timezone: null
+  day_or: true
 is_schedule_active: true
 infra_overrides: {}
 
@@ -28,18 +29,18 @@ infrastructure:
   command: null
   stream_output: true
   working_dir: null
-  _block_document_id: e1ea2f35-a6e0-49f6-8109-c0a0de65c148
-  _block_document_name: anonymous-7f8f0767-1b91-4474-884b-339829be4f21
+  _block_document_id: 48446782-86d8-41ee-9cc6-4b68e2da24c3
+  _block_document_name: anonymous-9730c7cb-f2e7-42c7-86c0-d56f968833dc
   _is_anonymous: true
   block_type_slug: process
   _block_type_slug: process
 storage:
-  repository: https://github.com/cityofaustin/atd-prefect/
+  repository: https://github.com/cityofaustin/atd-prefect
   reference: ch-prefect-2-test
   access_token: null
   include_git_objects: true
-  _block_document_id: 3d19b07d-d91e-4458-a629-151d14d5d72c
-  _block_document_name: github-atd-prefect
+  _block_document_id: 386bb209-603f-42ab-b361-d07010704f11
+  _block_document_name: finance-data-wip
   _is_anonymous: false
   block_type_slug: github
   _block_type_slug: github
@@ -51,4 +52,4 @@ parameter_openapi_schema:
   properties: {}
   required: null
   definitions: null
-timestamp: '2023-02-21T20:38:55.998930+00:00'
+timestamp: '2023-02-22T16:43:03.646270+00:00'
