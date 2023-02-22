@@ -6,10 +6,10 @@ Description: Wrapper ETL for the atd-knack-services docker image
              with defined commands for updating location fields in data tracker. 
 
 Create Deployment:
-$ prefect deployment build flows/knack/atd_knack_services_data_tracker_location_updater.py:atd_knack_services_dt_locations --name "Knack Services: ATD Knack Services: Data Tracker Location Updater" --pool atd-data-03 -q default -sb github/knack-services-wip
+$ prefect deployment build flows/knack/atd_knack_services_data_tracker_location_updater.py:main --name "Knack Services: ATD Knack Services: Data Tracker Location Updater" --pool atd-data-03 -q default -sb github/knack-services-wip -o "deployments/atd_knack_services_data_tracker_location_updater.yaml"
 
 Apply Deployment:
-$ prefect deployment apply atd_knack_services_dt_locations-deployment.yaml
+$ prefect deployment apply atd_knack_services_sm_contractors.yaml
 """
 
 import os
@@ -109,7 +109,7 @@ def update_exec_date(json_block):
 
 
 @flow(name=f"ATD Knack Services: Data Tracker Location Updater")
-def atd_knack_services_dt_locations(commands, block):
+def main(commands, block):
     # Logger instance
     logger = get_run_logger()
 
@@ -142,4 +142,4 @@ if __name__ == "__main__":
     # Environment Variable Storage Block Name
     block = "atd-knack-services-data-tracker-test-location-updater"
 
-    atd_knack_services_dt_locations(commands, block)
+    main(commands, block)

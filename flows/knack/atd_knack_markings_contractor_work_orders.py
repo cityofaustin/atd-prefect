@@ -6,7 +6,7 @@ Description: Wrapper ETL for the atd-knack-services docker image
              with defined commands for the contractor work orders flow
 
 Create Deployment:
-$ prefect deployment build flows/knack/atd_knack_markings_contractor_work_orders.py:main --name "Knack Services: SM Contractor Work Orders" --pool atd-data-03 --cron "5 7 * * *" -q default -sb github/knack-services-wip -o "deployments/atd_knack_services_sm_contractors.yaml"
+$ prefect deployment build flows/knack/atd_knack_markings_contractor_work_orders.py:main --name "Knack Services: SM Contractor Work Orders" --pool atd-data-03 --cron "5 7 * * *" -q default -sb github/knack-services-wip -o "deployments/atd_knack_markings_contractor_work_orders.py.yaml"
  
 $ prefect deployment apply deployments/atd_knack_services_sm_contractors.yaml
 """
