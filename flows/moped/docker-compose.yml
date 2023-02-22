@@ -1,0 +1,16 @@
+version: '3.7'
+services:
+  prefect-agent:
+    container_name: prefect-agent-moped
+    command: ["/root/agent/start_agent.sh"]
+    build: .
+    restart: always
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./prefect_bootstrap:/root/agent
+      - ./make_kv_store.py:/root/make_kv_store.py
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./test_instance_deployment:/root/test_instance_deployment
+    env_file:
+      - ./prefect_agent_environment_variables.env
