@@ -17,20 +17,18 @@ from prefect.blocks.system import JSON
 docker_image = f"atddocker/atd-knack-banner:production"
 
 
-slack_webhook_block = SlackWebhook.load("slack-failure-notification")
-
-
-@task(name="get_environment_variables") # do I need to put retries here?
+@task(name="get_environment_variables")
 def get_env_vars():
     # Environment Variables stored in JSON block in Prefect
     return JSON.load("atd-knack-banner")
+
 
 # Retrieve the provider's data
 @task(
     name="update HR employees in knack",
     retries=2,
     retry_delay_seconds=300,
-    task_run_name="atd-knack-banner/update-employees"
+    task_run_name="atd-knack-banner/update-employees",
 )
 def knack_banner_update_employees(environment_variables):
     logger = get_run_logger()
@@ -57,8 +55,6 @@ def knack_hr_banner_flow():
     logger = get_run_logger()
     environment_variables = get_env_vars()
     knack_banner_update_employees(environment_variables)
-
-    # slack_webhook_block.notify("Hello is this thing on")
 
 
 if __name__ == "__main__":
