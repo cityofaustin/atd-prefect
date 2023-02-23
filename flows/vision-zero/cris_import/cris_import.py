@@ -498,6 +498,13 @@ with Flow(
 
     pgloader_command_files = pgloader_csvs_into_database.map(extracted_archives)
 
+    # TODO add these indexes after the pgloader command
+    # create index import_crash_lookup on import.crash using btree (crash_id);
+    # create index import_unit_lookup on import.unit using btree (crash_id, unit_nbr);
+    # create index import_person_lookup on import.person using btree (crash_id, unit_nbr, prsn_nbr, prsn_type_id, prsn_occpnt_pos_id);
+    # create index import_primaryperson_lookup on import.primaryperson using btree (crash_id, unit_nbr, prsn_nbr, prsn_type_id, prsn_occpnt_pos_id); 
+
+
     trimmed_token = remove_trailing_carriage_returns(pgloader_command_files)
 
     typed_token = align_db_typing(trimmed_token=trimmed_token)
