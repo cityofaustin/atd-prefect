@@ -16,7 +16,6 @@ import docker
 
 # Prefect
 from prefect import flow, task, get_run_logger
-from prefect.blocks.notifications import SlackWebhook
 from prefect.blocks.system import JSON
 
 docker_image = f"atddocker/atd-knack-banner:production"
