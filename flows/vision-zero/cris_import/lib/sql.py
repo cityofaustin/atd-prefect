@@ -246,7 +246,8 @@ def try_statement(pg, output_map, table, public_key_sql, sql, dry_run):
         print("\a")  # 🛎
 
 
-def get_input_column_names(pg, DB_IMPORT_SCHEMA, table, target_columns):
+def get_input_column_names(DB_IMPORT_SCHEMA, table, target_columns):
+    pg = get_pg_connection()
     sql = f"""
     SELECT
         column_name,
@@ -280,7 +281,8 @@ def get_input_column_names(pg, DB_IMPORT_SCHEMA, table, target_columns):
     return valid_input_column_names
 
 
-def get_target_columns(pg, output_map, table):
+def get_target_columns(output_map, table):
+    pg = get_pg_connection()
     sql = f"""
     SELECT
         column_name,
@@ -300,7 +302,8 @@ def get_target_columns(pg, output_map, table):
     return target_columns
 
 
-def load_input_data_for_keying(pg, DB_IMPORT_SCHEMA, table):
+def load_input_data_for_keying(DB_IMPORT_SCHEMA, table):
+    pg = get_pg_connection()
     sql = f"select * from {DB_IMPORT_SCHEMA}.{table}"
 
     cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
