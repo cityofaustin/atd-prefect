@@ -474,6 +474,17 @@ def align_records(typed_token, dry_run):
     # fmt: on
     return True
 
+@task(name="Index imported schema tables of interest")
+def index_import(pgloader_command_files):
+    pg = get_pg_connection()
+    cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute('create index import_crash_lookup on import.crash using btree (crash_id);')
+    cursor.execute('create index import_unit_lookup on import.unit using btree (crash_id, unit_nbr);')
+    cursor.execute('create index import_person_lookup on import.person using btree (crash_id, unit_nbr, prsn_nbr, prsn_type_id, prsn_occpnt_pos_id);')
+    cursor.execute('create index import_primaryperson_lookup on import.primaryperson using btree (crash_id, unit_nbr, prsn_nbr, prsn_type_id, prsn_occpnt_pos_id);')
+    pg.commit()
+    return True
+
 
 with Flow(
     "CRIS Crash Import",
@@ -504,8 +515,9 @@ with Flow(
     # create index import_person_lookup on import.person using btree (crash_id, unit_nbr, prsn_nbr, prsn_type_id, prsn_occpnt_pos_id);
     # create index import_primaryperson_lookup on import.primaryperson using btree (crash_id, unit_nbr, prsn_nbr, prsn_type_id, prsn_occpnt_pos_id); 
 
+    indexed_token = index_import(pgloader_command_files)
 
-    trimmed_token = remove_trailing_carriage_returns(pgloader_command_files)
+    trimmed_token = remove_trailing_carriage_returns(indexed_token)
 
     typed_token = align_db_typing(trimmed_token=trimmed_token)
 
