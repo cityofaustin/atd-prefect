@@ -3,6 +3,8 @@ import psycopg2.extras
 
 import pprint
 
+from lib.database_connection import get_pg_connection
+
 pp = pprint.PrettyPrinter(indent=4)
 
 # This library is /not/ designed for reuse in other projects. It is designed to increase the
