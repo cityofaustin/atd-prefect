@@ -409,10 +409,10 @@ def align_records(typed_token, dry_run):
     for table in output_map.keys():
 
         # Query the list of columns in the target table
-        target_columns = util.get_target_columns(pg, output_map, table)
+        target_columns = util.get_target_columns(output_map, table)
 
         # Load up the list of imported records to iterate over. 
-        imported_records = util.load_input_data_for_keying(pg, DB_IMPORT_SCHEMA, table)
+        imported_records = util.load_input_data_for_keying( DB_IMPORT_SCHEMA, table)
 
         # Get columns used to uniquely identify a record
         key_columns = mappings.get_key_columns()[output_map[table]]
@@ -421,7 +421,7 @@ def align_records(typed_token, dry_run):
         linkage_clauses, linkage_sql = util.get_linkage_constructions(key_columns, output_map, table, DB_IMPORT_SCHEMA)
 
         # Build list of columns available for import by inspecting the input table
-        input_column_names = util.get_input_column_names(pg, DB_IMPORT_SCHEMA, table, target_columns)
+        input_column_names = util.get_input_column_names(DB_IMPORT_SCHEMA, table, target_columns)
 
         # iterate over each imported record and determine correct action
         for source in imported_records:
