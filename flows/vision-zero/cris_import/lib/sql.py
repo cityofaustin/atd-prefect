@@ -127,8 +127,11 @@ def get_key_clauses(table_keys, output_map, table, source, DB_IMPORT_SCHEMA):
     public_key_clauses = []
     import_key_clauses = []
     for key in table_keys[output_map[table]]:
-        public_key_clauses.append(f"cris.{output_map[table]}.{key} = {source[key]}")
-        import_key_clauses.append(f"{DB_IMPORT_SCHEMA}.{table}.{key} = {source[key]}")
+        value = source[key]
+        if value is None:
+            value = "null"
+        public_key_clauses.append(f"cris.{output_map[table]}.{key} = {value}")
+        import_key_clauses.append(f"{DB_IMPORT_SCHEMA}.{table}.{key} = {value}")
     public_key_sql = " and ".join(public_key_clauses)
     import_key_sql = " and ".join(import_key_clauses)
     return public_key_sql, import_key_sql
