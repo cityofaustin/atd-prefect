@@ -27,6 +27,8 @@ import lib.mappings as mappings
 import lib.sql as util
 import lib.graphql as graphql
 
+from lib.database_connection import get_pg_connection
+
 sys.path.insert(0, "/root/cris_import/atd-vz-data/atd-etl/app")
 from process.helpers_import import (
     insert_crash_change_template as insert_change_template,
