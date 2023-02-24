@@ -2,17 +2,17 @@
 ### A complete description of a Prefect Deployment for flow 'Knack HR Banner'
 ###
 name: HR Knack Banner
-description: null
+description: Gets updates from HR Banner endpoint and CTM email list and updates Knack HR app
 version: 7167d8ebe8099fb6d815d255df90f5d9
 # The work queue that will handle this deployment's runs
 work_queue_name: atd-data-03
-work_pool_name: default-agent-pool
+work_pool_name: atd-data-03
 tags:
 - production
 parameters: {}
 schedule:
-  cron: 45 13 * * *
-  timezone: null
+  cron: 45 7 * * *
+  timezone: America/Chicago
   day_or: true
 is_schedule_active: true
 infra_overrides: {}
