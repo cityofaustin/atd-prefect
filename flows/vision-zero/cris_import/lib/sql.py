@@ -145,9 +145,15 @@ def fetch_target_record(pg, output_map, table, public_key_sql):
     where 
     {public_key_sql}
     """
+
     cursor = pg.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cursor.execute(sql)
-    target = cursor.fetchone()
+    target = None
+    try:
+        cursor.execute(sql)
+        target = cursor.fetchone()
+    except:
+        pass
+
     return target
 
 
