@@ -9,7 +9,7 @@ work_queue_name: default
 work_pool_name: atd-data-03
 tags: []
 parameters:
-  block: atd-knack-services-data-tracker-test-location-updater
+  block: atd-knack-services-data-tracker-location-updater-prod
   commands:
   - atd-knack-services/services/records_to_postgrest.py -a data-tracker -c view_1201
   - atd-knack-services/services/knack_location_updater.py -a data-tracker -c view_1201

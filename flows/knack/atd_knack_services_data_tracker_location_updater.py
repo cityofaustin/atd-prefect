@@ -140,6 +140,6 @@ if __name__ == "__main__":
     ]
 
     # Environment Variable Storage Block Name
-    block = "atd-knack-services-data-tracker-test-location-updater"
+    block = "atd-knack-services-data-tracker-location-updater-prod"
 
     main(commands, block)
