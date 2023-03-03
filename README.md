@@ -65,17 +65,17 @@ flows/knack/knack_banner.py:knack_hr_banner_flow \
 --skip-upload \
 ```
 
-- After `prefect deployment build` include the following
+After `prefect deployment build` include the following
 - path/to/flow.py:functionname 
-- -q: work queue name (the agent that runs the flow). required.`atd-data-03` is our main agent that runs on atd-data03 in a conda environment. 
-- -t: optional tags you want to add to the flow
-- --cron: schedule for the flow to run, optional but if you don't set this
-- --name: the deployments name
-- -o: where the deployment file will be stored after creation. If this is blank, the file is created in the root directory with an automated name. Use the deployments folder and name your deployment file the same as your flow file
-- -sb: storage block. Where Prefect knows to look for your flow's code. The `github/atd-prefect-main-branch` is a block that points to the main branch of this repo. You can create temporary blocks to point to branches, but please delete them when you are done using them.
-- --skip-upload: Prefect's default is to upload a flows files to the storage block. Use this flag to skip this step since our workflow is to add to github and PR with approvals before merging. 
+- `-q`: work queue name (the agent that runs the flow). Required.`atd-data-03` is our main agent that runs on atd-data03 in a conda environment. See our gitbook documentation for more information on the agent. If you leave `-q` blank, or include a nonexistent queue/agent, prefect cloud will not be able to run the flow.
+- `-t`: optional tags you want to add to the flow
+- `--cron`: schedule for the flow to run, optional but if you don't set this
+- `--name`: the deployments name
+- `-o`: where the deployment file will be stored after creation. If this is blank, the file is created in the root directory with an automated name. Use the deployments folder and name your deployment file the same as your flow file
+- `-sb`: storage block. Where Prefect knows to look for your flow's code. The `github/atd-prefect-main-branch` is a block that points to the main branch of this repo. You can create temporary blocks to point to branches, but please delete them when you are done using them.
+- `--skip-upload`: Prefect's default is to upload a flows files to the storage block. Use this flag to skip this step since our workflow is to add to github and PR with approvals before merging. 
 
-The next step after building your deployment specification is to apply it. Once your flow has been approved and merged to main, run this command
+The next step after building your deployment specification is to apply it. Once your flow has been approved and merged to main, run this command, replacing the file name with the path to your deployment file.
 
 ```bash
 $ prefect deployment apply deployments/knack_banner.yaml
