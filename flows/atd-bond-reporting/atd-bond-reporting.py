@@ -85,7 +85,7 @@ def update_exec_date(json_block):
     block.save(name=json_block, overwrite=True)
 
 
-@flow(name=f"Knack Services: Signs Markings Contractor Work Orders")
+@flow(name=f"Bond Reporting Data Scripts")
 def main(commands, block):
     # Logger instance
     logger = get_run_logger()
@@ -105,8 +105,8 @@ if __name__ == "__main__":
     # List of commands to be sent to the docker image,
     # Note that the date filter arg is added last in determine_date_args task
     commands = [
-        "python atd-bond-reporting/bond_data.py",
-        "python atd-bond-reporting/bond_calculations.py",
+        "atd-bond-reporting/bond_data.py",
+        "atd-bond-reporting/bond_calculations.py",
     ]
 
     # Environment Variable Storage Block Name
