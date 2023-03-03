@@ -24,7 +24,7 @@ from prefect.blocks.system import JSON
 
 # Docker settings
 docker_env = "latest"
-docker_image = f"atddocker/atd-bond-reporting"
+docker_image = "atddocker/atd-bond-reporting"
 
 
 @task(
@@ -58,7 +58,7 @@ def docker_commands(environment_variables, commands, logger):
         response = (
             docker.from_env()
             .containers.run(
-                image=docker_image,
+                image=f"{docker_image}:{docker_env}",
                 working_dir=None,
                 command=f"python {c}",
                 environment=environment_variables,
