@@ -11,6 +11,8 @@ tags: []
 parameters: 
   block: atd-bond-reporting
   commands:
+    - atd-bond-reporting/microstrategy_to_s3.py -r "2020 Bond Expenses Obligated"
+    - atd-bond-reporting/microstrategy_to_s3.py -r "All bonds Expenses Obligated"
     - atd-bond-reporting/bond_data.py
     - atd-bond-reporting/bond_calculations.py
 schedule:

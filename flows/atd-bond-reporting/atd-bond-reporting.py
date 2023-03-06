@@ -50,8 +50,8 @@ def pull_docker_image():
 
 @task(
     name="docker_commands",
-    retries=1,
-    retry_delay_seconds=timedelta(minutes=5).seconds,
+    retries=3,
+    retry_delay_seconds=timedelta(minutes=2).seconds,
 )
 def docker_commands(environment_variables, commands, logger):
     for c in commands:
@@ -105,6 +105,8 @@ if __name__ == "__main__":
     # List of commands to be sent to the docker image,
     # Note that the date filter arg is added last in determine_date_args task
     commands = [
+        'atd-bond-reporting/microstrategy_to_s3.py -r "2020 Bond Expenses Obligated"',
+        'atd-bond-reporting/microstrategy_to_s3.py -r "All bonds Expenses Obligated"',
         "atd-bond-reporting/bond_data.py",
         "atd-bond-reporting/bond_calculations.py",
     ]
