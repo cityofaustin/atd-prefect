@@ -15,7 +15,7 @@ $ prefect deployment build flows/atd-finance-data/finance_data_to_s3.py:main \
 --description "Repo: https://github.com/cityofaustin/atd-finance-data, Gets Finance data from a database, places it in an S3 bucket, then moves it along to Knack and socrata."
 
 Then, apply this deployment
-$ prefect deployment apply finance_data_to_s3.yaml
+$ prefect deployment apply deployments/finance_data_to_s3.yaml
 """
 
 import os
