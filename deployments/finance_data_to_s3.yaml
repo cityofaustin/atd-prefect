@@ -2,8 +2,10 @@
 ### A complete description of a Prefect Deployment for flow 'Finance Data Publishing'
 ###
 name: Finance Data Publishing
-description: null
-version: a1804d9dd517dc9375e9b17a99cd8df2
+description: 'Repo: https://github.com/cityofaustin/atd-finance-data, Gets Finance
+  data from a database, places it in an S3 bucket, then moves it along to Knack and
+  socrata.'
+version: 684a41fb16f5aa3d41b4bfb4f4bbd762
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
@@ -45,11 +47,11 @@ storage:
   block_type_slug: github
   _block_type_slug: github
 path: ''
-entrypoint: flows/finance-data/finance_data_to_s3.py:main
+entrypoint: flows/atd-finance-data/finance_data_to_s3.py:main
 parameter_openapi_schema:
   title: Parameters
   type: object
   properties: {}
   required: null
   definitions: null
-timestamp: '2023-02-22T17:49:06.736197+00:00'
+timestamp: '2023-03-07T16:28:51.326467+00:00'

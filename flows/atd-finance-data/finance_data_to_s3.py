@@ -6,7 +6,14 @@ Description: Gets Finance data from a database, places it in an S3 bucket,
              then moves it along to Knack and socrata.
 
 Build Deployment yaml file:
-$ prefect deployment build flows/finance-data/finance_data_to_s3.py:main --name "Finance Data Publishing" --cron "13 7 * * *" --pool atd-data-03 -q default -sb github/finance-data-wip -o "deployments/finance_data_to_s3.yaml" 
+$ prefect deployment build flows/atd-finance-data/finance_data_to_s3.py:main \
+--name "Finance Data Publishing" \
+--cron "13 7 * * *" \
+--pool atd-data-03 -q default \
+-sb github/finance-data-wip \
+-o "deployments/finance_data_to_s3.yaml" \
+--description "Repo: https://github.com/cityofaustin/atd-finance-data, Gets Finance data from a database, places it in an S3 bucket, then moves it along to Knack and socrata."
+
 Then, apply this deployment
 $ prefect deployment apply finance_data_to_s3.yaml
 """
@@ -24,7 +31,7 @@ from prefect.blocks.system import JSON
 
 # Docker settings
 docker_env = "production"
-docker_image = f"atddocker/atd-finance-data:{docker_env}"
+docker_image = "atddocker/atd-finance-data"
 
 
 @task(
@@ -44,7 +51,7 @@ def get_env_vars():
 )
 def pull_docker_image():
     client = docker.from_env()
-    client.images.pull("atddocker/atd-finance-data", tag=docker_env)
+    client.images.pull(docker_image, tag=docker_env)
     return True
 
 
@@ -57,7 +64,7 @@ def upload_to_s3(environment_variables, name):
     response = (
         docker.from_env()
         .containers.run(
-            image=docker_image,
+            image=f"{docker_image}:{docker_env}",
             working_dir=None,
             command=f"python upload_to_s3.py {name}",
             environment=environment_variables,
@@ -80,7 +87,7 @@ def upload_to_knack(environment_variables, name, app, task_orders_res):
     response = (
         docker.from_env()
         .containers.run(
-            image=docker_image,
+            image=f"{docker_image}:{docker_env}",
             working_dir=None,
             command=f"python s3_to_knack.py {name} {app}",
             environment=environment_variables,
@@ -103,7 +110,7 @@ def upload_to_socrata(environment_variables):
     response = (
         docker.from_env()
         .containers.run(
-            image=docker_image,
+            image=f"{docker_image}:{docker_env}",
             working_dir=None,
             command="python s3_to_socrata.py",
             environment=environment_variables,
