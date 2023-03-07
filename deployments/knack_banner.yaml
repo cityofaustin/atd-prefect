@@ -2,8 +2,9 @@
 ### A complete description of a Prefect Deployment for flow 'Knack HR Banner'
 ###
 name: HR Knack Banner
-description: Gets updates from HR Banner endpoint and CTM email list and updates Knack HR app
-version: 7167d8ebe8099fb6d815d255df90f5d9
+description: Gets updates from HR Banner endpoint and CTM email list and updates Knack
+  HR app
+version: e3b891172d9593216b5b7cb84fc4e25d
 # The work queue that will handle this deployment's runs
 work_queue_name: atd-data-03
 work_pool_name: atd-data-03
@@ -11,10 +12,10 @@ tags:
 - production
 parameters: {}
 schedule:
-  cron: 45 7 * * *
-  timezone: America/Chicago
+  cron: 45 13 * * *
+  timezone: null
   day_or: true
-is_schedule_active: true
+is_schedule_active: false
 infra_overrides: {}
 
 ###
@@ -46,11 +47,11 @@ storage:
   block_type_slug: github
   _block_type_slug: github
 path: ''
-entrypoint: flows/knack/knack_banner.py:knack_hr_banner_flow
+entrypoint: flows/atd-knack-banner/knack_banner.py:knack_hr_banner_flow
 parameter_openapi_schema:
   title: Parameters
   type: object
   properties: {}
   required: null
   definitions: null
-timestamp: '2023-02-22T20:38:01.896521+00:00'
+timestamp: '2023-03-07T16:36:48.547729+00:00'

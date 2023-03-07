@@ -5,9 +5,9 @@ Name: Knack Banner HR App integration
 Description: Update knack HR app based on records in Banner and CTM
 Schedule: "45 13 * * *"
 
-prefect deployment build flows/knack/knack_banner.py:knack_hr_banner_flow -t production \
+prefect deployment build flows/atd-knack-banner/knack_banner.py:knack_hr_banner_flow -t production \
     --cron "45 13 * * *" -q atd-data-03 --name "HR Knack Banner" -o "deployments/knack_banner.yaml" \
-    -sb github/atd-prefect-main-branch --apply
+    -sb github/atd-prefect-main-branch --skip-upload
 
 """
 
