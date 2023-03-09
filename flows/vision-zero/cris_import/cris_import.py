@@ -61,6 +61,9 @@ DB_PASS = kv_dictionary["DB_PASS"]
 DB_NAME = kv_dictionary["DB_NAME"]
 DB_IMPORT_SCHEMA = kv_dictionary["DB_IMPORT_SCHEMA"]
 
+DB_BASTION_HOST = kv_dictionary["DB_BASTION_HOST"]
+DB_RDS_HOST = kv_dictionary["DB_RDS_HOST"]
+
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
 
