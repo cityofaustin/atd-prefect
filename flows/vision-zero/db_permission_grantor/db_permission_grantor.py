@@ -46,7 +46,6 @@ def grant_permissions():
         (DB_BASTION_HOST),
         ssh_username="vz-etl",
         ssh_private_key= '/root/.ssh/id_rsa', # will switch to ed25519 when we rebuild this for prefect 2
-        # ssh_private_key_password= creds["SSH_PKEY"],
         remote_bind_address=(DB_RDS_HOST, 5432)
         )
     ssh_tunnel.start()   
