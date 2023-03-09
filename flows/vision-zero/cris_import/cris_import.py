@@ -279,7 +279,7 @@ LOAD CSV
 $$;\n""")
                 cmd = f'pgloader {command_file}'
                 if os.system(cmd) != 0:
-                  raise Exception("pgloader did not execute successfully")
+                    raise Exception("pgloader did not execute successfully")
 
     return pgloader_command_files_tmpdir
 
