@@ -495,11 +495,23 @@ with Flow(
     dry_run = Parameter("dry_run", default=True, required=True)
 
     # get a location on disk which contains the zips from the sftp endpoint
-    #zip_location = download_extract_archives()
+    zip_location = download_extract_archives()
 
     # OR
 
-    zip_location = specify_extract_location("/root/cris_import/data/july-2022.zip")
+    # zip_location = specify_extract_location("/root/cris_import/data/july-2022.zip")
+
+    # zip_location = specify_extract_location("/root/cris_import/data/extract_2010_20230216105404372_86885_20130101-20131231_HAYSTRAVISWILLIAMSON.zip")
+    # zip_location = specify_extract_location("/root/cris_import/data/extract_2010_20230216105217209_86885_20140101-20141231_HAYSTRAVISWILLIAMSON.zip")
+    # zip_location = specify_extract_location("/root/cris_import/data/extract_2015_20230216105119289_86885_20150101-20151231_HAYSTRAVISWILLIAMSON.zip")
+    # zip_location = specify_extract_location("/root/cris_import/data/extract_2015_20230216105036978_86885_20160101-20161231_HAYSTRAVISWILLIAMSON.zip")
+    # zip_location = specify_extract_location("/root/cris_import/data/extract_2015_20230216104948738_86885_20170101-20171231_HAYSTRAVISWILLIAMSON.zip")
+    # zip_location = specify_extract_location("/root/cris_import/data/extract_2018_20230216104900917_86885_20180101-20181231_HAYSTRAVISWILLIAMSON.zip")
+    # zip_location = specify_extract_location("/root/cris_import/data/extract_2018_20230216104718740_86885_20190101-20191231_HAYSTRAVISWILLIAMSON.zip")
+    # zip_location = specify_extract_location("/root/cris_import/data/extract_2018_20230216104247048_86885_20200101-20201231_HAYSTRAVISWILLIAMSON.zip")
+    # zip_location = specify_extract_location("/root/cris_import/data/extract_2018_20230216104117672_86885_20210101-20211231_HAYSTRAVISWILLIAMSON.zip")
+    # zip_location = specify_extract_location("/root/cris_import/data/extract_2018_20230216104015305_86885_20220101-20221231_HAYSTRAVISWILLIAMSON.zip")
+    # zip_location = specify_extract_location("/root/cris_import/data/extract_2018_20230216105518862_86885_20230101-20230215_HAYSTRAVISWILLIAMSON.zip")
 
     # "/root/cris_import/data/2022-ytd.zip",
     # "/root/cris_import/data/july-2022.zip",
