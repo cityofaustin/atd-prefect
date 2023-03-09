@@ -18,18 +18,22 @@ DB_PASS = None
 DB_NAME = None
 SCHEMAS_CDL = None
 
-if False:
+if True:
     DB_HOST = os.getenv("DB_HOST")
     DB_USER = os.getenv("DB_USER")
     DB_PASS = os.getenv("DB_PASS")
     DB_NAME = os.getenv("DB_NAME")
     SCHEMAS_CDL = os.getenv("DB_PERMISSION_SCHEMAS")
+    DB_BASTION_HOST = os.getenv("DB_BASTION_HOST")
+    DB_RDS_HOST = os.getenv("DB_RDS_HOST")
 else:
     DB_HOST = kv_dictionary["DB_HOST"]
     DB_USER = kv_dictionary["DB_USER"]
     DB_PASS = kv_dictionary["DB_PASS"]
     DB_NAME = kv_dictionary["DB_NAME"]
     SCHEMAS_CDL = kv_dictionary["DB_PERMISSION_SCHEMAS"]
+    DB_BASTION_HOST = kv_dictionary["DB_BASTION_HOST"]
+    DB_RDS_HOST = kv_dictionary["DB_RDS_HOST"]
 
 SCHEMAS = SCHEMAS_CDL.split(", ")
 
