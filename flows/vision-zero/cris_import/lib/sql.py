@@ -15,7 +15,6 @@ pp = pprint.PrettyPrinter(indent=4)
 # in only one place (with one exception) in `cris_import.py`, one may appreciate these functions exist
 # only to improve readability and maintainability -- not reusability.
 
-
 def get_pgfutter_path():
     uname = os.uname()
     if uname.machine == "aarch64":
@@ -255,6 +254,7 @@ def try_statement(pg, output_map, table, public_key_sql, sql, dry_run):
         )
         print(f"Error executing:\n\n{sql}\n")
         print("\a")  # 🛎
+        # input("Press Enter to continue...")
 
 
 def get_input_column_names(DB_IMPORT_SCHEMA, table, target_columns):
