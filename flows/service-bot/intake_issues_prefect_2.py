@@ -23,9 +23,6 @@ from prefect.backend import get_key_value
 
 from prefect.utilities.notifications import slack_notifier
 
-# Select the appropriate tag for the Docker Image
-# docker_env will also be taken as a parameter
-DOCKER_TAG = "test"
 
 # Envrioment vars
 ENV = "production"
@@ -95,10 +92,12 @@ def intake_new_issues(environment_variables, docker_image):
 
 
 @flow(name="Service Bot: Intake Issues")
-def intake():
-    docker_tag = Parameter(
-        "Tag of the atd-service-bot Docker image", default=DOCKER_TAG, required=True
-    )
+def intake(docker_tag="test"):
+    """Intakes new issues from Knack to Github
+
+    Keyword arguments:
+    docker_tag -- the docker tag to use (default "test")
+    """
 
     # 1. Get secrets from Prefect KV Store
     environment_variables = get_env_vars()
