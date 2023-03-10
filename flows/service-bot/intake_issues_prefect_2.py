@@ -14,7 +14,7 @@ from datetime import timedelta
 
 
 # Prefect
-from prefect import Flow, task, Parameter
+from prefect import flow, task, Parameter
 from prefect.storage import GitHub
 from prefect.run_configs import LocalRun
 from prefect.engine.state import Failed
@@ -90,19 +90,12 @@ def intake_new_issues(environment_variables, docker_image):
     return response
 
 
-with Flow(
-    # Flow Name
-    "Service Bot: Intake Issues",
-    # Let's configure the agents to download the file from this repo
-    storage=GitHub(
-        repo="cityofaustin/atd-prefect",
-        path="flows/service-bot/intake_issues.py",
-        ref="main",  # The branch name
-        access_token_secret="GITHUB_ACCESS_TOKEN",
-    ),
-    run_config=LocalRun(labels=["atd-data02", "test"]),
-) as flow:
-    # Parameter task
+# TODOs
+# 1. Get env vars from JSON block ("test" and "production" are now nested in the same block)
+
+
+@flow(name="Service Bot: Intake Issues")
+def intake():
     docker_tag = Parameter(
         "Tag of the atd-service-bot Docker image", default=DOCKER_TAG, required=True
     )
@@ -116,9 +109,6 @@ with Flow(
     # 3. Intake new issues to github
     res = intake_new_issues(environment_variables, docker_image)
 
+
 if __name__ == "__main__":
-    flow.run(
-        parameters={
-            "Docker image tag": DOCKER_TAG,
-        }
-    )
+    intake()
