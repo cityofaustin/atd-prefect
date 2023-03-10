@@ -1,11 +1,12 @@
-#!/usr/bin/env python
-
 """
 Name: ATD Service Bot: Intake Issues
 Description: Sends new issue data from our service portal (knack) to our Github
-Repo atd-data-tech
-Schedule: * * * * * (AKA once every minute)
-Labels: WIP
+Schedule: */3 * * * * (AKA once every 3 minutes)
+prefect deployment build flows/atd-service-bot/intake_issues.py:main -t test \
+    --cron "*/3 * * * *" --pool atd-data-03 -q default \
+    --name "Service Bot: Intake Issues" -o "deployments/atd-service-bot-intake.yaml" \
+    -sb github/atd-prefect-main-branch --skip-upload \
+    --description "Repo: https://github.com/cityofaustin/atd-service-bot, Sends new issue data from our service portal (knack) to our Github"
 """
 
 import docker
@@ -15,8 +16,6 @@ from datetime import timedelta
 
 # Prefect
 from prefect import flow, task
-from prefect.storage import GitHub
-from prefect.run_configs import LocalRun
 from prefect.engine.state import Failed
 from prefect.blocks.system import JSON
 
@@ -83,6 +82,10 @@ def intake_new_issues(environment_variables, docker_image):
     )
     logger.info(response)
     return response
+
+
+# TODO: Figure out storage block in deployment build command. Skip upload?
+# TODO: What about pools and queues? Can we use these to organize flows?
 
 
 @flow(name="Service Bot: Intake Issues")
