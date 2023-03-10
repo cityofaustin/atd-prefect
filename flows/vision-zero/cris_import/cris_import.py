@@ -33,6 +33,8 @@ import lib.mappings as mappings
 import lib.sql as util
 import lib.graphql as graphql
 
+from sshtunnel import SSHTunnelForwarder
+
 sys.path.insert(0, "/root/cris_import/atd-vz-data/atd-etl/app")
 from process.helpers_import import (
     insert_crash_change_template as insert_change_template,
@@ -60,6 +62,9 @@ DB_USER = kv_dictionary["DB_USER"]
 DB_PASS = kv_dictionary["DB_PASS"]
 DB_NAME = kv_dictionary["DB_NAME"]
 DB_IMPORT_SCHEMA = kv_dictionary["DB_IMPORT_SCHEMA"]
+
+DB_BASTION_HOST = kv_dictionary["DB_BASTION_HOST"]
+DB_RDS_HOST = kv_dictionary["DB_RDS_HOST"]
 
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
@@ -252,8 +257,18 @@ def pgloader_csvs_into_database(directory):
                 command_file = pgloader_command_files_tmpdir + "/" + table + ".load"
                 print(f'Command file: {command_file}')
 
+                # we're going to get away with opening up this tunnel here for all pgloader commands
+                # because they get executed before this goes out of scope
+                ssh_tunnel = SSHTunnelForwarder(
+                    (DB_BASTION_HOST),
+                    ssh_username="vz-etl",
+                    ssh_private_key= '/root/.ssh/id_rsa', # will switch to ed25519 when we rebuild this for prefect 2
+                    remote_bind_address=(DB_RDS_HOST, 5432)
+                    )
+                ssh_tunnel.start()  
+
                 # See https://github.com/dimitri/pgloader/issues/768#issuecomment-693390290
-                CONNECTION_STRING = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}?sslmode=allow'
+                CONNECTION_STRING = f'postgresql://{DB_USER}:{DB_PASS}@localhost:{ssh_tunnel.local_bind_port}/{DB_NAME}?sslmode=allow'
 
                 with open(command_file, 'w') as file:
                     file.write(f"""
@@ -274,7 +289,7 @@ LOAD CSV
 $$;\n""")
                 cmd = f'pgloader {command_file}'
                 if os.system(cmd) != 0:
-                  raise Exception("pgloader did not execute successfully")
+                    raise Exception("pgloader did not execute successfully")
 
     return pgloader_command_files_tmpdir
 
@@ -282,7 +297,23 @@ $$;\n""")
 @task(name="Remove trailing carriage returns from imported data", state_handlers=[handler],)
 def remove_trailing_carriage_returns(data_loaded_token):
 
-    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
+    ssh_tunnel = SSHTunnelForwarder(
+        (DB_BASTION_HOST),
+        ssh_username="vz-etl",
+        ssh_private_key= '/root/.ssh/id_rsa', # will switch to ed25519 when we rebuild this for prefect 2
+        remote_bind_address=(DB_RDS_HOST, 5432)
+        )
+    ssh_tunnel.start()   
+
+    pg = psycopg2.connect(
+        host='localhost', 
+        port=ssh_tunnel.local_bind_port,
+        user=DB_USER, 
+        password=DB_PASS, 
+        dbname=DB_NAME, 
+        sslmode="require", 
+        sslrootcert="/root/rds-combined-ca-bundle.pem"
+        )
 
     columns = util.get_input_tables_and_columns(pg, DB_IMPORT_SCHEMA)
     for column in columns:
@@ -307,8 +338,23 @@ def align_db_typing(trimmed_token):
     # Note about the above comment. It's used to disable black linting. For this particular task, 
     # I believe it's more readable to not have it wrap long lists of function arguments. 
 
+    ssh_tunnel = SSHTunnelForwarder(
+        (DB_BASTION_HOST),
+        ssh_username="vz-etl",
+        ssh_private_key= '/root/.ssh/id_rsa', # will switch to ed25519 when we rebuild this for prefect 2
+        remote_bind_address=(DB_RDS_HOST, 5432)
+        )
+    ssh_tunnel.start()   
 
-    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
+    pg = psycopg2.connect(
+        host='localhost', 
+        port=ssh_tunnel.local_bind_port,
+        user=DB_USER, 
+        password=DB_PASS, 
+        dbname=DB_NAME, 
+        sslmode="require", 
+        sslrootcert="/root/rds-combined-ca-bundle.pem"
+        )
 
     # query list of the tables which were created by the pgloader import process
     imported_tables = util.get_imported_tables(pg, DB_IMPORT_SCHEMA)
@@ -372,7 +418,25 @@ def align_records(typed_token, dry_run):
     logger = prefect.context.get("logger")
 
     # fmt: off
-    pg = psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, dbname=DB_NAME, sslmode="require", sslrootcert="/root/rds-combined-ca-bundle.pem")
+    
+    ssh_tunnel = SSHTunnelForwarder(
+        (DB_BASTION_HOST),
+        ssh_username="vz-etl",
+        ssh_private_key= '/root/.ssh/id_rsa', # will switch to ed25519 when we rebuild this for prefect 2
+        remote_bind_address=(DB_RDS_HOST, 5432)
+        )
+    ssh_tunnel.start()   
+
+    pg = psycopg2.connect(
+        host='localhost', 
+        port=ssh_tunnel.local_bind_port,
+        user=DB_USER, 
+        password=DB_PASS, 
+        dbname=DB_NAME, 
+        sslmode="require", 
+        sslrootcert="/root/rds-combined-ca-bundle.pem"
+        )
+
     print("Finding updated records")
 
     output_map = mappings.get_table_map()

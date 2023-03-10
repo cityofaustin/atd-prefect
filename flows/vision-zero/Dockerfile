@@ -12,6 +12,7 @@ RUN pip install -r /root/requirements.txt
 COPY ./prefect_bootstrap/ssh_config /root/.ssh/config
 COPY ./prefect_bootstrap/id_rsa /root/.ssh/id_rsa
 COPY ./prefect_bootstrap/id_rsa.pub /root/.ssh/id_rsa.pub
+COPY ./prefect_bootstrap/prefect.config.toml /root/.prefect/config.toml
 RUN chmod 600 /root/.ssh/id_rsa
 RUN chmod 644 /root/.ssh/id_rsa.pub
 WORKDIR /root/
@@ -19,5 +20,5 @@ WORKDIR /root/
 # The following two lines inflate build times and image size, but they provide man pages in the image.
 # If, in the future, we find ourselves motivated to crush down this image size, such as if it were to be
 # useful to the public at large and accumulating lots of downloads, we can disable these lines.
-RUN apt-get install -y man-db
-RUN yes | unminimize
+# RUN apt-get install -y man-db
+# RUN yes | unminimize
