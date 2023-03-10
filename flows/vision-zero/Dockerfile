@@ -12,6 +12,7 @@ RUN pip install -r /root/requirements.txt
 COPY ./prefect_bootstrap/ssh_config /root/.ssh/config
 COPY ./prefect_bootstrap/id_rsa /root/.ssh/id_rsa
 COPY ./prefect_bootstrap/id_rsa.pub /root/.ssh/id_rsa.pub
+COPY ./prefect_bootstrap/prefect.config.toml /root/.prefect/config.toml
 RUN chmod 600 /root/.ssh/id_rsa
 RUN chmod 644 /root/.ssh/id_rsa.pub
 WORKDIR /root/
