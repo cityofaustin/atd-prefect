@@ -14,18 +14,14 @@ from datetime import timedelta
 
 
 # Prefect
-from prefect import flow, task, Parameter
+from prefect import flow, task
 from prefect.storage import GitHub
 from prefect.run_configs import LocalRun
 from prefect.engine.state import Failed
-from prefect.backend import get_key_value
+from prefect.blocks.system import JSON
 
 
 from prefect.utilities.notifications import slack_notifier
-
-
-# Envrioment vars
-ENV = "production"
 
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed])
@@ -55,9 +51,11 @@ def pull_docker_image(docker_tag):
     state_handlers=[handler],
     log_stdout=True,
 )
-def get_env_vars():
-    environment_variables = get_key_value(key=f"atd_service_bot_{ENV}")
-    logger.info(f"Recieved Prefect Environment Variables for: {docker_image}")
+def get_env_vars(env):
+    # Environment Variables stored in JSON block in Prefect
+    json_block = JSON.load("atd-service-bot")
+    environment_variables = json_block[env]
+    # logger.info(f"Recieved Prefect Environment Variables for: {docker_image}")
     return environment_variables
 
 
@@ -87,20 +85,17 @@ def intake_new_issues(environment_variables, docker_image):
     return response
 
 
-# TODOs
-# 1. Get env vars from JSON block ("test" and "production" are now nested in the same block)
-
-
 @flow(name="Service Bot: Intake Issues")
-def intake(docker_tag="test"):
+def intake(docker_tag="test", env="production"):
     """Intakes new issues from Knack to Github
 
     Keyword arguments:
     docker_tag -- the docker tag to use (default "test")
+    env -- the environment to use (default "production")
     """
 
     # 1. Get secrets from Prefect KV Store
-    environment_variables = get_env_vars()
+    environment_variables = get_env_vars(env)
 
     # 2. Pull latest docker image
     docker_image = pull_docker_image(docker_tag)
