@@ -11,29 +11,15 @@ prefect deployment build flows/atd-service-bot/intake_issues.py:main -t test \
 """
 
 import docker
-import prefect
-from datetime import timedelta
 import json
 
 
 # Prefect
 from prefect import flow, task, get_run_logger
-from prefect.engine.state import Failed
 from prefect.blocks.system import Secret
 
-
-from prefect.utilities.notifications import slack_notifier
-
-# Set up slack fail handler
-handler = slack_notifier(only_states=[Failed])
-
 # Task to pull the latest Docker image
-@task(
-    name="pull_docker_image",
-    timeout=timedelta(minutes=1),
-    state_handlers=[handler],
-    log_stdout=True,
-)
+@task(name="pull_docker_image", timeout_seconds=60)
 def pull_docker_image(docker_tag):
     logger = get_run_logger()
 
@@ -45,12 +31,7 @@ def pull_docker_image(docker_tag):
 
 
 # Get the envrioment variables based on the given environment
-@task(
-    name="get_env_vars",
-    timeout=timedelta(minutes=1),
-    state_handlers=[handler],
-    log_stdout=True,
-)
+@task(name="get_env_vars", timeout_seconds=60)
 def get_env_vars(env):
     logger = get_run_logger()
 
@@ -64,12 +45,7 @@ def get_env_vars(env):
 
 
 # Knack Issues to Github
-@task(
-    name="intake_new_issues",
-    timeout=timedelta(minutes=1),
-    state_handlers=[handler],
-    log_stdout=True,
-)
+@task(name="intake_new_issues", timeout_seconds=60)
 def intake_new_issues(environment_variables, docker_image):
     logger = get_run_logger()
 
