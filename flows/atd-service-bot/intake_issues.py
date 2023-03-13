@@ -17,7 +17,7 @@ import json
 
 
 # Prefect
-from prefect import flow, task
+from prefect import flow, task, get_run_logger
 from prefect.engine.state import Failed
 from prefect.blocks.system import Secret
 
@@ -27,9 +27,6 @@ from prefect.utilities.notifications import slack_notifier
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed])
 
-# Logger instance
-logger = prefect.context.get("logger")
-
 # Task to pull the latest Docker image
 @task(
     name="pull_docker_image",
@@ -38,6 +35,8 @@ logger = prefect.context.get("logger")
     log_stdout=True,
 )
 def pull_docker_image(docker_tag):
+    logger = get_run_logger()
+
     docker_image = f"atddocker/atd-service-bot:{docker_tag}"
     client = docker.from_env()
     client.images.pull("atddocker/atd-service-bot", tag=docker_tag)
@@ -53,6 +52,8 @@ def pull_docker_image(docker_tag):
     log_stdout=True,
 )
 def get_env_vars(env):
+    logger = get_run_logger()
+
     # Environment Variables stored in secret block in Prefect
     secret_block = Secret.load(f"atd-service-bot-{env}")
     encoded_env_vars = secret_block.get()
@@ -70,6 +71,8 @@ def get_env_vars(env):
     log_stdout=True,
 )
 def intake_new_issues(environment_variables, docker_image):
+    logger = get_run_logger()
+
     response = (
         docker.from_env()
         .containers.run(
@@ -96,7 +99,6 @@ def intake(docker_tag="test", env="production"):
     docker_tag -- the docker tag to use (default "test")
     env -- the environment to use (default "production")
     """
-
     # 1. Get secrets from Prefect KV Store
     environment_variables = get_env_vars(env)
 
