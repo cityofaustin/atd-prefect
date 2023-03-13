@@ -12,12 +12,13 @@ prefect deployment build flows/atd-service-bot/intake_issues.py:main -t test \
 import docker
 import prefect
 from datetime import timedelta
+import json
 
 
 # Prefect
 from prefect import flow, task
 from prefect.engine.state import Failed
-from prefect.blocks.system import JSON
+from prefect.blocks.system import Secret
 
 
 from prefect.utilities.notifications import slack_notifier
@@ -38,7 +39,7 @@ logger = prefect.context.get("logger")
 def pull_docker_image(docker_tag):
     docker_image = f"atddocker/atd-service-bot:{docker_tag}"
     client = docker.from_env()
-    response = client.images.pull("atddocker/atd-service-bot", tag=docker_tag)
+    client.images.pull("atddocker/atd-service-bot", tag=docker_tag)
     logger.info(f"Docker Images Pulled, using: {docker_image}")
     return docker_image
 
@@ -51,11 +52,13 @@ def pull_docker_image(docker_tag):
     log_stdout=True,
 )
 def get_env_vars(env):
-    # Environment Variables stored in JSON block in Prefect
-    json_block = JSON.load("atd-service-bot")
-    environment_variables = json_block[env]
-    # logger.info(f"Recieved Prefect Environment Variables for: {docker_image}")
-    return environment_variables
+    # Environment Variables stored in secret block in Prefect
+    secret_block = Secret.load(f"atd-service-bot-{env}")
+    encoded_env_vars = secret_block.get()
+    decoded_env_vars = json.loads(encoded_env_vars)
+
+    logger.info(f"Received Prefect Environment Variables for: {env}")
+    return decoded_env_vars
 
 
 # Knack Issues to Github
