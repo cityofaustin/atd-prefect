@@ -3,10 +3,10 @@ Name: ATD Service Bot: Intake Issues
 Description: Sends new issue data from our service portal (knack) to our Github
 Schedule: */3 * * * * (AKA once every 3 minutes)
 Work queue concurrency limit: 1
-prefect deployment build flows/atd-service-bot/intake_issues.py:main \
+prefect deployment build flows/atd-service-bot/intake_issues.py:intake \
     --cron "*/3 * * * *" --pool atd-data-03 -q atd-service-bot \
-    --name "Service Bot: Intake Issues" -o "deployments/atd-service-bot-intake.yaml" \
-    -sb github/atd-prefect-main-branch --skip-upload \
+    --name "Service Bot: Intake Issues" -o "deployments/atd_service_bot_intake.yaml" \
+    -sb github/atd-service-bot-staging --skip-upload \
     --description "Repo: https://github.com/cityofaustin/atd-service-bot, Sends new issue data from our service portal (knack) to our Github"
 """
 
