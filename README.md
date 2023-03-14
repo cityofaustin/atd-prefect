@@ -1,6 +1,5 @@
 # Prefect
-
-Initial documentation of our new ETL process. 
+ 
 
 ## Development
 
@@ -16,10 +15,6 @@ Pyenv is recommended to work with multiple versions
 of python in your system.
 
 ## Getting started
-
-There are two ways to run an ETL, the first is by running the
-python ETL script locally, and the second is by running
-prefect cloud agents.
 
 First, we must install our requirements:
 
@@ -44,61 +39,46 @@ you may now run it using python:
 $ python flows/test/test.py
 ```
 
-#### Using cloud agents
+#### Using Prefect Cloud
 
-Running ETLs with cloud agents requires you to register
-the flow first using labels. Prefect uses labels to match
-python scripts to running agents.  The file
-`flows/test/test.py` is already labeled and registered
-for  your convenience, and all you have to do is continue
-with the instructions.
-
-1. To run an agent in your machine, be sure you export
-the API key in order to connect the agent to the account
-by running.
+After developing and testing your flow, create a deployment file to connect it with our Prefect cloud instance. 
 
 ```bash
-$ export PREFECT_KEY="YOUR_PREFECT_API_KEY"
-- or -
-$ prefect auth login --key "YOUR_PREFECT_API_KEY"
+$ prefect cloud login
+```
+ 
+ The command will prompt you to log in via the browser or with an api key. 
+
+ Use the transportation.data email address to log in to the cloud instance, app.prefect.cloud. Our workspace is named `atdprefect`. 
+
+ Connecting the flow you are working on involves creating and applying a deployment configuration. You can create the deployment file from the command line, here is an example with the flags we use.
+
+ ```
+ prefect deployment build \
+flows/knack/knack_banner.py:knack_hr_banner_flow \
+-t production \
+--cron "45 13 * * *" \
+-q atd-data-03 \
+--name "HR Knack Banner" \
+-o "deployments/knack_banner.yaml" \
+-sb github/atd-prefect-main-branch \
+--skip-upload \
 ```
 
-You can retrieve your API key by going to the prefect
-cloud account, [following this link](https://cloud.prefect.io/user/keys).
+After `prefect deployment build` include the following
+- path/to/flow.py:functionname 
+- `-q`: work queue name (the agent that runs the flow). Required.`atd-data-03` is our main agent that runs on atd-data03 in a conda environment. See our gitbook documentation for more information on the agent. If you leave `-q` blank, or include a nonexistent queue/agent, prefect cloud will not be able to run the flow.
+- `-t`: optional tags you want to add to the flow
+- `--cron`: schedule for the flow to run, optional but if you don't set this
+- `--name`: the deployments name
+- `-o`: where the deployment file will be stored after creation. If this is blank, the file is created in the root directory with an automated name. Use the deployments folder and name your deployment file the same as your flow file
+- `-sb`: storage block. Where Prefect knows to look for your flow's code. The `github/atd-prefect-main-branch` is a block that points to the main branch of this repo. You can create temporary blocks to point to branches, but please delete them when you are done using them.
+- `--skip-upload`: Prefect's default is to upload a flows files to the storage block. Use this flag to skip this step since our workflow is to add to github and PR with approvals before merging. 
 
-2. Once exported the key, you may run this:
+The next step after building your deployment specification is to apply it. Once your flow has been approved and merged to main, run this command, replacing the file name with the path to your deployment file.
 
 ```bash
-$ prefect agent local start -l test
+$ prefect deployment apply deployments/knack_banner.yaml
 ```
 
-Note: `-l` stands for label, and the example above uses the
-`test` label for which the above ETL is registered.
 
-3. Go to [Prefect Cloud](https://cloud.prefect.io), then click
-Dashboard > Flows > "hello-test" > Quick Run (at the top right).
-
-It will look something like this:
-
-```
-❯ prefect agent local start -l test
-[2021-12-06 23:40:47,475] INFO - agent | Registering agent...
-[2021-12-06 23:40:47,719] INFO - agent | Registration successful!
-
- ____            __           _        _                    _
-|  _ \ _ __ ___ / _| ___  ___| |_     / \   __ _  ___ _ __ | |_
-| |_) | '__/ _ \ |_ / _ \/ __| __|   / _ \ / _` |/ _ \ '_ \| __|
-|  __/| | |  __/  _|  __/ (__| |_   / ___ \ (_| |  __/ | | | |_
-|_|   |_|  \___|_|  \___|\___|\__| /_/   \_\__, |\___|_| |_|\__|
-                                           |___/
-
-[2021-12-06 23:40:47,899] INFO - agent | Starting LocalAgent with labels ['test']
-[2021-12-06 23:40:47,900] INFO - agent | Agent documentation can be found at https://docs.prefect.io/orchestration/
-[2021-12-06 23:40:47,900] INFO - agent | Waiting for flow runs...
-[2021-12-06 23:41:46,365] INFO - agent | Deploying flow run 11111111-1111-1111-1111-111111111111 to execution environment...
-[2021-12-06 23:41:46,884] INFO - agent | Completed deployment of flow run 11111111-1111-1111-1111-111111111111
-```
-
-Notice the success message "Completed deployment of flow run" which
-means the flow has been deployed and run. The output of the ETL has
-been sent back to prefect cloud.

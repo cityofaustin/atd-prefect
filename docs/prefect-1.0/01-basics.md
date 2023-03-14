@@ -46,7 +46,7 @@ $ virtualenv venv
 $ source venv/bin/activate
 
 # 3. Install the requirements for local development
-$ pip install -r requirements.txt
+$ pip install -r requirements-legacy.txt
 ```
 
 ## Repo File Structure
