@@ -3,7 +3,7 @@ Name: ATD Service Bot: Intake Issues
 Description: Sends new issue data from our service portal (knack) to our Github
 Schedule: */3 * * * * (AKA once every 3 minutes)
 Work queue concurrency limit: 1
-prefect deployment build flows/atd-service-bot/intake_issues.py:main -t test \
+prefect deployment build flows/atd-service-bot/intake_issues.py:main \
     --cron "*/3 * * * *" --pool atd-data-03 -q atd-service-bot \
     --name "Service Bot: Intake Issues" -o "deployments/atd-service-bot-intake.yaml" \
     -sb github/atd-prefect-main-branch --skip-upload \
@@ -19,7 +19,11 @@ from prefect import flow, task, get_run_logger
 from prefect.blocks.system import Secret
 
 # Task to pull the latest Docker image
-@task(name="pull_docker_image", timeout_seconds=60)
+@task(
+    name="pull_docker_image",
+    retries=1,
+    retry_delay_seconds=5,
+)
 def pull_docker_image(docker_tag):
     logger = get_run_logger()
 
@@ -27,7 +31,7 @@ def pull_docker_image(docker_tag):
     client = docker.from_env()
     client.images.pull("atddocker/atd-service-bot", tag=docker_tag)
     logger.info(f"Docker Images Pulled, using: {docker_image}")
-    return docker_image
+    return True
 
 
 # Get the envrioment variables based on the given environment
@@ -68,11 +72,11 @@ def intake_new_issues(environment_variables, docker_image):
 
 
 @flow(name="Service Bot: Intake Issues")
-def intake(docker_tag="test", env="production"):
+def intake(docker_tag="production", env="production"):
     """Intakes new issues from Knack to Github
 
     Keyword arguments:
-    docker_tag -- the docker tag to use (default "test")
+    docker_tag -- the docker tag to use (default "production")
     env -- the environment to use (default "production")
     """
     # 1. Get secrets from Prefect KV Store
@@ -82,7 +86,7 @@ def intake(docker_tag="test", env="production"):
     docker_image = pull_docker_image(docker_tag)
 
     # 3. Intake new issues to github
-    res = intake_new_issues(environment_variables, docker_image)
+    intake_new_issues(environment_variables, docker_image)
 
 
 if __name__ == "__main__":
