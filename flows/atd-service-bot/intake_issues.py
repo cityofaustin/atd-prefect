@@ -31,23 +31,21 @@ def pull_docker_image(docker_tag):
     client = docker.from_env()
     client.images.pull("atddocker/atd-service-bot", tag=docker_tag)
     logger.info(f"Docker Images Pulled, using: {docker_image}")
-    return True
+    return docker_image
 
 
 # Get the envrioment variables based on the given environment
 @task(name="get_env_vars", timeout_seconds=60)
 def get_env_vars(env):
     logger = get_run_logger()
-    logger.info(f"Getting secret block for: {env}")
 
     # Environment Variables stored in secret block in Prefect
     secret_block = Secret.load(f"atd-service-bot-{env}")
-    encoded_env_vars = secret_block.get()
-    logger.info(encoded_env_vars)
-    decoded_env_vars = json.loads(encoded_env_vars)
+    env_vars_json_string = secret_block.get()
+    environment_variables = json.loads(env_vars_json_string)
 
     logger.info(f"Received Prefect Environment Variables for: {env}")
-    return decoded_env_vars
+    return environment_variables
 
 
 # Knack Issues to Github
