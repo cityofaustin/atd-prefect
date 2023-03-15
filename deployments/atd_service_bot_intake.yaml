@@ -14,7 +14,7 @@ schedule:
   cron: '*/3 * * * *'
   timezone: null
   day_or: true
-is_schedule_active: null
+is_schedule_active: false
 infra_overrides: {}
 infrastructure:
   type: process

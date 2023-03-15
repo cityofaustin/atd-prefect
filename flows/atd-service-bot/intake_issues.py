@@ -38,6 +38,7 @@ def pull_docker_image(docker_tag):
 @task(name="get_env_vars", timeout_seconds=60)
 def get_env_vars(env):
     logger = get_run_logger()
+    logger.info(f"Getting secret block for: {env}")
 
     # Environment Variables stored in secret block in Prefect
     secret_block = Secret.load(f"atd-service-bot-{env}")
