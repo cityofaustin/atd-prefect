@@ -43,6 +43,7 @@ def get_env_vars(env):
     # Environment Variables stored in secret block in Prefect
     secret_block = Secret.load(f"atd-service-bot-{env}")
     encoded_env_vars = secret_block.get()
+    logger.info(encoded_env_vars)
     decoded_env_vars = json.loads(encoded_env_vars)
 
     logger.info(f"Received Prefect Environment Variables for: {env}")
