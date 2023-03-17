@@ -15,32 +15,13 @@ to an Open Data Portal dataset (AKA Socrata)
 """
 
 import docker
-import prefect
-from datetime import timedelta
+import json
 
 
 # Prefect
-from prefect import Flow, task, Parameter
-from prefect.storage import GitHub
-from prefect.run_configs import LocalRun
-from prefect.engine.state import Failed
-from prefect.backend import get_key_value
+from prefect import flow, task, get_run_logger
+from prefect.blocks.system import Secret
 
-
-from prefect.utilities.notifications import slack_notifier
-
-# Select the appropriate tag for the Docker Image
-# docker_env will also be taken as a parameter
-DOCKER_TAG = "test"
-
-# Envrioment vars
-ENV = "production"
-
-# Set up slack fail handler
-handler = slack_notifier(only_states=[Failed])
-
-# Logger instance
-logger = prefect.context.get("logger")
 
 # Task to pull the latest Docker image
 @task(
@@ -60,18 +41,16 @@ def pull_docker_image(docker_tag):
 
 
 # Get the envrioment variables based on the given environment
-@task(
-    name="get_env_vars",
-    task_run_name="get_env_vars",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
-    log_stdout=True,
-)
-def get_env_vars():
-    environment_variables = get_key_value(key=f"atd_service_bot_{ENV}")
-    logger.info(f"Recieved Prefect Environment Variables for: {docker_image}")
+@task(name="get_env_vars", timeout_seconds=60)
+def get_env_vars(env):
+    logger = get_run_logger()
+
+    # Environment Variables stored in secret block in Prefect
+    secret_block = Secret.load(f"atd-service-bot-{env}")
+    env_vars_json_string = secret_block.get()
+    environment_variables = json.loads(env_vars_json_string)
+
+    logger.info(f"Received Prefect Environment Variables for: {env}")
     return environment_variables
 
 
@@ -81,7 +60,6 @@ def get_env_vars():
     max_retries=1,
     timeout=timedelta(minutes=60),
     retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
     log_stdout=True,
 )
 def sending_issues_to_socrata(environment_variables, docker_image):
@@ -116,7 +94,7 @@ def sending_issues_to_socrata(environment_variables, docker_image):
 #     run_config=LocalRun(labels=["atd-data02", "test"]),
 # ) as flow:
 @flow(name="Service Bot: Issues to Socrata")
-def socrata(docker_tag="production", env="production"):
+def issues_to_socrata(docker_tag="production", env="production"):
     """Uploads (replaces) github issue data from our atd-data-tech repo
 
     Keyword arguments:
@@ -124,18 +102,14 @@ def socrata(docker_tag="production", env="production"):
     env -- the environment to use (default "production")
     """
     # 1. Get secrets from Prefect KV Store
-    environment_variables = get_env_vars()
+    environment_variables = get_env_vars(env)
 
     # 2. Pull latest docker image
     docker_image = pull_docker_image(docker_tag)
 
     # 3. Send issue data to Socrata
-    res = sending_issues_to_socrata(environment_variables, docker_image)
+    sending_issues_to_socrata(environment_variables, docker_image)
 
 
 if __name__ == "__main__":
-    flow.run(
-        parameters={
-            "Docker image tag": DOCKER_TAG,
-        }
-    )
+    issues_to_socrata()
