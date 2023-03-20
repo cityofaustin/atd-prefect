@@ -14,7 +14,7 @@ schedule:
   cron: 13 7 * * *
   timezone: null
   day_or: true
-is_schedule_active: null
+is_schedule_active: false
 infra_overrides: {}
 infrastructure:
   type: process
@@ -34,8 +34,8 @@ flow_name: 'Service Bot: Update Issues'
 manifest_path: null
 storage:
   repository: https://github.com/cityofaustin/atd-prefect
-  reference: md-11418-service-bot-intake
-  access_token: null
+  reference: md-11418-service-bot-socrata
+  access_token: '**********'
   include_git_objects: true
   _block_document_id: 198f5be2-dae9-4b1c-8222-5c6edd528399
   _block_document_name: atd-service-bot-staging
@@ -58,4 +58,4 @@ parameter_openapi_schema:
       position: 1
   required: null
   definitions: null
-timestamp: '2023-03-20T22:05:55.569290+00:00'
+timestamp: '2023-03-20T22:27:34.000674+00:00'
