@@ -1,9 +1,9 @@
 ###
-### A complete description of a Prefect Deployment for flow 'ATD Performance Dashboard: ROW Data Publishing'
+### A complete description of a Prefect Deployment for flow 'ATD Performance Dashboard: ROW Active Permits Logging'
 ###
-name: 'ATD Performance Dashboard: ROW Data Publishing'
+name: 'ATD Performance Dashboard: ROW Active Permits Logging'
 description: null
-version: 960d1d8404b9291aaa11fbfa6a9fc85b
+version: 531602d7fafe9c10b7ccb021450057d4
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
@@ -11,13 +11,9 @@ tags: []
 parameters: 
   block: amanda-to-s3
   commands:
-    - AMANDA/amanda_to_s3.py --query applications_received
-    - AMANDA/amanda_to_s3.py --query active_permits
-    - AMANDA/amanda_to_s3.py --query issued_permits
-    - smartsheet/smartsheet_to_s3.py
-    - row_data_summary.py
+    - active_permits_logging.py
 schedule:
-  cron: 5 13 * * *
+  cron: 0 8 * * 1
   timezone: null
   day_or: true
 is_schedule_active: null
@@ -36,7 +32,7 @@ infrastructure:
 ###
 ### DO NOT EDIT BELOW THIS LINE
 ###
-flow_name: 'ATD Performance Dashboard: ROW Data Publishing'
+flow_name: 'ATD Performance Dashboard: ROW Active Permits Logging'
 manifest_path: null
 storage:
   repository: https://github.com/cityofaustin/atd-prefect
@@ -49,7 +45,7 @@ storage:
   block_type_slug: github
   _block_type_slug: github
 path: ''
-entrypoint: flows/atd-executive-dashboard/row_data_publishing.py:main
+entrypoint: flows/atd-executive-dashboard/row_active_permits.py:main
 parameter_openapi_schema:
   title: Parameters
   type: object
@@ -64,4 +60,4 @@ parameter_openapi_schema:
   - commands
   - block
   definitions: null
-timestamp: '2023-03-20T18:51:18.380353+00:00'
+timestamp: '2023-03-20T18:55:28.589438+00:00'

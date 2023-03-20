@@ -1,12 +1,19 @@
 #!/usr/bin/env python
 
 """
-Name: ATD Knack Services: Signs and Markings Contractor Work Orders
-Description: Wrapper ETL for the atd-knack-services docker image 
-             with defined commands for the contractor work orders flow
+Name: ATD Performance Dashboard: ROW Data Publishing
+Description: Repo: https://github.com/cityofaustin/atd-executive-dashboard Downloads ROW data from AMANDA and Smartsheet and 
+    publishes the weekly summary results in a Socrata Dataset.
 
 Create Deployment:
-$ prefect deployment build flows/atd-executive-dashboard/amanda_to_s3.py:main --name "Executive Dashboard: AMANDA Queries to S3" --pool atd-data-03 --cron "5 13 * * *" -q default -sb github/ch-amanda-queries -o "deployments/amanda_to_s3.yaml"
+$ prefect deployment build flows/atd-executive-dashboard/row_data_publishing.py:main \
+    --name "ATD Performance Dashboard: ROW Data Publishing" \
+    --pool atd-data-03 \
+    --cron "5 13 * * *" \
+    -q default \
+    -sb github/ch-amanda-queries \
+    -o "deployments/amanda_to_s3.yaml"
+    --description Repo: https://github.com/cityofaustin/atd-executive-dashboard Downloads ROW data from AMANDA and Smartsheet and publishes the weekly summary results in a Socrata Dataset.
  
 $ prefect deployment apply deployments/amanda_to_s3.yaml
 """
@@ -85,7 +92,7 @@ def update_exec_date(json_block):
     block.save(name=json_block, overwrite=True)
 
 
-@flow(name=f"Knack Services: Signs Markings Contractor Work Orders")
+@flow(name=f"ATD Performance Dashboard: ROW Data Publishing")
 def main(commands, block):
     # Logger instance
     logger = get_run_logger()
@@ -108,6 +115,8 @@ if __name__ == "__main__":
         "AMANDA/amanda_to_s3.py --query applications_received",
         "AMANDA/amanda_to_s3.py --query active_permits",
         "AMANDA/amanda_to_s3.py --query issued_permits",
+        "smartsheet/smartsheet_to_s3.py",
+        "row_data_summary.py",
     ]
 
     # Environment Variable Storage Block Name
