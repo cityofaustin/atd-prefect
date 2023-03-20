@@ -92,7 +92,7 @@ def update_exec_date(json_block):
     block.save(name=json_block, overwrite=True)
 
 
-@flow(name=f"ATD Performance Dashboard: ROW Active Permits Logging")
+@flow(name=f"ATD Performance Dashboard")
 def main(commands, block):
     # Logger instance
     logger = get_run_logger()
