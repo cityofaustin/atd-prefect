@@ -6,11 +6,11 @@ Description: Wrapper ETL for the atd-knack-services docker image
              with defined commands for the corridor retiming view in Data Tracker app
 Create Deployment:
 $ prefect deployment build flows/atd-knack-services/corridor-retiming.py:main \
---name "Knack Services: SM Contractor Work Orders" --pool atd-data-03 \
+--name "Knack Services: Corridor Retiming" --pool atd-data-03 \
 --cron "45 11 * * *" -q default -sb github/atd-prefect-main-branch \
--o "deployments/knack-services-corridor-retiming.yaml"
+-o "deployments/knack-services-corridor-retiming.yaml --skip-upload"
  
-$ prefect deployment apply deployments/atd_knack_services_sm_contractors.yaml
+$ prefect deployment apply deployments/knack-services-corridor-retiming.yaml
 """
 
 import os
