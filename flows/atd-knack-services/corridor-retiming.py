@@ -28,6 +28,7 @@ from prefect.blocks.system import JSON
 docker_env = "production"
 docker_image = f"atddocker/atd-knack-services:{docker_env}"
 
+
 @task(
     name="get_env_vars",
     retries=10,
