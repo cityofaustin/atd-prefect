@@ -101,11 +101,11 @@ def docker_commands(environment_variables, commands, logger):
     retries=10,
     retry_delay_seconds=timedelta(seconds=15).seconds,
 )
-def update_exec_date(json_block):
+def update_exec_date(env_block_name):
     # Update our JSON block with the updated date of last flow execution
-    block = JSON.load(json_block)
+    block = JSON.load(env_block_name)
     block.value["PREV_EXEC"] = datetime.today().strftime("%Y-%m-%d")
-    block.save(name=json_block, overwrite=True)
+    block.save(name=env_block_name, overwrite=True)
 
 
 @flow(name=f"Knack Services: Data Tracker Corridor Retiming")
@@ -128,7 +128,7 @@ def main(commands, env_block_name):
 
 
 if __name__ == "__main__":
-    app_name = "data_tracker"  # Name of knack app
+    app_name = "data-tracker"  # Name of knack app
     container = "view_3814"  # Container of contractor work orders
 
     # List of commands to be sent to the docker image,
@@ -140,6 +140,6 @@ if __name__ == "__main__":
 
     # Environment Variable Storage Block Name
     # todo: add this block and var name
-    env_block_name = ""
+    env_block_name = "atd-knack-services-dt-corridor-retiming"
 
     main(commands, env_block_name)
