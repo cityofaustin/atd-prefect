@@ -20,7 +20,7 @@ from prefect import flow, task, get_run_logger
 from helpers import get_env_vars, pull_docker_image
 
 # Index Issues to Knack
-@task(name="update_knack_issues", timeout_seconds=36000)
+@task(name="update_knack_issues", timeout_seconds=3600)
 def update_knack_issues(environment_variables, docker_image):
     logger = get_run_logger()
 
