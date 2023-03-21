@@ -50,7 +50,7 @@ def pull_docker_image():
     return True
 
 
-# Determine what date to run the knack scripts
+# Determine what date to append to knack scripts arguments
 @task(
     name="determine_date_args",
     retries=1,
@@ -103,7 +103,7 @@ def docker_commands(environment_variables, commands, logger):
     retry_delay_seconds=timedelta(seconds=15).seconds,
 )
 def update_exec_date(env_block_name):
-    # Update our JSON block with the updated date of last flow execution
+    # Update our JSON block with the date of last successful flow execution
     block = JSON.load(env_block_name)
     block.value["PREV_EXEC"] = datetime.today().strftime("%Y-%m-%d")
     block.save(name=env_block_name, overwrite=True)
@@ -114,16 +114,16 @@ def main(commands, env_block_name):
     # Logger instance
     logger = get_run_logger()
 
-    # Start: get env vars and pull the latest docker image
+    # Get env vars and pull the latest docker image
     environment_variables = get_env_vars(env_block_name)
     docker_res = pull_docker_image()
 
-    # Append date argument to our commands list
+    # Append appropriaste date argument to our commands list
     commands = determine_date_args(environment_variables, commands)
 
-    # Run our commands
     if docker_res:
         commands_res = docker_commands(environment_variables, commands, logger)
+    # After success, update prev_execution date in prefect json block
     if commands_res:
         update_exec_date(env_block_name)
 
@@ -140,7 +140,6 @@ if __name__ == "__main__":
     ]
 
     # Environment Variable Storage Block Name
-    # todo: add this block and var name
     env_block_name = "atd-knack-services-dt-corridor-retiming"
 
     main(commands, env_block_name)
