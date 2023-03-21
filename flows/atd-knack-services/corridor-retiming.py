@@ -130,7 +130,7 @@ def main(commands, env_block_name):
 
 if __name__ == "__main__":
     app_name = "data-tracker"  # Name of knack app
-    container = "view_3814"  # Container of contractor work orders
+    container = "view_3814"
 
     # List of commands to be sent to the docker image,
     # Note that the date filter arg is added last in determine_date_args task
