@@ -22,7 +22,7 @@ from prefect import flow, task, get_run_logger
 from helpers import get_env_vars, pull_docker_image
 
 # Issues to Socrata
-@task(name="sending_issues_to_socrata", timeout_seconds=60)
+@task(name="sending_issues_to_socrata", timeout_seconds=3600)
 def sending_issues_to_socrata(environment_variables, docker_image):
     logger = get_run_logger()
 
