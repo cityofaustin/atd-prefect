@@ -8,7 +8,7 @@ Create Deployment:
 $ prefect deployment build flows/atd-knack-services/corridor-retiming.py:main \
 --name "Knack Services: Corridor Retiming" --pool atd-data-03 \
 --cron "45 11 * * *" -q default -sb github/atd-prefect-main-branch \
--o "deployments/knack-services-corridor-retiming.yaml --skip-upload"
+-o "deployments/knack-services-corridor-retiming.yaml" --skip-upload
  
 $ prefect deployment apply deployments/knack-services-corridor-retiming.yaml
 """
