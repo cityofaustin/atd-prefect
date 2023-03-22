@@ -6,7 +6,14 @@ Description: Wrapper ETL for the atd-knack-services docker image
              with defined commands for updating location fields in data tracker. 
 
 Create Deployment:
-$ prefect deployment build flows/knack/atd_knack_services_data_tracker_location_updater.py:main --name "Knack Services: ATD Knack Services: Data Tracker Location Updater" --pool atd-data-03 -q default -sb github/knack-services-wip -o "deployments/atd_knack_services_data_tracker_location_updater.yaml"
+$ prefect deployment build flows/atd-knack-services/atd_knack_services_data_tracker_location_updater.py:main \
+    --name "Knack Services: ATD Knack Services: Data Tracker Location Updater" \
+    --pool atd-data-03 \
+    -q default \
+    -sb github/knack-services-wip \
+    -o "deployments/atd_knack_services_data_tracker_location_updater.yaml" \
+    --skip-upload \
+    --tag atd-knack-services
 
 Apply Deployment:
 $ prefect deployment apply deployments/atd_knack_services_data_tracker_location_updater.yaml
@@ -24,8 +31,8 @@ from prefect.blocks.system import JSON
 
 
 # Docker settings
-docker_env = "test"
-docker_image = f"atddocker/atd-knack-services:{docker_env}"
+docker_env = "production"
+docker_image = "atddocker/atd-knack-services"
 
 
 @task(
@@ -45,7 +52,7 @@ def get_env_vars(json_block):
 )
 def pull_docker_image():
     client = docker.from_env()
-    client.images.pull("atddocker/atd-knack-services", tag=docker_env)
+    client.images.pull(docker_image, tag=docker_env)
     return True
 
 
@@ -81,7 +88,7 @@ def docker_commands(environment_variables, commands, logger):
         response = (
             docker.from_env()
             .containers.run(
-                image=docker_image,
+                image=f"{docker_image}:{docker_env}",
                 working_dir=None,
                 command=f"python {c}",
                 environment=environment_variables,

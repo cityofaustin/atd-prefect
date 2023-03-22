@@ -2,11 +2,20 @@
 
 """
 Name: ATD Knack Services: Signs and Markings Contractor Work Orders
-Description: Wrapper ETL for the atd-knack-services docker image 
+Description: Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image 
              with defined commands for the contractor work orders flow
 
 Create Deployment:
-$ prefect deployment build flows/knack/atd_knack_markings_contractor_work_orders.py:main --name "Knack Services: SM Contractor Work Orders" --pool atd-data-03 --cron "5 7 * * *" -q default -sb github/knack-services-wip -o "deployments/atd_knack_markings_contractor_work_orders.py.yaml"
+$ prefect deployment build flows/atd-knack-services/atd_knack_markings_contractor_work_orders.py:main \
+    --name "Knack Services: SM Contractor Work Orders" \
+    --pool atd-data-03 \
+    --cron "5 7 * * *" \
+    -q default \
+    -sb github/knack-services-wip \
+    -o "deployments/atd_knack_markings_contractor_work_orders.py.yaml"
+    --description Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image with defined commands for the contractor work orders flow \
+    --skip-upload
+    --tag atd-knack-services
  
 $ prefect deployment apply deployments/atd_knack_services_sm_contractors.yaml
 """
@@ -24,7 +33,7 @@ from prefect.blocks.system import JSON
 
 # Docker settings
 docker_env = "production"
-docker_image = f"atddocker/atd-knack-services:{docker_env}"
+docker_image = "atddocker/atd-knack-services"
 
 
 @task(
@@ -44,7 +53,7 @@ def get_env_vars(json_block):
 )
 def pull_docker_image():
     client = docker.from_env()
-    client.images.pull("atddocker/atd-finance-data", tag=docker_env)
+    client.images.pull(docker_image, tag=docker_env)
     return True
 
 
@@ -80,7 +89,7 @@ def docker_commands(environment_variables, commands, logger):
         response = (
             docker.from_env()
             .containers.run(
-                image=docker_image,
+                image=f"{docker_image}:{docker_env}",
                 working_dir=None,
                 command=f"python {c}",
                 environment=environment_variables,
