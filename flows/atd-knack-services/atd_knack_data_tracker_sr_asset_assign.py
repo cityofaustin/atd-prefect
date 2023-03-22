@@ -12,9 +12,9 @@ $ prefect deployment build flows/atd-knack-services/atd_knack_data_tracker_sr_as
     --cron "* * * * *" \
     -q default \
     -sb github/knack-services-wip \
-    -o "deployments/atd_knack_data_tracker_sr_asset_assign.yaml"
-    --description Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image with commands for a script that assigns signals to CSRs in data tracker. \
-    --skip-upload
+    -o "deployments/atd_knack_data_tracker_sr_asset_assign.yaml" \
+    --description "Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image with commands for a script that assigns signals to CSRs in data tracker." \
+    --skip-upload \
     --tag atd-knack-services
  
 $ prefect deployment apply deployments/atd_knack_data_tracker_sr_asset_assign.yaml
@@ -95,9 +95,6 @@ def main(commands, block):
     # Run our commands
     if docker_res:
         commands_res = docker_commands(environment_variables, commands, logger)
-    if commands_res:
-        update_exec_date(block)
-
 
 if __name__ == "__main__":
     app_name = "data-tracker"  # Name of knack app

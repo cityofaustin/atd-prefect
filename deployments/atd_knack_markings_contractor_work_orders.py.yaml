@@ -1,22 +1,25 @@
 ###
-### A complete description of a Prefect Deployment for flow 'ATD Knack Services: Data Tracker Location Updater'
+### A complete description of a Prefect Deployment for flow 'Knack Services: Signs Markings Contractor Work Orders'
 ###
-name: 'Knack Services: ATD Knack Services: Data Tracker Location Updater'
+name: 'Knack Services: SM Contractor Work Orders'
 description: 'Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL
-  for the atd-knack-services docker image with defined commands for updating location
-  fields in data tracker.'
-version: 0f46b1a73b92a358669288235d415038
+  for the atd-knack-services docker image with defined commands for the contractor
+  work orders flow'
+version: e3d8388ebdf5597dc46d7edb0e42f00b
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
 tags:
 - atd-knack-services
 parameters:
-  block: atd-knack-services-data-tracker-location-updater-prod
+  block: atd-knack-services-sm-contractor-work-orders
   commands:
-  - atd-knack-services/services/knack_location_updater.py -a data-tracker -c view_1201
+  - atd-knack-services/services/records_to_postgrest.py -a signs-markings -c view_3628
+  - atd-knack-services/services/records_to_agol.py -a signs-markings -c view_3628
+  - atd-knack-services/services/records_to_socrata.py -a signs-markings -c view_3628
+  - atd-knack-services/services/agol_build_markings_segment_geometries.py -l markings_contractor_work_orders
 schedule:
-  cron: 19 7 * * *
+  cron: 5 7 * * *
   timezone: null
   day_or: true
 is_schedule_active: true
@@ -25,7 +28,7 @@ infra_overrides: {}
 ###
 ### DO NOT EDIT BELOW THIS LINE
 ###
-flow_name: 'ATD Knack Services: Data Tracker Location Updater'
+flow_name: 'Knack Services: Signs Markings Contractor Work Orders'
 manifest_path: null
 infrastructure:
   type: process
@@ -35,8 +38,8 @@ infrastructure:
   command: null
   stream_output: true
   working_dir: null
-  _block_document_id: 031e2384-ca7b-4a59-a69a-f6d9e3d3b6ad
-  _block_document_name: anonymous-78c96ea8-0663-40a6-90f4-d1a4dd0d7444
+  _block_document_id: 94db8c96-2455-453a-b143-845ffa98ea2a
+  _block_document_name: anonymous-3dd57c23-aaf4-4ebb-9353-ec6d51f79176
   _is_anonymous: true
   block_type_slug: process
   _block_type_slug: process
@@ -51,7 +54,7 @@ storage:
   block_type_slug: github
   _block_type_slug: github
 path: ''
-entrypoint: flows/atd-knack-services/atd_knack_services_data_tracker_location_updater.py:main
+entrypoint: flows/atd-knack-services/atd_knack_markings_contractor_work_orders.py:main
 parameter_openapi_schema:
   title: Parameters
   type: object
@@ -66,4 +69,4 @@ parameter_openapi_schema:
   - commands
   - block
   definitions: null
-timestamp: '2023-03-22T22:22:47.501447+00:00'
+timestamp: '2023-03-22T22:24:28.972217+00:00'
