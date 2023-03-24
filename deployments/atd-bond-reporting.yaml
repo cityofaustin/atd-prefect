@@ -2,25 +2,33 @@
 ### A complete description of a Prefect Deployment for flow 'Bond Reporting Data Scripts'
 ###
 name: Bond Reporting Data Scripts
-description: null
-version: 6277f516265fd2ea0d732d0d4d1c0340
+description: 'Repo: https://github.com/cityofaustin/atd-bond-reporting Wrapper ETL
+  for the atd-bond-reporting docker image with commands for moving the data from S3
+  to Socrata.'
+version: 9d3c55a3b474362eb3fd4178afdfae5a
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
 tags: []
-parameters: 
+parameters:
   block: atd-bond-reporting
   commands:
-    - atd-bond-reporting/microstrategy_to_s3.py -r "2020 Bond Expenses Obligated"
-    - atd-bond-reporting/microstrategy_to_s3.py -r "All bonds Expenses Obligated"
-    - atd-bond-reporting/bond_data.py
-    - atd-bond-reporting/bond_calculations.py
+  - atd-bond-reporting/microstrategy_to_s3.py -r "2020 Bond Expenses Obligated"
+  - atd-bond-reporting/microstrategy_to_s3.py -r "All bonds Expenses Obligated"
+  - atd-bond-reporting/bond_data.py
+  - atd-bond-reporting/bond_calculations.py
 schedule:
   cron: 0 15 * * *
   timezone: null
   day_or: true
-is_schedule_active: null
+is_schedule_active: true
 infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: Bond Reporting Data Scripts
+manifest_path: null
 infrastructure:
   type: process
   env: {}
@@ -29,14 +37,11 @@ infrastructure:
   command: null
   stream_output: true
   working_dir: null
+  _block_document_id: 799b844b-517c-4485-960c-562fde80d658
+  _block_document_name: anonymous-b67adcb5-ecfd-41d5-b902-fbf74785d461
+  _is_anonymous: true
   block_type_slug: process
   _block_type_slug: process
-
-###
-### DO NOT EDIT BELOW THIS LINE
-###
-flow_name: Bond Reporting Data Scripts
-manifest_path: null
 storage:
   repository: https://github.com/cityofaustin/atd-prefect/
   reference: ch-bond-reporting
@@ -63,4 +68,4 @@ parameter_openapi_schema:
   - commands
   - block
   definitions: null
-timestamp: '2023-03-03T20:35:27.994145+00:00'
+timestamp: '2023-03-24T19:10:22.663315+00:00'
