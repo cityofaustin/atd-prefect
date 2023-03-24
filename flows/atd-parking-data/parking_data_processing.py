@@ -183,7 +183,7 @@ def main(commands, block, s3_env):
     docker_res = pull_docker_image()
 
     start_date = get_start_date(environment_variables["PREV_EXEC"])
-    prev_month = prev_execution_date_success(environment_variables["PREV_EXEC"])
+    prev_month = decide_prev_month(environment_variables["PREV_EXEC"])
     commands = add_command_arguments(commands, s3_env, start_date, prev_month)
 
     # Run our commands

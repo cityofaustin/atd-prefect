@@ -9,7 +9,9 @@ version: c77cfcaa8d24d54b1ba017217e0684c4
 work_queue_name: default
 work_pool_name: atd-data-03
 tags: []
-parameters: 
+parameters:
+  block: atd-parking-data
+  s3_env: prod
   commands:
   - txn_history.py -v --report transactions
   - txn_history.py -v --report payments
@@ -25,14 +27,18 @@ parameters:
   - parking_socrata.py --dataset payments
   - parking_socrata.py --dataset fiserv
   - parking_socrata.py --dataset transactions
-  block: atd-parking-data
-  s3_env: prod
 schedule:
   cron: 35 8 * * *
   timezone: null
   day_or: true
-is_schedule_active: null
+is_schedule_active: true
 infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: 'atd-parking-data: Parking Data Processsing'
+manifest_path: null
 infrastructure:
   type: process
   env: {}
@@ -41,14 +47,11 @@ infrastructure:
   command: null
   stream_output: true
   working_dir: null
+  _block_document_id: 0feb4873-073e-4f60-8261-4681ccdd73dd
+  _block_document_name: anonymous-9cb9bcf5-5182-4b00-8661-f3c639e027fa
+  _is_anonymous: true
   block_type_slug: process
   _block_type_slug: process
-
-###
-### DO NOT EDIT BELOW THIS LINE
-###
-flow_name: 'atd-parking-data: Parking Data Processsing'
-manifest_path: null
 storage:
   repository: https://github.com/cityofaustin/atd-prefect
   reference: ch-parking-data-prefect2
@@ -79,4 +82,4 @@ parameter_openapi_schema:
   - block
   - s3_env
   definitions: null
-timestamp: '2023-03-24T21:22:29.193700+00:00'
+timestamp: '2023-03-24T21:25:02.890555+00:00'
