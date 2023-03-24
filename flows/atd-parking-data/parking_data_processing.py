@@ -55,6 +55,7 @@ def pull_docker_image():
     client.images.pull(docker_image, tag=docker_env)
     return True
 
+
 @task
 def get_start_date(prev_execution_date_success):
     """Creates a start date 7 days before the date of the last successful run of the flow
@@ -74,6 +75,7 @@ def get_start_date(prev_execution_date_success):
         return start_date.strftime("%Y-%m-%d")
     else:
         return "2021-12-25"
+
 
 @task
 def decide_prev_month(prev_execution_date_success):
@@ -107,7 +109,7 @@ def decide_prev_month(prev_execution_date_success):
 def add_command_arguments(commands, s3_env, start_date):
     # Adds additonal command arguments based on provided arguments
     # and the previous exec date.
-    output_commands []
+    output_commands = []
     for c in commands:
         if "txn_history.py" in c:
             c = f"{c} --env {s3_env}"
@@ -130,6 +132,9 @@ def add_command_arguments(commands, s3_env, start_date):
             c = f"{c} --lastmonth {prev_month}"
 
         output_commands.append(c)
+
+    return output_commands
+
 
 @task(
     name="docker_commands",
