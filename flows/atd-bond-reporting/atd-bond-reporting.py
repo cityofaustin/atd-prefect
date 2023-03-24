@@ -2,11 +2,19 @@
 
 """
 Name: atd-bond-reporting: Bond Dashboard Scripts
-Description: Wrapper ETL for the atd-bond-reporting docker image 
+Description: Repo: https://github.com/cityofaustin/atd-bond-reporting Wrapper ETL for the atd-bond-reporting docker image 
              with commands for moving the data from S3 to Socrata.
 
 Create Deployment:
-$ prefect deployment build flows/atd-bond-reporting/atd-bond-reporting.py:main --name "Bond Reporting Data Scripts" --pool atd-data-03 --cron "0 15 * * *" -q default -sb github/ch-bond-reporting -o "deployments/atd-bond-reporting.yaml"
+$ prefect deployment build flows/atd-bond-reporting/atd-bond-reporting.py:main \
+    --name "Bond Reporting Data Scripts" \
+    --pool atd-data-03 \
+    --cron "0 15 * * *" \
+    -q default \
+    -sb github/ch-bond-reporting \
+    -o "deployments/atd-bond-reporting.yaml"\
+    --skip-upload \
+    --description "Repo: https://github.com/cityofaustin/atd-bond-reporting Wrapper ETL for the atd-bond-reporting docker image with commands for moving the data from S3 to Socrata."
  
 $ prefect deployment apply deployments/atd-bond-reporting.yaml
 """
@@ -23,7 +31,7 @@ from prefect.blocks.system import JSON
 
 
 # Docker settings
-docker_env = "latest"
+docker_env = "production"
 docker_image = "atddocker/atd-bond-reporting"
 
 
