@@ -106,7 +106,7 @@ def decide_prev_month(prev_execution_date_success):
 
 
 @task
-def add_command_arguments(commands, s3_env, start_date):
+def add_command_arguments(commands, s3_env, start_date, prev_month):
     # Adds additonal command arguments based on provided arguments
     # and the previous exec date.
     output_commands = []
