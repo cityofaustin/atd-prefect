@@ -31,7 +31,6 @@ from prefect.blocks.system import JSON
 
 
 # Docker settings
-docker_env = "latest"
 docker_image = "atddocker/atd-parking-data-meters"
 
 
@@ -50,7 +49,7 @@ def get_env_vars(json_block):
     retries=1,
     retry_delay_seconds=timedelta(minutes=5).seconds,
 )
-def pull_docker_image():
+def pull_docker_image(docker_env):
     client = docker.from_env()
     client.images.pull(docker_image, tag=docker_env)
     return True
@@ -141,7 +140,7 @@ def add_command_arguments(commands, s3_env, start_date, prev_month):
     retries=3,
     retry_delay_seconds=timedelta(minutes=2).seconds,
 )
-def docker_commands(environment_variables, commands, logger):
+def docker_commands(docker_env, environment_variables, commands, logger):
     for c in commands:
         response = (
             docker.from_env()
@@ -174,13 +173,13 @@ def update_exec_date(json_block):
 
 
 @flow(name="atd-parking-data: Parking Data Processsing")
-def main(commands, block, s3_env):
+def main(commands, block, s3_env, docker_env):
     # Logger instance
     logger = get_run_logger()
 
     # Start: get env vars and pull the latest docker image
     environment_variables = get_env_vars(block)
-    docker_res = pull_docker_image()
+    docker_res = pull_docker_image(docker_env)
 
     start_date = get_start_date(environment_variables["PREV_EXEC"])
     prev_month = decide_prev_month(environment_variables["PREV_EXEC"])
@@ -188,7 +187,9 @@ def main(commands, block, s3_env):
 
     # Run our commands
     if docker_res:
-        commands_res = docker_commands(environment_variables, commands, logger)
+        commands_res = docker_commands(
+            docker_env, environment_variables, commands, logger
+        )
     if commands_res:
         update_exec_date(block)
 
@@ -219,4 +220,7 @@ if __name__ == "__main__":
     # Which s3 folder to use
     s3_env = "prod"
 
-    main(commands, block)
+    # Tag of docker image to use
+    docker_env = "latest"
+
+    main(commands, block, s3_env, docker_env)

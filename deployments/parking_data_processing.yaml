@@ -4,7 +4,7 @@
 name: 'atd-parking-data: Parking Data Processsing'
 description: 'Repo: https://github.com/cityofaustin/atd-parking-data Scripts that
   download and process parking data for finance reporting.'
-version: c77cfcaa8d24d54b1ba017217e0684c4
+version: f25a3084a74b5d6bae74a70f9a89ef8b
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
@@ -27,6 +27,7 @@ parameters:
   - parking_socrata.py --dataset payments
   - parking_socrata.py --dataset fiserv
   - parking_socrata.py --dataset transactions
+  docker_env: latest
 schedule:
   cron: 35 8 * * *
   timezone: null
@@ -77,9 +78,13 @@ parameter_openapi_schema:
     s3_env:
       title: s3_env
       position: 2
+    docker_env:
+      title: docker_env
+      position: 3
   required:
   - commands
   - block
   - s3_env
+  - docker_env
   definitions: null
-timestamp: '2023-03-24T21:25:02.890555+00:00'
+timestamp: '2023-03-27T15:49:28.654497+00:00'
