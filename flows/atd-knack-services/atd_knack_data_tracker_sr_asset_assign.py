@@ -32,7 +32,7 @@ from prefect.blocks.system import JSON
 
 
 # Docker settings
-docker_env = "test"
+docker_env = "production"
 docker_image = "atddocker/atd-knack-services"
 
 
@@ -95,6 +95,7 @@ def main(commands, block):
     # Run our commands
     if docker_res:
         commands_res = docker_commands(environment_variables, commands, logger)
+
 
 if __name__ == "__main__":
     app_name = "data-tracker"  # Name of knack app

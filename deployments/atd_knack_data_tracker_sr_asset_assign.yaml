@@ -5,7 +5,7 @@ name: 'Knack Services: Data Tracker SR Assign Signals'
 description: 'Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL
   for the atd-knack-services docker image with commands for a script that assigns
   signals to CSRs in data tracker.'
-version: d32612d9ac0180c06a25dd3828c079e1
+version: e213f949f6509457cd613537efc4a25d
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
@@ -67,4 +67,4 @@ parameter_openapi_schema:
   - commands
   - block
   definitions: null
-timestamp: '2023-03-23T15:05:08.937437+00:00'
+timestamp: '2023-03-28T22:05:53.704416+00:00'
