@@ -1,16 +1,23 @@
 #!/usr/bin/env python
 
 """
-Name: ATD Knack Services
-Description: This set of tasks publishes data from ATD's various Knack 
- applications to other platforms including a Postgres database, Socrata, 
- and ArcGIS Online (AGOL). 
-Schedule: Case-by-case basis
-Labels: atd-data02, production
+Name: Knack Services: Artbox Signals
+Description: Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image 
+             with commands for updating signal records in one knack app (smart mobility) with data from another (data tracker).
 
-Re-Register with:
-$ prefect register --project knack -p atd_knack_artbox_signals.py -n "ATD-Knack-Services: Signals to Artbox Knack App" -f
-
+Create Deployment:
+$ prefect deployment build flows/atd-knack-services/atd_knack_artbox_signals.py:main \
+    --name "Knack Services: Artbox Signals" \
+    --pool atd-data-03 \
+    --cron "30 0 * * *" \
+    -q default \
+    -sb github/knack-services-wip \
+    -o "deployments/atd_knack_artbox_signals.yaml" \
+    --description "Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image with commands for updating signal records in one knack app (smart mobility) with data from another (data tracker)." \
+    --skip-upload \
+    --tag atd-knack-services
+ 
+$ prefect deployment apply deployments/atd_knack_artbox_signals.yaml
 """
 
 import os
@@ -20,138 +27,70 @@ import prefect
 from datetime import datetime, timedelta
 
 # Prefect
-from prefect import Flow, task, Parameter, unmapped, case
-from prefect.storage import GitHub
-from prefect.run_configs import LocalRun
-from prefect.engine.state import Failed
-from prefect.schedules import Schedule
-from prefect.schedules.clocks import CronClock
-from prefect.backend import set_key_value, get_key_value
-from prefect.triggers import all_successful
-from prefect.tasks.docker import PullImage
+from prefect import flow, task, get_run_logger
+from prefect.blocks.system import JSON
 
 
-from prefect.utilities.notifications import slack_notifier
+# Docker settings
+docker_env = "production"
+docker_image = "atddocker/atd-knack-services"
 
 
-# Signs/Markings Contractor Work Orders Config
-FLOW_NAME_UNIQUE = "Signals to Artbox Knack App"
-APP_NAME = "data-tracker"
-CONTAINER = "view_197"
-
-# Optional Services
-LAYER_NAME = (
-    ""  # If provided, will be used in agol_build_markings_segment_geometries.py
-)
-APP_NAME_DEST = "smart-mobility"  # If provided, will be used in records_to_knack.py
-CONTAINER_DEST = "view_396"  # Needed in order to use records_to_knack.py
-SOCRATA_FLAG = False  # If True, will run records_to_socrata.py
-AGOL_FLAG = False  # If True, will run records_to_agol.py
-REPLACE_DATA = False  # Flag that will overwrite all data (ignores date)
-
-
-# Select the appropriate tag for the Docker Image
-# docker_env will also be taken as a parameter
-DOCKER_TAG = "production"
-
-# Set up slack fail handler
-handler = slack_notifier(only_states=[Failed])
-
-# Logger instance
-logger = prefect.context.get("logger")
-
-
-# Based on inputs, determine if some conditional tasks should run
-@task(name="determine_task_runs", nout=2)
-def determine_task_runs(layer, app_name_dest):
-    return bool(layer), bool(app_name_dest)
-
-
-# Task to pull the latest Docker image
-@task(
-    name="pull_docker_image",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
-    log_stdout=True,
-)
-def pull_docker_image(docker_tag):
-    docker_image = f"atddocker/atd-knack-services:{docker_tag}"
-    client = docker.from_env()
-    response = client.images.pull("atddocker/atd-knack-services", all_tags=True)
-    logger.info(f"Docker Images Pulled, using: {docker_image}")
-    return docker_image
-
-
-# Get the envrioment variables for the given app
 @task(
     name="get_env_vars",
-    task_run_name="get_env_vars:{app}",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
-    log_stdout=True,
+    retries=10,
+    retry_delay_seconds=timedelta(seconds=15).seconds,
 )
-def get_env_vars(app):
-    environment_variables = get_key_value(key=f"{app}-atd_knack_services")
-    return environment_variables
+def get_env_vars(json_block):
+    # Environment Variables stored in JSON block in Prefect
+    return JSON.load(json_block).dict()["value"]
 
 
-# Get the last date (string) the flow was succesful
 @task(
-    name="get_last_exec_time",
-    task_run_name="get_last_exec_time (app: {app}, container: {container})",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
-    log_stdout=True,
+    name="pull_docker_image",
+    retries=1,
+    retry_delay_seconds=timedelta(minutes=5).seconds,
 )
-def get_last_exec_time(app, container, replace_data):
+def pull_docker_image():
+    client = docker.from_env()
+    client.images.pull(docker_image, tag=docker_env)
+    return True
+
+
+# Determine what date to run the knack scripts
+@task(
+    name="determine_date_args",
+    retries=1,
+    retry_delay_seconds=timedelta(minutes=5).seconds,
+)
+def determine_date_args(environment_variables, commands):
     # Completely replace data on 15th day of every month,
     # to catch records potentially missed by incremental refreshes
+    output = []
     if datetime.today().day == 15:
-        return "1970-01-01"
+        for c in commands:
+            output.append(f"{c} -d 1970-01-01")
+        return output
 
-    # parameter option to replace all data
-    if replace_data:
-        return "1970-01-01"
-
-    # Get dict of previous executions
-    prev_execs = get_key_value("atd_knack_services_prev_exec")
-
-    # Key is unique based on the container and app
-    key = f"{app}:{container}-prev-exec"
-
-    # Return the date for this container/app if it exists
-    if key in prev_execs:
-        return prev_execs[key]
-    else:
-        # Return this if it doesn't exist yet
-        return "1970-01-01"
+    prev_exec = environment_variables["artbox_signals_prev_exec"]
+    for c in commands:
+        output.append(f"{c} -d {prev_exec}")
+    return output
 
 
-# Records to postgrest
 @task(
-    name="records_to_postgrest",
-    task_run_name="records_to_postgrest (app: {app_name}, contianer: {container}, date_filter:{date_filter})",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
-    log_stdout=True,
+    name="docker_command",
+    retries=1,
+    retry_delay_seconds=timedelta(minutes=5).seconds,
 )
-def records_to_postgrest(
-    app_name, container, date_filter, environment_variables, docker_image
-):
+def docker_command(environment_variables, command, logger):
+    logger.info(command)
     response = (
         docker.from_env()
         .containers.run(
-            image=docker_image,
+            image=f"{docker_image}:{docker_env}",
             working_dir=None,
-            command=f"python atd-knack-services/services/records_to_postgrest.py -a {app_name} -c {container} -d {date_filter}",
+            command=f"python {command}",
             environment=environment_variables,
             volumes=None,
             remove=True,
@@ -164,248 +103,64 @@ def records_to_postgrest(
     return response
 
 
-# Records to AGOL
 @task(
-    name="records_to_agol",
-    task_run_name="records_to_agol (app: {app_name}, container: {container}, date_filter: {date_filter})",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
-    log_stdout=True,
+    name="update_exec_date",
+    retries=10,
+    retry_delay_seconds=timedelta(seconds=15).seconds,
 )
-def records_to_agol(
-    app_name, container, date_filter, environment_variables, docker_image
-):
-    response = (
-        docker.from_env()
-        .containers.run(
-            image=docker_image,
-            working_dir=None,
-            command=f"python atd-knack-services/services/records_to_agol.py -a {app_name} -c {container} -d {date_filter}",
-            environment=environment_variables,
-            volumes=None,
-            remove=True,
-            detach=False,
-            stdout=True,
-        )
-        .decode("utf-8")
+def update_exec_date(json_block):
+    # Update our JSON block with the updated date of last flow execution
+    block = JSON.load(json_block)
+    block.value["artbox_signals_prev_exec"] = datetime.today().strftime("%Y-%m-%d")
+    block.save(name=json_block, overwrite=True)
+
+
+@flow(name=f"Knack Services: Artbox Signals")
+def main(commands, block, app_name_src, app_name_dest):
+    # Logger instance
+    logger = get_run_logger()
+
+    # Start: get env vars and pull the latest docker image
+    environment_variables = get_env_vars(block)
+    docker_res = pull_docker_image()
+
+    # Append date argument to our commands list
+    commands = determine_date_args(environment_variables, commands)
+
+    # Running provided commands
+    # 1. Upload source data to postgres
+    command_res = docker_command(
+        environment_variables[app_name_src], commands[0], logger
     )
-    logger.info(response)
-    return response
 
-
-# Records to Socrata
-@task(
-    name="records_to_socrata",
-    task_run_name="records_to_socrata (app: {app_name}, container: {container}, date_filter: {date_filter})",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
-    log_stdout=True,
-)
-def records_to_socrata(
-    app_name, container, date_filter, environment_variables, docker_image
-):
-    response = (
-        docker.from_env()
-        .containers.run(
-            image=docker_image,
-            working_dir=None,
-            command=f"python atd-knack-services/services/records_to_socrata.py -a {app_name} -c {container} -d {date_filter}",
-            environment=environment_variables,
-            volumes=None,
-            remove=True,
-            detach=False,
-            stdout=True,
-        )
-        .decode("utf-8")
+    # 2. Upload destination data to postgres
+    command_res = docker_command(
+        environment_variables[app_name_dest], commands[1], logger
     )
-    logger.info(response)
-    return response
 
-
-# Building AGOL segment geometries
-@task(
-    name="agol_build_markings_segment_geometries",
-    task_run_name="agol_build_markings_segment_geometries (layer: {layer}, date_filter: {date_filter})",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
-    log_stdout=True,
-)
-def agol_build_markings_segment_geometries(
-    layer, date_filter, environment_variables, docker_image
-):
-    response = (
-        docker.from_env()
-        .containers.run(
-            image=docker_image,
-            working_dir=None,
-            command=f"python atd-knack-services/services/agol_build_markings_segment_geometries.py -l {layer} -d {date_filter}",
-            environment=environment_variables,
-            volumes=None,
-            remove=True,
-            detach=False,
-            stdout=True,
-        )
-        .decode("utf-8")
+    # 3. Upload data to destination knack app
+    command_res = docker_command(
+        environment_variables[f"{app_name_src} to {app_name_dest}"], commands[2], logger
     )
-    logger.info(response)
-    return response
 
+    update_exec_date(block)
 
-# Send Records to a destination knack app
-@task(
-    name="records_to_knack",
-    task_run_name="records_to_knack (app_name_src: {app_name_src}, container_src: {container_src}, app_name_dest: {app_name_dest})",
-    max_retries=1,
-    timeout=timedelta(minutes=60),
-    retry_delay=timedelta(minutes=5),
-    state_handlers=[handler],
-    log_stdout=True,
-)
-def records_to_knack(
-    app_name_src,
-    container_src,
-    date_filter,
-    app_name_dest,
-    environment_variables,
-    dest_environment_variables,
-    postgrest_res_des,
-    docker_image,
-):
-    # Merging the two env variables
-    environment_variables["KNACK_APP_ID_SRC"] = environment_variables["KNACK_APP_ID"]
-    environment_variables["KNACK_APP_ID_DEST"] = dest_environment_variables[
-        "KNACK_APP_ID"
-    ]
-    environment_variables["KNACK_API_KEY_DEST"] = dest_environment_variables[
-        "KNACK_API_KEY"
-    ]
-
-    response = (
-        docker.from_env()
-        .containers.run(
-            image=docker_image,
-            working_dir=None,
-            command=f"python atd-knack-services/services/records_to_knack.py -a {app_name_src} -c {container_src} -d {date_filter} -dest {app_name_dest}",
-            environment=environment_variables,
-            volumes=None,
-            remove=True,
-            detach=False,
-            stdout=True,
-        )
-        .decode("utf-8")
-    )
-    logger.info(response)
-    return response
-
-
-# Update the date stored in the key value in Prefect
-# if the upstream tasks were successful
-@task(trigger=all_successful)
-def update_last_exec_time(app, container):
-    # Get today's date as a string
-    new_date = datetime.today().strftime("%Y-%m-%d")
-
-    # Get dict of previous executions
-    prev_execs = get_key_value("atd_knack_services_prev_exec")
-
-    # Key is unique based on the container and app
-    key = f"{app}:{container}-prev-exec"
-
-    # Set that key to the new date
-    prev_execs[key] = new_date
-    set_key_value(key="atd_knack_services_prev_exec", value=prev_execs)
-
-
-with Flow(
-    # Flow Name
-    f"ATD-Knack-Services: {FLOW_NAME_UNIQUE}",
-    # Let's configure the agents to download the file from this repo
-    storage=GitHub(
-        repo="cityofaustin/atd-prefect",
-        path="flows/knack/atd_knack_artbox_signals.py",
-        ref="atd-knack-services",  # The branch name
-    ),
-    run_config=LocalRun(labels=["atd-data02", "production"]),
-    schedule=Schedule(clocks=[CronClock("30 0 * * *")]),
-) as flow:
-    # Based on provided parameters, skip or run some conditional tasks
-    build_geom, to_knack = determine_task_runs(LAYER_NAME, APP_NAME_DEST)
-
-    # Get the last time the flow ran for this app/container combo
-    date_filter = get_last_exec_time(APP_NAME, CONTAINER, REPLACE_DATA)
-
-    environment_variables = get_env_vars(APP_NAME)
-
-    # 1. Pull latest docker image
-    docker_image = pull_docker_image(DOCKER_TAG)
-    # 2. Download Knack records and send them to Postgres(t)
-    postgrest_res = records_to_postgrest(
-        APP_NAME,
-        CONTAINER,
-        date_filter,
-        environment_variables,
-        docker_image,
-    )
-    # 3. Send data from Postgrest to AGOL (optional)
-    with case(AGOL_FLAG, True):
-        agol_res = records_to_agol(
-            APP_NAME,
-            CONTAINER,
-            date_filter,
-            environment_variables,
-            docker_image,
-            upstream_tasks=[postgrest_res],
-        )
-
-    # 4. Send data from Postgrest to Socrata (optional)
-    with case(SOCRATA_FLAG, True):
-        socrata_res = records_to_socrata(
-            APP_NAME,
-            CONTAINER,
-            date_filter,
-            environment_variables,
-            docker_image,
-            upstream_tasks=[postgrest_res],
-        )
-    # 5. Build line geometries in AGOL (optional)
-    with case(build_geom, True):
-        agol_build_res = agol_build_markings_segment_geometries(
-            LAYER_NAME,
-            date_filter,
-            environment_variables,
-            docker_image,
-            upstream_tasks=[agol_res, build_geom],
-        )
-    # 6. Send data to another knack app (optional)
-    with case(to_knack, True):
-        dest_environment_variables = get_env_vars(APP_NAME_DEST)
-        postgrest_res_des = records_to_postgrest(
-            APP_NAME_DEST,
-            CONTAINER_DEST,
-            date_filter,
-            dest_environment_variables,
-            docker_image,
-        )
-        knack_res = records_to_knack(
-            APP_NAME,
-            CONTAINER,
-            date_filter,
-            APP_NAME_DEST,
-            environment_variables,
-            dest_environment_variables,
-            postgrest_res_des,
-            docker_image,
-            upstream_tasks=[postgrest_res, to_knack],
-        )
-
-    # 6. (if successful) update exec date
-    update_last_exec_time(APP_NAME, CONTAINER)
 
 if __name__ == "__main__":
-    flow.run()
+    app_name_src = "data-tracker"  # Name of source data knack app
+    container_src = "view_197"  # Container of source
+
+    app_name_dest = "smart-mobility"  # Name of destination data knack app
+    container_dest = "view_396"  # Container of destination
+
+    # List of commands to be sent to the docker image
+    commands = [
+        f"atd-knack-services/services/records_to_postgrest.py -a {app_name_src} -c {container_src}",
+        f"atd-knack-services/services/records_to_postgrest.py -a {app_name_dest} -c {container_dest}",
+        f"atd-knack-services/services/records_to_knack.py -a {app_name_src} -c {container_src} -dest {app_name_dest}",
+    ]
+
+    # Environment Variable Storage Block Name
+    block = "atd-knack-services"
+
+    main(commands, block, app_name_src, app_name_dest)
