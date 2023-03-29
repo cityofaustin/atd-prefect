@@ -2,9 +2,10 @@
 ### A complete description of a Prefect Deployment for flow 'Knack Services: Data Tracker Corridor Retiming'
 ###
 name: 'Knack Services: Corridor Retiming'
-description: Wrapper ETL for the atd-knack-services docker image 
-             with defined commands for the corridor retiming view in Data Tracker app
-version: 5efc182879c4d579a2c9c66926dc3af4
+description: Wrapper ETL for the https://github.com/cityofaustin/atd-knack-services
+  docker image with defined commands for the corridor retiming view in Data Tracker
+  app
+version: faff2b2e23e3884231c48f005b5e3c36
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
@@ -59,4 +60,4 @@ parameter_openapi_schema:
   - commands
   - env_block_name
   definitions: null
-timestamp: '2023-03-29T00:31:14.258616+00:00'
+timestamp: '2023-03-29T02:08:50.804728+00:00'

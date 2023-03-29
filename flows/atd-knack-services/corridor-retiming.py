@@ -9,6 +9,8 @@ $ prefect deployment build flows/atd-knack-services/corridor-retiming.py:main \
 --name "Knack Services: Corridor Retiming" --pool atd-data-03 \
 --cron "45 11 * * *" -q default -sb github/atd-prefect-main-branch \
 --tag atd-knack-services \
+--description "Wrapper ETL for the https://github.com/cityofaustin/atd-knack-services docker image \
+    with defined commands for the corridor retiming view in Data Tracker app"
 -o "deployments/knack-services-corridor-retiming.yaml" --skip-upload
  
 $ prefect deployment apply deployments/knack-services-corridor-retiming.yaml
