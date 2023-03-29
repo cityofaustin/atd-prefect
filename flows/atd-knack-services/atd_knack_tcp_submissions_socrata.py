@@ -1,23 +1,23 @@
 #!/usr/bin/env python
 
 """
-Name: Knack Services: Artbox Signals
+Name: ATD Knack Services: ROW TCP Submissions to Socrata
 Description: Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image 
-             with commands for updating signal records in one knack app (smart mobility) with data from another (data tracker).
+        with config for publishing ROW TCP data to the open data portal
 
 Create Deployment:
-$ prefect deployment build flows/atd-knack-services/atd_knack_artbox_signals.py:main \
-    --name "Knack Services: Artbox Signals" \
+$ prefect deployment build flows/atd-knack-services/atd_knack_tcp_submissions_socrata.py:main \
+    --name "Knack Services: ROW TCP Submissions to Socrata" \
     --pool atd-data-03 \
-    --cron "30 0 * * *" \
+    --cron "15 7 * * *" \
     -q default \
     -sb github/knack-services-wip \
-    -o "deployments/atd_knack_artbox_signals.yaml" \
-    --description "Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image with commands for updating signal records in one knack app (smart mobility) with data from another (data tracker)." \
+    -o "deployments/atd_knack_tcp_submissions_socrata.yaml" \
+    --description "Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image with config for publishing ROW TCP data to the open data portal" \
     --skip-upload \
     --tag atd-knack-services
  
-$ prefect deployment apply deployments/atd_knack_artbox_signals.yaml
+$ prefect deployment apply deployments/atd_knack_tcp_submissions_socrata.yaml
 """
 
 import os
@@ -30,7 +30,7 @@ from datetime import datetime, timedelta
 from prefect import flow, task, get_run_logger
 from prefect.blocks.system import JSON
 
-FLOW_NAME = "Knack Services: Artbox Signals"
+FLOW_NAME = "Knack Services: ROW TCP Submissions to Socrata"
 
 # Docker settings
 docker_env = "production"
@@ -80,27 +80,28 @@ def determine_date_args(environment_variables, commands):
 
 
 @task(
-    name="docker_command",
+    name="docker_commands",
     retries=1,
     retry_delay_seconds=timedelta(minutes=5).seconds,
 )
-def docker_command(environment_variables, command, logger):
-    logger.info(command)
-    response = (
-        docker.from_env()
-        .containers.run(
-            image=f"{docker_image}:{docker_env}",
-            working_dir=None,
-            command=f"python {command}",
-            environment=environment_variables,
-            volumes=None,
-            remove=True,
-            detach=False,
-            stdout=True,
+def docker_commands(environment_variables, commands, logger):
+    # list ex: ["atd-knack-services/services/records_to_postgrest.py -a {app_name} -c {container} -d {date_filter}"]
+    for c in commands:
+        response = (
+            docker.from_env()
+            .containers.run(
+                image=f"{docker_image}:{docker_env}",
+                working_dir=None,
+                command=f"python {c}",
+                environment=environment_variables,
+                volumes=None,
+                remove=True,
+                detach=False,
+                stdout=True,
+            )
+            .decode("utf-8")
         )
-        .decode("utf-8")
-    )
-    logger.info(response)
+        logger.info(response)
     return response
 
 
@@ -117,7 +118,7 @@ def update_exec_date(json_block):
 
 
 @flow(name=FLOW_NAME)
-def main(commands, block, app_name_src, app_name_dest):
+def main(commands, block, app_name):
     # Logger instance
     logger = get_run_logger()
 
@@ -128,40 +129,27 @@ def main(commands, block, app_name_src, app_name_dest):
     # Append date argument to our commands list
     commands = determine_date_args(environment_variables, commands)
 
-    # Running provided commands
-    # 1. Upload source data to postgres
-    command_res = docker_command(
-        environment_variables[app_name_src], commands[0], logger
-    )
-
-    # 2. Upload destination data to postgres
-    command_res = docker_command(
-        environment_variables[app_name_dest], commands[1], logger
-    )
-
-    # 3. Upload data to destination knack app
-    command_res = docker_command(
-        environment_variables[f"{app_name_src} to {app_name_dest}"], commands[2], logger
-    )
-
-    update_exec_date(block)
+    # Run our commands
+    if docker_res:
+        commands_res = docker_commands(
+            environment_variables[app_name], commands, logger
+        )
+    if commands_res:
+        update_exec_date(block)
 
 
 if __name__ == "__main__":
-    app_name_src = "data-tracker"  # Name of source data knack app
-    container_src = "view_197"  # Container of source
+    app_name = "row"  # Name of knack app
+    container = "view_483"  # Container of contractor work orders
 
-    app_name_dest = "smart-mobility"  # Name of destination data knack app
-    container_dest = "view_396"  # Container of destination
-
-    # List of commands to be sent to the docker image
+    # List of commands to be sent to the docker image,
+    # Note that the date filter arg is added last in determine_date_args task
     commands = [
-        f"atd-knack-services/services/records_to_postgrest.py -a {app_name_src} -c {container_src}",
-        f"atd-knack-services/services/records_to_postgrest.py -a {app_name_dest} -c {container_dest}",
-        f"atd-knack-services/services/records_to_knack.py -a {app_name_src} -c {container_src} -dest {app_name_dest}",
+        f"atd-knack-services/services/records_to_postgrest.py -a {app_name} -c {container}",
+        f"atd-knack-services/services/records_to_socrata.py -a {app_name} -c {container}",
     ]
 
     # Environment Variable Storage Block Name
     block = "atd-knack-services"
 
-    main(commands, block, app_name_src, app_name_dest)
+    main(commands, block, app_name)
