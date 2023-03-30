@@ -1,7 +1,7 @@
 ###
 ### A complete description of a Prefect Deployment for flow 'Service Bot: Intake Issues'
 ###
-name: 'Service Bot: Intake Issues'
+name: 'Service Bot: Intake Issues Staging'
 description: 'Repo: https://github.com/cityofaustin/atd-service-bot, Sends new issue
   data from our service portal (knack) to our Github'
 version: fd57a6a658aa9cfb2bd9f5a03b1e36dd
@@ -9,7 +9,8 @@ version: fd57a6a658aa9cfb2bd9f5a03b1e36dd
 work_queue_name: atd-service-bot
 work_pool_name: atd-data-03
 tags: []
-parameters: {}
+parameters: 
+  env: staging
 schedule:
   cron: '*/3 * * * *'
   timezone: null

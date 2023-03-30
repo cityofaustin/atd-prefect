@@ -8,7 +8,7 @@ Schedule: 21 5 * * * (UTC)
 Work queue concurrency limit: 1
 prefect deployment build flows/atd-service-bot/issues_to_socrata.py:issues_to_socrata \
     --cron "21 5 * * *" --pool atd-data-03 -q atd-service-bot \
-    --name "Service Bot: Issues to Socrata" -o "deployments/atd_service_bot_socrata.yaml" \
+    --name "Service Bot: Issues to Socrata" -o "deployments/atd_service_bot_socrata/staging.yaml" \
     -sb github/atd-service-bot-staging --skip-upload \
     --description "Repo: https://github.com/cityofaustin/atd-service-bot, Uploads (replaces) github issue data from our atd-data-tech repo
 to an Open Data Portal dataset (AKA Socrata)"

@@ -7,7 +7,7 @@ Schedule: 13 7 * * * (UTC)
 Work queue concurrency limit: 1
 prefect deployment build flows/atd-service-bot/update_issues.py:update \
     --cron "13 7 * * *" --pool atd-data-03 -q atd-service-bot \
-    --name "Service Bot: Update Issues" -o "deployments/atd_service_bot_update.yaml" \
+    --name "Service Bot: Update Issues" -o "deployments/atd_service_bot_update/staging.yaml" \
     -sb github/atd-service-bot-staging --skip-upload \
     --description "Repo: https://github.com/cityofaustin/atd-service-bot, Updates projects in our DTS portal (Knack) with new data from Github"
 """
