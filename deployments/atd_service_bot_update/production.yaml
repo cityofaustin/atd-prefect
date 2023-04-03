@@ -1,0 +1,65 @@
+###
+### A complete description of a Prefect Deployment for flow 'Service Bot: Update Issues'
+###
+name: 'Service Bot: Update Issues Production'
+description: 'Repo: https://github.com/cityofaustin/atd-service-bot, Updates projects
+  in our DTS portal (Knack) with new data from Github'
+version: 6290483f58b21f87fc4eb4df636f30d4
+# The work queue that will handle this deployment's runs
+work_queue_name: atd-service-bot
+work_pool_name: atd-data-03
+tags: []
+parameters:
+  env: production
+schedule:
+  cron: 13 7 * * *
+  timezone: null
+  day_or: true
+is_schedule_active: false
+infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: 'Service Bot: Update Issues'
+manifest_path: null
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  _block_document_id: c0eef10c-c008-40cb-908e-9b0098ae6565
+  _block_document_name: anonymous-1a54019c-bb3d-42a4-a7fa-7786b8088bd0
+  _is_anonymous: true
+  block_type_slug: process
+  _block_type_slug: process
+storage:
+  repository: https://github.com/cityofaustin/atd-prefect
+  reference: main
+  access_token: '**********'
+  include_git_objects: true
+  _block_document_id: 5ae7647c-8e37-47be-8eac-6523604b8b2f
+  _block_document_name: atd-service-bot-production
+  _is_anonymous: false
+  block_type_slug: github
+  _block_type_slug: github
+path: ''
+entrypoint: flows/atd-service-bot/update_issues.py:update
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties:
+    docker_tag:
+      title: docker_tag
+      default: production
+      position: 0
+    env:
+      title: env
+      default: production
+      position: 1
+  required: null
+  definitions: null
+timestamp: '2023-03-30T22:43:21.632283+00:00'
