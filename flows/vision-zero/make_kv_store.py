@@ -49,6 +49,10 @@ kv_store = {
     "DB_IMPORT_SCHEMA": os.getenv("DB_IMPORT_SCHEMA"),
     "GRAPHQL_ENDPOINT": os.getenv("GRAPHQL_ENDPOINT"),
     "GRAPHQL_ENDPOINT_KEY": os.getenv("GRAPHQL_ENDPOINT_KEY"),
+
+    "DB_PERMISSION_SCHEMAS": os.getenv("DB_PERMISSION_SCHEMAS"),
+    "DB_BASTION_HOST": os.getenv("DB_BASTION_HOST"),
+    "DB_RDS_HOST": os.getenv("DB_RDS_HOST")
 }
 
 json = json.dumps(kv_store)
