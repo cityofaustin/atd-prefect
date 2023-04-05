@@ -221,6 +221,6 @@ if __name__ == "__main__":
     s3_env = "prod"
 
     # Tag of docker image to use
-    docker_env = "latest"
+    docker_env = "production"
 
     main(commands, block, s3_env, docker_env)
