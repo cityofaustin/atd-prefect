@@ -3,8 +3,8 @@
 ###
 name: Austin Travis County Traffic Incident Reports
 description: Wrapper ETL for the https://github.com/cityofaustin/atd-traffic-incident-reports
-  docker image     connects to oracle db and updates postrgrest with incidents
-version: 371bb93883b40af1da84cf14fc6d0c79
+  docker image connects to oracle db and updates postrgrest with incidents
+version: 877ef8317b0b5f6798681d447207eb87
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
@@ -50,4 +50,4 @@ parameter_openapi_schema:
   properties: {}
   required: null
   definitions: null
-timestamp: '2023-04-12T21:32:44.405240+00:00'
+timestamp: '2023-04-18T20:28:10.718560+00:00'

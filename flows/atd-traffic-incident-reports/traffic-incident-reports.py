@@ -10,8 +10,7 @@ Create Deployment:
 $ prefect deployment build flows/atd-traffic-incident-reports/traffic-incident-reports.py:traffic_incidents_flow \
 --name "Austin Travis County Traffic Incident Reports" --pool atd-data-03 \
 --cron "*/5 * * * *" -q default -sb github/atd-prefect-main-branch \
---description "Wrapper ETL for the https://github.com/cityofaustin/atd-traffic-incident-reports docker image \
-    connects to oracle db and updates postrgrest with incidents" \
+--description "Wrapper ETL for the https://github.com/cityofaustin/atd-traffic-incident-reports docker image connects to oracle db and updates postrgrest with incidents" \
 -o "deployments/traffic-incident-reports.yaml" --skip-upload
  
 $ prefect deployment apply deployments/traffic-incident-reports.yaml
