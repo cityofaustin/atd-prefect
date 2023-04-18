@@ -27,7 +27,7 @@ from prefect import flow, task, get_run_logger
 from prefect.blocks.system import JSON
 
 # Docker settings
-docker_env = "latest"
+docker_env = "production"
 docker_image = f"atddocker/atd-traffic-incident-reports:{docker_env}"
 
 
