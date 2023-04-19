@@ -51,6 +51,7 @@ DB_USER = None
 DB_PASS = None
 DB_NAME = None
 DB_IMPORT_SCHEMA = None
+DB_SSL_REQUIREMENT = None
 
 DB_BASTION_HOST_SSH_USERNAME = None
 DB_BASTION_HOST = None
@@ -75,6 +76,7 @@ if False:
     DB_PASS = kv_dictionary["DB_PASS"]
     DB_NAME = kv_dictionary["DB_NAME"]
     DB_IMPORT_SCHEMA = kv_dictionary["DB_IMPORT_SCHEMA"]
+    DB_SSL_REQUIREMENT = kv_dictionary["DB_SSL_REQUIREMENT"]
 
     DB_BASTION_HOST_SSH_USERNAME = kv_dictionary["DB_BASTION_HOST_SSH_USERNAME"]
     DB_BASTION_HOST = kv_dictionary["DB_BASTION_HOST"]
@@ -96,6 +98,7 @@ else:
     DB_PASS = os.getenv("DB_PASS")
     DB_NAME = os.getenv("DB_NAME")
     DB_IMPORT_SCHEMA = os.getenv("DB_IMPORT_SCHEMA")
+    DB_SSL_REQUIREMENT = os.getenv("DB_SSL_REQUIREMENT")
 
     DB_BASTION_HOST_SSH_USERNAME = os.getenv("DB_BASTION_HOST_SSH_USERNAME")
     DB_BASTION_HOST = os.getenv("DB_BASTION_HOST")
@@ -364,7 +367,7 @@ def remove_trailing_carriage_returns(data_loaded_token):
         user=DB_USER, 
         password=DB_PASS, 
         dbname=DB_NAME, 
-        sslmode="require", 
+        sslmode=DB_SSL_REQUIREMENT, 
         sslrootcert="/root/rds-combined-ca-bundle.pem"
         )
 
@@ -408,7 +411,7 @@ def align_db_typing(trimmed_token):
         user=DB_USER, 
         password=DB_PASS, 
         dbname=DB_NAME, 
-        sslmode="require", 
+        sslmode=DB_SSL_REQUIREMENT, 
         sslrootcert="/root/rds-combined-ca-bundle.pem"
         )
 
@@ -492,7 +495,7 @@ def align_records(typed_token, dry_run):
         user=DB_USER, 
         password=DB_PASS, 
         dbname=DB_NAME, 
-        sslmode="require", 
+        sslmode=DB_SSL_REQUIREMENT, 
         sslrootcert="/root/rds-combined-ca-bundle.pem"
         )
 
