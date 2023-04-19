@@ -643,6 +643,51 @@ def create_import_schema_name(logical_group_id):
     print("Schema name: ", schema)
     return schema
 
+@task(
+    name="Create target import schema",
+)
+def create_target_import_schema(schema_name):
+    ssh_tunnel = SSHTunnelForwarder(
+        (DB_BASTION_HOST),
+        ssh_username=DB_BASTION_HOST_SSH_USERNAME,
+        ssh_private_key= '/root/.ssh/id_rsa', # will switch to ed25519 when we rebuild this for prefect 2
+        remote_bind_address=(DB_RDS_HOST, 5432)
+        )
+    ssh_tunnel.start()   
+
+    pg = psycopg2.connect(
+        host='localhost', 
+        port=ssh_tunnel.local_bind_port,
+        user=DB_USER, 
+        password=DB_PASS, 
+        dbname=DB_NAME, 
+        sslmode=DB_SSL_REQUIREMENT, 
+        sslrootcert="/root/rds-combined-ca-bundle.pem"
+        )
+
+    cursor = pg.cursor()
+    
+    # check if the schema exists by querying the pg_namespace system catalog
+    cursor.execute(f"SELECT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = '{schema_name}')")
+
+    schema_exists = cursor.fetchone()[0]
+
+    # if the schema doesn't exist, create it using a try-except block to handle the case where it already exists
+    if not schema_exists:
+        try:
+            cursor.execute(f"CREATE SCHEMA {schema_name}")
+            print("Schema created successfully")
+        except psycopg2.Error as e:
+            print(f"Error creating schema: {e}")
+    else:
+        print("Schema already exists")
+
+    # commit the changes and close the cursor and connection
+    pg.commit()
+    cursor.close()
+    pg.close()
+
+    return True
 
 with Flow(
     "CRIS Crash Import",
