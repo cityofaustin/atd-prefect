@@ -614,6 +614,7 @@ def align_records(typed_token, dry_run):
     # fmt: on
     return True
 
+
 @task(
     name="Group CSVs into logical groups",
 )
@@ -629,6 +630,14 @@ def group_csvs_into_logical_groups(extracted_archives):
             logical_groups.append(group_id)
     print("logical groups: " + str(logical_groups))
     return logical_groups
+
+@task(
+    name="Generate a short alphanumeric string based on logical group id",
+)
+def create_import_schema_name(logical_group_id):
+    schema = 'import_' + hashlib.md5(logical_group_id.encode()).hexdigest()[:12]
+    print("Schema name: ", schema)
+    return schema
 
 
 with Flow(
@@ -655,6 +664,7 @@ with Flow(
 
     logical_groups_of_csvs = group_csvs_into_logical_groups(extracted_archives[0])
 
+    schema_name = create_import_schema_name.map(logical_groups_of_csvs)
 
     pgloader_command_files = pgloader_csvs_into_database.map(extracted_archives)
 
