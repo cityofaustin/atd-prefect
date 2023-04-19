@@ -291,7 +291,7 @@ def remove_archives_from_sftp_endpoint(zip_location):
     retry_delay=datetime.timedelta(minutes=1), 
     #state_handlers=[handler],
     )
-def pgloader_csvs_into_database(directory):
+def pgloader_csvs_into_database(directory, schema_name):
     # Walk the directory and find all the CSV files
     pgloader_command_files_tmpdir = tempfile.mkdtemp()
     for root, dirs, files in os.walk(directory):
@@ -328,12 +328,12 @@ def pgloader_csvs_into_database(directory):
                     file.write(f"""
 LOAD CSV
     FROM '{directory}/{filename}' ({headers_line})
-    INTO  {CONNECTION_STRING}&import.{table} ({headers_line})
+    INTO  {CONNECTION_STRING}&{schema_name}.{table} ({headers_line})
     WITH truncate,
         skip header = 1
     BEFORE LOAD DO 
-    $$ drop table if exists import.{table}; $$,
-    $$ create table import.{table} (\n""")
+    $$ drop table if exists {schema_name}.{table}; $$,
+    $$ create table {schema_name}.{table} (\n""")
                     fields = []
                     for field in headers:
                         fields.append(f'       {field} character varying') 
