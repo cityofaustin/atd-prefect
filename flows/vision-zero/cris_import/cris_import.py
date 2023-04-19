@@ -715,7 +715,9 @@ with Flow(
 
     schema_name = create_import_schema_name.map(logical_groups_of_csvs)
 
-    pgloader_command_files = pgloader_csvs_into_database.map(extracted_archives)
+    schema_created_token = create_target_import_schema.map(schema_name)
+
+    #pgloader_command_files = pgloader_csvs_into_database.map(logical_groups_of_csvs, schema_name)
 
     # trimmed_token = remove_trailing_carriage_returns(pgloader_command_files)
 
