@@ -43,9 +43,6 @@ if False:
     ZIP_PASSWORD = kv_dictionary["ZIP_PASSWORD"]
     VZ_ETL_LOCATION = kv_dictionary["VZ_ETL_LOCATION"]
 
-    RAW_AIRFLOW_CONFIG_JSON = kv_dictionary["RAW_AIRFLOW_CONFIG"]
-    RAW_AIRFLOW_CONFIG = json.loads(RAW_AIRFLOW_CONFIG_JSON)
-
     AWS_DEFAULT_REGION = kv_dictionary["AWS_DEFAULT_REGION"]
     AWS_ACCESS_KEY_ID = kv_dictionary["AWS_ACCESS_KEY_ID"]
     AWS_SECRET_ACCESS_KEY = kv_dictionary["AWS_SECRET_ACCESS_KEY"]
@@ -65,9 +62,6 @@ else:
     SFTP_ENDPOINT = os.getenv("SFTP_ENDPOINT")
     ZIP_PASSWORD = os.getenv("ZIP_PASSWORD")
     VZ_ETL_LOCATION = os.getenv("VZ_ETL_LOCATION")
-
-    RAW_AIRFLOW_CONFIG_JSON = os.getenv("RAW_AIRFLOW_CONFIG")
-    RAW_AIRFLOW_CONFIG = json.loads(RAW_AIRFLOW_CONFIG_JSON)
 
     AWS_DEFAULT_REGION = os.getenv("AWS_DEFAULT_REGION")
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
