@@ -614,6 +614,22 @@ def align_records(typed_token, dry_run):
     # fmt: on
     return True
 
+@task(
+    name="Group CSVs into logical groups",
+)
+def group_csvs_into_logical_groups(extracted_archives):
+    files = os.listdir(str(extracted_archives))
+    logical_groups = []
+    for file in files:
+        if file.endswith(".xml"):
+            continue
+        match = re.search("^extract_(\d+_\d+)_", file)
+        group_id = match.group(1)
+        if group_id not in logical_groups:
+            logical_groups.append(group_id)
+    print("logical groups: " + str(logical_groups))
+    return logical_groups
+
 
 with Flow(
     "CRIS Crash Import",
@@ -635,7 +651,9 @@ with Flow(
 
     # iterate over the zips in that location and unarchive them into
     # a list of temporary directories containing the files of each
-    extracted_archives = unzip_archives(zip_location)
+    extracted_archives = unzip_archives(zip_location) # this returns an array, but is not mapped on
+
+    logical_groups_of_csvs = group_csvs_into_logical_groups(extracted_archives[0])
 
 
     pgloader_command_files = pgloader_csvs_into_database.map(extracted_archives)
