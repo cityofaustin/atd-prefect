@@ -51,7 +51,7 @@ DB_HOST = None
 DB_USER = None
 DB_PASS = None
 DB_NAME = None
-DB_IMPORT_SCHEMA = None
+DB_IMPORT_SCHEMA = None # FIXME this needs to go, and can be removed when the flow is map safe, because the import schema is dynamic
 DB_SSL_REQUIREMENT = None
 
 DB_BASTION_HOST_SSH_USERNAME = None
@@ -352,7 +352,7 @@ $$;\n""")
     name="Remove trailing carriage returns from imported data", 
     # state_handlers=[handler],
     )
-def remove_trailing_carriage_returns(data_loaded_token):
+def remove_trailing_carriage_returns(map_state):
 
     ssh_tunnel = SSHTunnelForwarder(
         (DB_BASTION_HOST),
@@ -372,16 +372,18 @@ def remove_trailing_carriage_returns(data_loaded_token):
         sslrootcert="/root/rds-combined-ca-bundle.pem"
         )
 
-    columns = util.get_input_tables_and_columns(pg, DB_IMPORT_SCHEMA)
+    columns = util.get_input_tables_and_columns(pg, map_state["import_schema"])
     for column in columns:
-        util.trim_trailing_carriage_returns(pg, DB_IMPORT_SCHEMA, column)
+        util.trim_trailing_carriage_returns(pg,  map_state["import_schema"], column)
+
+    return map_state
 
 
 @task(
     name="Align DB Types", 
     # state_handlers=[handler],
     )
-def align_db_typing(trimmed_token):
+def align_db_typing(map_state):
 
     """
     This function compares the target table in the VZDB with the corollary table in the import schema. For each column pair,
@@ -417,7 +419,7 @@ def align_db_typing(trimmed_token):
         )
 
     # query list of the tables which were created by the pgloader import process
-    imported_tables = util.get_imported_tables(pg, DB_IMPORT_SCHEMA)
+    imported_tables = util.get_imported_tables(pg, map_state["import_schema"])
 
     # pull our map which connects the names of imported tables to the target tables in VZDB
     table_mappings = mappings.get_table_map()
@@ -431,7 +433,7 @@ def align_db_typing(trimmed_token):
 
         # Safety check to make sure that all incoming data has each row complete with a value in each of the "key" columns. Key columns are
         # the columns which are used to uniquely identify the entity being represented by a record in the database. 
-        util.enforce_complete_keying(pg, mappings.get_key_columns(), output_table, DB_IMPORT_SCHEMA, input_table)
+        util.enforce_complete_keying(pg, mappings.get_key_columns(), output_table, map_state["import_schema"], input_table)
 
         # collect the column types for the target table, to be applied to the imported table
         output_column_types = util.get_output_column_types(pg, output_table)
@@ -439,15 +441,15 @@ def align_db_typing(trimmed_token):
         # iterate on each column
         for column in output_column_types:
             # for that column, confirm that it is included in the incoming CRIS data
-            input_column_type = util.get_input_column_type(pg, DB_IMPORT_SCHEMA, input_table, column)
+            input_column_type = util.get_input_column_type(pg, map_state["import_schema"], input_table, column)
 
             # skip columns which do not appear in the import data, such as the columns we have added ourselves to the VZDB
             if not input_column_type:
                 continue
 
             # form an ALTER statement to apply the type to the imported table's column
-            alter_statement = util.form_alter_statement_to_apply_column_typing(DB_IMPORT_SCHEMA, input_table, column)
-            print(f"Aligning types for {DB_IMPORT_SCHEMA}.{input_table['table_name']}.{column['column_name']}.")
+            alter_statement = util.form_alter_statement_to_apply_column_typing(map_state["import_schema"], input_table, column)
+            print(f"Aligning types for {map_state['import_schema']}.{input_table['table_name']}.{column['column_name']}.")
 
             # and execute the statement
             cursor = pg.cursor()
@@ -455,7 +457,7 @@ def align_db_typing(trimmed_token):
             pg.commit()
 
     # fmt: on
-    return True
+    return map_state 
 
 
 @task(
@@ -731,9 +733,9 @@ with Flow(
 
     pgloader_command_files = pgloader_csvs_into_database.map(schema_name)
 
-    #trimmed_token = remove_trailing_carriage_returns.map(pgloader_command_files)
+    trimmed_token = remove_trailing_carriage_returns.map(pgloader_command_files)
 
-    # typed_token = align_db_typing(trimmed_token=trimmed_token)
+    typed_token = align_db_typing.map(trimmed_token)
 
     # align_records_token = align_records(typed_token=typed_token, dry_run=dry_run)
 
