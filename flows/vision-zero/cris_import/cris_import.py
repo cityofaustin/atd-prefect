@@ -52,6 +52,7 @@ DB_PASS = None
 DB_NAME = None
 DB_IMPORT_SCHEMA = None
 
+DB_BASTION_HOST_SSH_USERNAME = None
 DB_BASTION_HOST = None
 DB_RDS_HOST = None
 
@@ -75,6 +76,7 @@ if False:
     DB_NAME = kv_dictionary["DB_NAME"]
     DB_IMPORT_SCHEMA = kv_dictionary["DB_IMPORT_SCHEMA"]
 
+    DB_BASTION_HOST_SSH_USERNAME = kv_dictionary["DB_BASTION_HOST_SSH_USERNAME"]
     DB_BASTION_HOST = kv_dictionary["DB_BASTION_HOST"]
     DB_RDS_HOST = kv_dictionary["DB_RDS_HOST"]
 else:
@@ -95,6 +97,7 @@ else:
     DB_NAME = os.getenv("DB_NAME")
     DB_IMPORT_SCHEMA = os.getenv("DB_IMPORT_SCHEMA")
 
+    DB_BASTION_HOST_SSH_USERNAME = os.getenv("DB_BASTION_HOST_SSH_USERNAME")
     DB_BASTION_HOST = os.getenv("DB_BASTION_HOST")
     DB_RDS_HOST = os.getenv("DB_RDS_HOST")
 
@@ -308,7 +311,7 @@ def pgloader_csvs_into_database(directory):
                 # because they get executed before this goes out of scope
                 ssh_tunnel = SSHTunnelForwarder(
                     (DB_BASTION_HOST),
-                    ssh_username="vz-etl",
+                    ssh_username=DB_BASTION_HOST_SSH_USERNAME,
                     ssh_private_key= '/root/.ssh/id_rsa', # will switch to ed25519 when we rebuild this for prefect 2
                     remote_bind_address=(DB_RDS_HOST, 5432)
                     )
@@ -349,7 +352,7 @@ def remove_trailing_carriage_returns(data_loaded_token):
 
     ssh_tunnel = SSHTunnelForwarder(
         (DB_BASTION_HOST),
-        ssh_username="vz-etl",
+        ssh_username=DB_BASTION_HOST_SSH_USERNAME,
         ssh_private_key= '/root/.ssh/id_rsa', # will switch to ed25519 when we rebuild this for prefect 2
         remote_bind_address=(DB_RDS_HOST, 5432)
         )
@@ -393,7 +396,7 @@ def align_db_typing(trimmed_token):
 
     ssh_tunnel = SSHTunnelForwarder(
         (DB_BASTION_HOST),
-        ssh_username="vz-etl",
+        ssh_username=DB_BASTION_HOST_SSH_USERNAME,
         ssh_private_key= '/root/.ssh/id_rsa', # will switch to ed25519 when we rebuild this for prefect 2
         remote_bind_address=(DB_RDS_HOST, 5432)
         )
@@ -477,7 +480,7 @@ def align_records(typed_token, dry_run):
     
     ssh_tunnel = SSHTunnelForwarder(
         (DB_BASTION_HOST),
-        ssh_username="vz-etl",
+        ssh_username=DB_BASTION_HOST_SSH_USERNAME,
         ssh_private_key= '/root/.ssh/id_rsa', # will switch to ed25519 when we rebuild this for prefect 2
         remote_bind_address=(DB_RDS_HOST, 5432)
         )
@@ -616,45 +619,49 @@ with Flow(
     "CRIS Crash Import",
 ) as flow:
 
-    dry_run = Parameter("dry_run", default=True, required=True)
+
+    # dry_run = Parameter("dry_run", default=True, required=True)
 
     # get a location on disk which contains the zips from the sftp endpoint
-    zip_location = download_extract_archives()
+    # zip_location = download_extract_archives()
 
     # OR
 
-    # zip_location = specify_extract_location(
-    # "/root/cris_import/data/2022-ytd.zip",
+    zip_location = specify_extract_location(
+    "/root/cris_import/data/apr-19-dual-schema-export.zip",
     # "/root/cris_import/data/july-2022.zip",
     # "/root/cris_import/data/nov21-sep22.zip",
-    # )
+    )
 
     # iterate over the zips in that location and unarchive them into
     # a list of temporary directories containing the files of each
     extracted_archives = unzip_archives(zip_location)
 
+
     pgloader_command_files = pgloader_csvs_into_database.map(extracted_archives)
 
-    trimmed_token = remove_trailing_carriage_returns(pgloader_command_files)
+    # trimmed_token = remove_trailing_carriage_returns(pgloader_command_files)
 
-    typed_token = align_db_typing(trimmed_token=trimmed_token)
+    # typed_token = align_db_typing(trimmed_token=trimmed_token)
 
-    align_records_token = align_records(typed_token=typed_token, dry_run=dry_run)
+    # align_records_token = align_records(typed_token=typed_token, dry_run=dry_run)
 
     # push up the archives to s3 for archival
-    uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
+    # uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
 
     # remove archives from SFTP endpoint
-    removal_token = remove_archives_from_sftp_endpoint(zip_location)
+    # removal_token = remove_archives_from_sftp_endpoint(zip_location)
 
-    cleanup = cleanup_temporary_directories(
-        zip_location,
-        extracted_archives,
-        pgloader_command_files,
-        upstream_tasks=[align_records_token, removal_token],
-    )
+    # cleanup = cleanup_temporary_directories(
+        # zip_location,
+        # extracted_archives,
+        # pgloader_command_files,
+        # upstream_tasks=[align_records_token],
+        # #upstream_tasks=[align_records_token, removal_token],
+    # )
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
-flow.register(project_name="vision-zero")
-#flow.run(dry_run=False)
+# flow.register(project_name="vision-zero")
+# flow.run(dry_run=False)
+flow.run()
