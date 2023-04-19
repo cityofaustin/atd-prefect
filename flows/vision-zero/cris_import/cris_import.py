@@ -291,22 +291,20 @@ def remove_archives_from_sftp_endpoint(zip_location):
     retry_delay=datetime.timedelta(minutes=1), 
     #state_handlers=[handler],
     )
-def pgloader_csvs_into_database(directory, schema_name):
-    print("👋" + directory)
+def pgloader_csvs_into_database(map_state):
     # Walk the directory and find all the CSV files
     pgloader_command_files_tmpdir = tempfile.mkdtemp()
-    for root, dirs, files in os.walk(directory):
+    for root, dirs, files in os.walk(map_state["working_directory"]):
         for filename in files:
-            if filename.endswith(".csv"):
+            if filename.endswith(".csv") and filename.startswith(map_state["csv_prefix"]):
                 # Extract the table name from the filename. They are named `crash`, `unit`, `person`, `primaryperson`, & `charges`.
                 table = re.search("extract_[\d_]+(.*)_[\d].*\.csv", filename).group(1)
 
                 headers_line_with_newline = None
 
-                with open(directory + "/" + filename, "r") as file:
+                with open(map_state["working_directory"] + "/" + filename, "r") as file:
                     headers_line_with_newline = file.readline()
                 headers_line = headers_line_with_newline.strip()
-
 
                 headers = headers_line.split(',')
                 command_file = pgloader_command_files_tmpdir + "/" + table + ".load"
@@ -328,13 +326,13 @@ def pgloader_csvs_into_database(directory, schema_name):
                 with open(command_file, 'w') as file:
                     file.write(f"""
 LOAD CSV
-    FROM '{directory}/{filename}' ({headers_line})
-    INTO  {CONNECTION_STRING}&{schema_name}.{table} ({headers_line})
+    FROM '{map_state["working_directory"]}/{filename}' ({headers_line})
+    INTO  {CONNECTION_STRING}&{map_state["import_schema"]}.{table} ({headers_line})
     WITH truncate,
         skip header = 1
     BEFORE LOAD DO 
-    $$ drop table if exists {schema_name}.{table}; $$,
-    $$ create table {schema_name}.{table} (\n""")
+    $$ drop table if exists {map_state["import_schema"]}.{table}; $$,
+    $$ create table {map_state["import_schema"]}.{table} (\n""")
                     fields = []
                     for field in headers:
                         fields.append(f'       {field} character varying') 
@@ -347,7 +345,7 @@ $$;\n""")
                 if os.system(cmd) != 0:
                     raise Exception("pgloader did not execute successfully")
 
-    return pgloader_command_files_tmpdir
+    return map_state 
 
 
 @task(
@@ -640,6 +638,7 @@ def group_csvs_into_logical_groups(extracted_archives):
         map_safe_state.append({
             "logical_group_id": group,
             "working_directory": str(extracted_archives),
+            "csv_prefix": "extract_" + group + "_",
         })
     print(map_safe_state)
     return map_safe_state
@@ -730,7 +729,7 @@ with Flow(
 
     schema_name = create_target_import_schema.map(desired_schema_name)
 
-    # pgloader_command_files = pgloader_csvs_into_database.map(logical_groups_of_csvs, schema_name)
+    pgloader_command_files = pgloader_csvs_into_database.map(schema_name)
 
     #trimmed_token = remove_trailing_carriage_returns.map(pgloader_command_files)
 
