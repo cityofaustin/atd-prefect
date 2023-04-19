@@ -99,14 +99,14 @@ else:
     DB_RDS_HOST = os.getenv("DB_RDS_HOST")
 
 # Set up slack fail handler
-handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
+#handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
 
 @task(
     name="Specify where archive can be found",
     slug="locate-zips",
     max_retries=3,
     retry_delay=datetime.timedelta(minutes=2),
-    state_handlers=[handler],
+    #state_handlers=[handler],
 )
 def specify_extract_location(file):
     zip_tmpdir = tempfile.mkdtemp()
@@ -119,7 +119,7 @@ def specify_extract_location(file):
     slug="get-zips",
     max_retries=3,
     retry_delay=datetime.timedelta(minutes=2),
-    state_handlers=[handler],
+    #state_handlers=[handler],
 )
 def download_extract_archives():
     """
@@ -156,7 +156,7 @@ def download_extract_archives():
     max_retries=3,
     retry_delay=datetime.timedelta(minutes=2),
     nout=1,
-    state_handlers=[handler],
+    #state_handlers=[handler],
 )
 def unzip_archives(archives_directory):
     """
@@ -180,7 +180,11 @@ def unzip_archives(archives_directory):
     return extracted_csv_directories
 
 
-@task(name="Cleanup temporary directories", slug="cleanup-temporary-directories", state_handlers=[handler],)
+@task(
+    name="Cleanup temporary directories", 
+    slug="cleanup-temporary-directories", 
+    # state_handlers=[handler],
+    )
 def cleanup_temporary_directories(zip_location, pgloader_command_files, extracted_archives):
     """
     Remove directories that have accumulated during the flow's execution
@@ -210,7 +214,10 @@ def cleanup_temporary_directories(zip_location, pgloader_command_files, extracte
     return None
 
 
-@task(name="Upload CSV files on s3 for archival", state_handlers=[handler],)
+@task(
+    name="Upload CSV files on s3 for archival", 
+    # state_handlers=[handler],
+    )
 def upload_csv_files_to_s3(extract_directory):
     """
     Upload CSV files which came from CRIS exports up to S3 for archival
@@ -246,7 +253,10 @@ def upload_csv_files_to_s3(extract_directory):
     return extract_directory
 
 
-@task(name="Remove archive from SFTP Endpoint", state_handlers=[handler],)
+@task(
+    name="Remove archive from SFTP Endpoint", 
+    # state_handlers=[handler],
+    )
 def remove_archives_from_sftp_endpoint(zip_location):
     """
     Delete the archives which have been processed from the SFTP endpoint
@@ -268,7 +278,12 @@ def remove_archives_from_sftp_endpoint(zip_location):
 
     return None
 
-@task(name="pgloader CSV into DB", max_retries=2, retry_delay=datetime.timedelta(minutes=1), state_handlers=[handler],)
+@task(
+    name="pgloader CSV into DB", 
+    max_retries=2, 
+    retry_delay=datetime.timedelta(minutes=1), 
+    #state_handlers=[handler],
+    )
 def pgloader_csvs_into_database(directory):
     # Walk the directory and find all the CSV files
     pgloader_command_files_tmpdir = tempfile.mkdtemp()
@@ -326,7 +341,10 @@ $$;\n""")
     return pgloader_command_files_tmpdir
 
 
-@task(name="Remove trailing carriage returns from imported data", state_handlers=[handler],)
+@task(
+    name="Remove trailing carriage returns from imported data", 
+    # state_handlers=[handler],
+    )
 def remove_trailing_carriage_returns(data_loaded_token):
 
     ssh_tunnel = SSHTunnelForwarder(
@@ -352,7 +370,10 @@ def remove_trailing_carriage_returns(data_loaded_token):
         util.trim_trailing_carriage_returns(pg, DB_IMPORT_SCHEMA, column)
 
 
-@task(name="Align DB Types", state_handlers=[handler],)
+@task(
+    name="Align DB Types", 
+    # state_handlers=[handler],
+    )
 def align_db_typing(trimmed_token):
 
     """
@@ -430,7 +451,10 @@ def align_db_typing(trimmed_token):
     return True
 
 
-@task(name="Insert / Update records in target schema", state_handlers=[handler],)
+@task(
+    name="Insert / Update records in target schema", 
+    # state_handlers=[handler],
+    )
 def align_records(typed_token, dry_run):
 
     """
