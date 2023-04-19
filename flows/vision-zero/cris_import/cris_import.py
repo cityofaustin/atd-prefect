@@ -464,7 +464,7 @@ def align_db_typing(map_state):
     name="Insert / Update records in target schema", 
     # state_handlers=[handler],
     )
-def align_records(typed_token, dry_run):
+def align_records(map_state):
 
     """
     This function begins by preparing a number of list and string variables containing SQL fragments.
@@ -504,6 +504,9 @@ def align_records(typed_token, dry_run):
 
     print("Finding updated records")
 
+    print("👋")
+    print(map_state)
+
     output_map = mappings.get_table_map()
     table_keys = mappings.get_key_columns()
 
@@ -516,22 +519,22 @@ def align_records(typed_token, dry_run):
         no_override_columns = mappings.no_override_columns()[output_map[table]]
 
         # Load up the list of imported records to iterate over. 
-        imported_records = util.load_input_data_for_keying(pg, DB_IMPORT_SCHEMA, table)
+        imported_records = util.load_input_data_for_keying(pg, map_state["import_schema"], table)
 
         # Get columns used to uniquely identify a record
         key_columns = mappings.get_key_columns()[output_map[table]]
 
         # Build SQL fragment used as a JOIN ON clause to link input and output tables
-        linkage_clauses, linkage_sql = util.get_linkage_constructions(key_columns, output_map, table, DB_IMPORT_SCHEMA)
+        linkage_clauses, linkage_sql = util.get_linkage_constructions(key_columns, output_map, table, map_state["import_schema"])
 
         # Build list of columns available for import by inspecting the input table
-        input_column_names = util.get_input_column_names(pg, DB_IMPORT_SCHEMA, table, target_columns)
+        input_column_names = util.get_input_column_names(pg, map_state["import_schema"], table, target_columns)
 
         # iterate over each imported record and determine correct action
         for source in imported_records:
 
             # generate some record specific SQL fragments to identify the record in larger queries
-            record_key_sql, import_key_sql = util.get_key_clauses(table_keys, output_map, table, source, DB_IMPORT_SCHEMA)
+            record_key_sql, import_key_sql = util.get_key_clauses(table_keys, output_map, table, source, map_state["import_schema"])
 
             # To decide to UPDATE, we need to find a matching target record in the output table.
             # This function returns that record as a token of existence or false if none is available
@@ -551,17 +554,17 @@ def align_records(typed_token, dry_run):
 
                 # Check if the proposed update would result in a non-op, such as if there are no changes between the import and
                 # target record. If this is the case, continue to the next record. There's no changes needed in this case.
-                if util.check_if_update_is_a_non_op(pg, column_comparisons, output_map, table, linkage_clauses, record_key_sql, DB_IMPORT_SCHEMA):
+                if util.check_if_update_is_a_non_op(pg, column_comparisons, output_map, table, linkage_clauses, record_key_sql, map_state["import_schema"]):
                     #logger.info(f"Skipping update for {output_map[table]} {record_key_sql}")
                     continue
 
                 # For future reporting and debugging purposes: Use SQL to query a list of 
                 # column names which have differing values between the import and target records.
                 # Return these column names as an array and display them in the output.
-                changed_columns = util.get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, record_key_sql, DB_IMPORT_SCHEMA)
+                changed_columns = util.get_changed_columns(pg, column_aggregators, output_map, table, linkage_clauses, record_key_sql, map_state["import_schema"])
                 
                 # Do the same thing, but this time using the SQL clauses formed from "important" columns.
-                important_changed_columns = util.get_changed_columns(pg, important_column_aggregators, output_map, table, linkage_clauses, record_key_sql, DB_IMPORT_SCHEMA)
+                important_changed_columns = util.get_changed_columns(pg, important_column_aggregators, output_map, table, linkage_clauses, record_key_sql, map_state["import_schema"])
 
 
                 if len(important_changed_columns['changed_columns']) > 0:
@@ -607,10 +610,10 @@ def align_records(typed_token, dry_run):
                         raise "No changed columns? Why are we forming an update? This is a bug."
 
                     # Display the before and after values of the columns which are subject to update
-                    util.show_changed_values(pg, changed_columns, output_map, table, linkage_clauses, record_key_sql, DB_IMPORT_SCHEMA)
+                    util.show_changed_values(pg, changed_columns, output_map, table, linkage_clauses, record_key_sql, map_state["import_schema"])
 
                     # Using all the information we've gathered, form a single SQL update statement to update the target record.
-                    update_statement = util.form_update_statement(output_map, table, column_assignments, DB_IMPORT_SCHEMA, record_key_sql, linkage_sql, changed_columns)
+                    update_statement = util.form_update_statement(output_map, table, column_assignments, map_state["import_schema"], record_key_sql, linkage_sql, changed_columns)
                     logger.info(f"Executing update in {output_map[table]} for where " + record_key_sql)
 
                     # Execute the update statement
@@ -621,7 +624,7 @@ def align_records(typed_token, dry_run):
             else:
                 # An insert is always just an vanilla insert, as there is not a pair of records to compare.
                 # Produce the SQL which creates a new VZDB record from a query of the imported data
-                insert_statement = util.form_insert_statement(output_map, table, input_column_names, import_key_sql, DB_IMPORT_SCHEMA)
+                insert_statement = util.form_insert_statement(output_map, table, input_column_names, import_key_sql, map_state["import_schema"])
                 logger.info(f"Executing insert in {output_map[table]} for where " + record_key_sql)
 
                 # Execute the insert statement
@@ -634,7 +637,7 @@ def align_records(typed_token, dry_run):
 @task(
     name="Group CSVs into logical groups",
 )
-def group_csvs_into_logical_groups(extracted_archives):
+def group_csvs_into_logical_groups(extracted_archives, dry_run):
     files = os.listdir(str(extracted_archives))
     logical_groups = []
     for file in files:
@@ -651,6 +654,7 @@ def group_csvs_into_logical_groups(extracted_archives):
             "logical_group_id": group,
             "working_directory": str(extracted_archives),
             "csv_prefix": "extract_" + group + "_",
+            "dry_run": dry_run,
         })
     print(map_safe_state)
     return map_safe_state
@@ -716,9 +720,7 @@ def create_target_import_schema(map_state):
 with Flow(
     "CRIS Crash Import",
 ) as flow:
-
-
-    # dry_run = Parameter("dry_run", default=True, required=True)
+    dry_run = Parameter("dry_run", default=True, required=True)
 
     # get a location on disk which contains the zips from the sftp endpoint
     # zip_location = download_extract_archives()
@@ -735,7 +737,7 @@ with Flow(
     # a list of temporary directories containing the files of each
     extracted_archives = unzip_archives(zip_location) # this returns an array, but is not mapped on
 
-    logical_groups_of_csvs = group_csvs_into_logical_groups(extracted_archives[0])
+    logical_groups_of_csvs = group_csvs_into_logical_groups(extracted_archives[0], dry_run)
 
     desired_schema_name = create_import_schema_name.map(logical_groups_of_csvs)
 
@@ -747,7 +749,7 @@ with Flow(
 
     typed_token = align_db_typing.map(trimmed_token)
 
-    # align_records_token = align_records(typed_token=typed_token, dry_run=dry_run)
+    align_records_token = align_records.map(map_state=typed_token)
 
     # push up the archives to s3 for archival
     # uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
@@ -766,5 +768,4 @@ with Flow(
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
 # flow.register(project_name="vision-zero")
-# flow.run(dry_run=False)
-flow.run()
+flow.run(dry_run=False)
