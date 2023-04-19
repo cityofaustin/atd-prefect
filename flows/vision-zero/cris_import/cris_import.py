@@ -9,6 +9,7 @@ import time
 import datetime
 import tempfile
 from subprocess import Popen, PIPE
+import hashlib
 
 import boto3
 import sysrsync
