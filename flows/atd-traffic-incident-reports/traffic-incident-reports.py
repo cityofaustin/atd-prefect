@@ -54,8 +54,8 @@ def pull_docker_image():
 # Retrieve the provider's data
 @task(
     name="update_postgrest_with_traffic_incidents",
-    retries=2,
-    retry_delay_seconds=300,
+    retries=1,
+    retry_delay_seconds=30,
 )
 def get_traffic_incidents(environment_variables):
     logger = get_run_logger()
