@@ -35,10 +35,29 @@ from process.helpers_import import (
     insert_crash_change_template as insert_change_template,
 )
 
-kv_store = get_key_value("Vision Zero Development")
-kv_dictionary = json.loads(kv_store)
+SFTP_ENDPOINT = None
+ZIP_PASSWORD = None
+VZ_ETL_LOCATION = None
+
+AWS_DEFAULT_REGION = None
+AWS_ACCESS_KEY_ID = None
+AWS_SECRET_ACCESS_KEY = None
+AWS_CSV_ARCHIVE_BUCKET_NAME = None
+AWS_CSV_ARCHIVE_PATH_PRODUCTION = None
+AWS_CSV_ARCHIVE_PATH_STAGING = None
+
+DB_HOST = None
+DB_USER = None
+DB_PASS = None
+DB_NAME = None
+DB_IMPORT_SCHEMA = None
+
+DB_BASTION_HOST = None
+DB_RDS_HOST = None
 
 if False:
+    kv_store = get_key_value("Vision Zero Development")
+    kv_dictionary = json.loads(kv_store)
     SFTP_ENDPOINT = kv_dictionary["SFTP_ENDPOINT"]
     ZIP_PASSWORD = kv_dictionary["ZIP_PASSWORD"]
     VZ_ETL_LOCATION = kv_dictionary["VZ_ETL_LOCATION"]
