@@ -152,7 +152,7 @@ def download_extract_archives():
     # complete successfully.
     # see: https://www.gnu.org/software/libc/manual/html_node/Exit-Status.html
     if rsync.returncode != 0:
-        return false
+        return False
     logger.info("Temp Directory: " + zip_tmpdir)
     return zip_tmpdir
 
