@@ -635,6 +635,7 @@ def group_csvs_into_logical_groups(extracted_archives):
     print("logical groups: " + str(logical_groups))
     return logical_groups
 
+
 @task(
     name="Generate a short alphanumeric string based on logical group id",
 )
@@ -642,6 +643,7 @@ def create_import_schema_name(logical_group_id):
     schema = 'import_' + hashlib.md5(logical_group_id.encode()).hexdigest()[:12]
     print("Schema name: ", schema)
     return schema
+
 
 @task(
     name="Create target import schema",
