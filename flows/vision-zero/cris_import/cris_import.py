@@ -633,7 +633,14 @@ def group_csvs_into_logical_groups(extracted_archives):
         if group_id not in logical_groups:
             logical_groups.append(group_id)
     print("logical groups: " + str(logical_groups))
-    return logical_groups
+    map_safe_state = []
+    for group in logical_groups:
+        map_safe_state.append({
+            "logical_group_id": group,
+            "working_directory": str(extracted_archives),
+        })
+    print(map_safe_state)
+    return map_safe_state
 
 
 @task(
