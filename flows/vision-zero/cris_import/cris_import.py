@@ -292,6 +292,7 @@ def remove_archives_from_sftp_endpoint(zip_location):
     #state_handlers=[handler],
     )
 def pgloader_csvs_into_database(directory, schema_name):
+    print("👋" + directory)
     # Walk the directory and find all the CSV files
     pgloader_command_files_tmpdir = tempfile.mkdtemp()
     for root, dirs, files in os.walk(directory):
@@ -342,6 +343,7 @@ LOAD CSV
     );
 $$;\n""")
                 cmd = f'pgloader {command_file}'
+                print(cmd)
                 if os.system(cmd) != 0:
                     raise Exception("pgloader did not execute successfully")
 
@@ -646,10 +648,12 @@ def group_csvs_into_logical_groups(extracted_archives):
 @task(
     name="Generate a short alphanumeric string based on logical group id",
 )
-def create_import_schema_name(logical_group_id):
-    schema = 'import_' + hashlib.md5(logical_group_id.encode()).hexdigest()[:12]
-    print("Schema name: ", schema)
-    return schema
+def create_import_schema_name(mapped_state):
+    print(mapped_state)
+    schema = 'import_' + hashlib.md5(mapped_state["logical_group_id"].encode()).hexdigest()[:12]
+    mapped_state["import_schema"] = schema
+    print("Schema name: ", mapped_state["import_schema"])
+    return mapped_state
 
 
 @task(
@@ -696,7 +700,7 @@ def create_target_import_schema(schema_name):
     cursor.close()
     pg.close()
 
-    return True
+    return schema_name
 
 with Flow(
     "CRIS Crash Import",
@@ -722,13 +726,13 @@ with Flow(
 
     logical_groups_of_csvs = group_csvs_into_logical_groups(extracted_archives[0])
 
-    schema_name = create_import_schema_name.map(logical_groups_of_csvs)
+    desired_schema_name = create_import_schema_name.map(logical_groups_of_csvs)
 
-    schema_created_token = create_target_import_schema.map(schema_name)
+    # schema_name = create_target_import_schema.map(desired_schema_name)
 
-    #pgloader_command_files = pgloader_csvs_into_database.map(logical_groups_of_csvs, schema_name)
+    # pgloader_command_files = pgloader_csvs_into_database.map(logical_groups_of_csvs, schema_name)
 
-    # trimmed_token = remove_trailing_carriage_returns(pgloader_command_files)
+    #trimmed_token = remove_trailing_carriage_returns.map(pgloader_command_files)
 
     # typed_token = align_db_typing(trimmed_token=trimmed_token)
 
