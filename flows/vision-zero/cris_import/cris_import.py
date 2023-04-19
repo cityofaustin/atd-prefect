@@ -659,7 +659,7 @@ def create_import_schema_name(mapped_state):
 @task(
     name="Create target import schema",
 )
-def create_target_import_schema(schema_name):
+def create_target_import_schema(map_state):
     ssh_tunnel = SSHTunnelForwarder(
         (DB_BASTION_HOST),
         ssh_username=DB_BASTION_HOST_SSH_USERNAME,
@@ -681,14 +681,14 @@ def create_target_import_schema(schema_name):
     cursor = pg.cursor()
     
     # check if the schema exists by querying the pg_namespace system catalog
-    cursor.execute(f"SELECT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = '{schema_name}')")
+    cursor.execute(f"SELECT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = '{map_state['import_schema']}')")
 
     schema_exists = cursor.fetchone()[0]
 
     # if the schema doesn't exist, create it using a try-except block to handle the case where it already exists
     if not schema_exists:
         try:
-            cursor.execute(f"CREATE SCHEMA {schema_name}")
+            cursor.execute(f"CREATE SCHEMA {map_state['schema_name']}")
             print("Schema created successfully")
         except psycopg2.Error as e:
             print(f"Error creating schema: {e}")
@@ -700,7 +700,7 @@ def create_target_import_schema(schema_name):
     cursor.close()
     pg.close()
 
-    return schema_name
+    return map_state
 
 with Flow(
     "CRIS Crash Import",
@@ -728,7 +728,7 @@ with Flow(
 
     desired_schema_name = create_import_schema_name.map(logical_groups_of_csvs)
 
-    # schema_name = create_target_import_schema.map(desired_schema_name)
+    schema_name = create_target_import_schema.map(desired_schema_name)
 
     # pgloader_command_files = pgloader_csvs_into_database.map(logical_groups_of_csvs, schema_name)
 
