@@ -270,13 +270,6 @@ def remove_archives_from_sftp_endpoint(zip_location, map_state):
     Returns: None
     """
 
-    print("🔥")
-    print(zip_location)
-
-    time.sleep(1000)
-
-    return True
-
     logger = prefect.context.get("logger")
     logger.info(zip_location)
     for archive in os.listdir(zip_location):
@@ -734,10 +727,7 @@ def clean_up_import_schema(map_state):
         )
 
     cursor = pg.cursor()
-    
-    cursor.execute(f"DROP SCHEMA IF EXISTS {map_state['import_schema']}")
-    schema_exists = cursor.execute()
-    pg.commit()
+    cursor.execute(f"DROP SCHEMA IF EXISTS {map_state['import_schema']} CASCADE")
     cursor.close()
     pg.close()
 
