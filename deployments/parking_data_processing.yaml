@@ -1,0 +1,90 @@
+###
+### A complete description of a Prefect Deployment for flow 'atd-parking-data: Parking Data Processsing'
+###
+name: 'atd-parking-data: Parking Data Processsing'
+description: 'Repo: https://github.com/cityofaustin/atd-parking-data Scripts that
+  download and process parking data for finance reporting.'
+version: 9a46c085ce35eecb5fea75eadb0436ad
+# The work queue that will handle this deployment's runs
+work_queue_name: default
+work_pool_name: atd-data-03
+tags: []
+parameters:
+  block: atd-parking-data
+  s3_env: prod
+  commands:
+  - txn_history.py -v --report transactions
+  - txn_history.py -v --report payments
+  - txn_history.py -v --report payments --user pard
+  - passport_txns.py -v
+  - fiserv_email_pub.py
+  - fiserv_DB.py
+  - payments_s3.py
+  - payments_s3.py --user pard
+  - passport_DB.py
+  - smartfolio_s3.py
+  - match_field_processing.py
+  - parking_socrata.py --dataset payments
+  - parking_socrata.py --dataset fiserv
+  - parking_socrata.py --dataset transactions
+  docker_env: production
+schedule:
+  cron: 35 8 * * *
+  timezone: null
+  day_or: true
+is_schedule_active: true
+infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: 'atd-parking-data: Parking Data Processsing'
+manifest_path: null
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  _block_document_id: 0feb4873-073e-4f60-8261-4681ccdd73dd
+  _block_document_name: anonymous-9cb9bcf5-5182-4b00-8661-f3c639e027fa
+  _is_anonymous: true
+  block_type_slug: process
+  _block_type_slug: process
+storage:
+  repository: https://github.com/cityofaustin/atd-prefect/
+  reference: main
+  access_token: null
+  include_git_objects: false
+  _block_document_id: d0cc8e56-412b-49b3-bb9c-33b522c64736
+  _block_document_name: atd-prefect-main-branch
+  _is_anonymous: false
+  block_type_slug: github
+  _block_type_slug: github
+path: ''
+entrypoint: flows/atd-parking-data/parking_data_processing.py:main
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties:
+    commands:
+      title: commands
+      position: 0
+    block:
+      title: block
+      position: 1
+    s3_env:
+      title: s3_env
+      position: 2
+    docker_env:
+      title: docker_env
+      position: 3
+  required:
+  - commands
+  - block
+  - s3_env
+  - docker_env
+  definitions: null
+timestamp: '2023-04-20T17:09:27.985238+00:00'
