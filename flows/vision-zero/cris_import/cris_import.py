@@ -503,9 +503,6 @@ def align_records(map_state):
 
     print("Finding updated records")
 
-    print("👋")
-    print(map_state)
-
     output_map = mappings.get_table_map()
     table_keys = mappings.get_key_columns()
 
