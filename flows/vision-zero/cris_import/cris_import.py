@@ -338,7 +338,6 @@ LOAD CSV
     );
 $$;\n""")
                 cmd = f'pgloader {command_file}'
-                print(cmd)
                 if os.system(cmd) != 0:
                     raise Exception("pgloader did not execute successfully")
 
