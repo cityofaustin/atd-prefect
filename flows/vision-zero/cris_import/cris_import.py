@@ -56,7 +56,7 @@ DB_BASTION_HOST_SSH_USERNAME = None
 DB_BASTION_HOST = None
 DB_RDS_HOST = None
 
-if False:
+if True:
     kv_store = get_key_value("Vision Zero Development")
     kv_dictionary = json.loads(kv_store)
     SFTP_ENDPOINT = kv_dictionary["SFTP_ENDPOINT"]
