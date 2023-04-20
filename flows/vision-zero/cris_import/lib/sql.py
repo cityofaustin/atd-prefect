@@ -439,8 +439,8 @@ def show_changed_values(
         print(column)
         linkage_sql = " and ".join(linkage_clauses)
         sql = f"""
-            select import.{table}.{column}::text as import_{column},
-                   public.{output_map[table]}.{column}::text as public_{column}
+            select {DB_IMPORT_SCHEMA}.{table}.{column}::text as import_{column},
+                public.{output_map[table]}.{column}::text as public_{column}
             from public.{output_map[table]}
             left join {DB_IMPORT_SCHEMA}.{table} on {linkage_sql}
             where {record_key_sql}
