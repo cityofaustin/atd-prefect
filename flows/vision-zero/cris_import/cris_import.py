@@ -109,7 +109,7 @@ handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
     slug="locate-zips",
     max_retries=3,
     retry_delay=datetime.timedelta(minutes=2),
-    #state_handlers=[handler],
+    state_handlers=[handler],
 )
 def specify_extract_location(file):
     zip_tmpdir = tempfile.mkdtemp()
@@ -122,7 +122,7 @@ def specify_extract_location(file):
     slug="get-zips",
     max_retries=3,
     retry_delay=datetime.timedelta(minutes=2),
-    #state_handlers=[handler],
+    state_handlers=[handler],
 )
 def download_extract_archives():
     """
@@ -159,7 +159,7 @@ def download_extract_archives():
     max_retries=3,
     retry_delay=datetime.timedelta(minutes=2),
     nout=1,
-    #state_handlers=[handler],
+    state_handlers=[handler],
 )
 def unzip_archives(archives_directory):
     """
@@ -186,7 +186,7 @@ def unzip_archives(archives_directory):
 @task(
     name="Cleanup temporary directories", 
     slug="cleanup-temporary-directories", 
-    # state_handlers=[handler],
+    state_handlers=[handler],
     )
 def cleanup_temporary_directories(zip_location, pgloader_command_files, extracted_archives):
     """
@@ -219,7 +219,7 @@ def cleanup_temporary_directories(zip_location, pgloader_command_files, extracte
 
 @task(
     name="Upload CSV files on s3 for archival", 
-    # state_handlers=[handler],
+    state_handlers=[handler],
     )
 def upload_csv_files_to_s3(extract_directory):
     """
@@ -258,7 +258,7 @@ def upload_csv_files_to_s3(extract_directory):
 
 @task(
     name="Remove archive from SFTP Endpoint", 
-    # state_handlers=[handler],
+    state_handlers=[handler],
     )
 def remove_archives_from_sftp_endpoint(zip_location, done_using_these_token):
     """
@@ -285,7 +285,7 @@ def remove_archives_from_sftp_endpoint(zip_location, done_using_these_token):
     name="pgloader CSV into DB", 
     max_retries=2, 
     retry_delay=datetime.timedelta(minutes=1), 
-    #state_handlers=[handler],
+    state_handlers=[handler],
     )
 def pgloader_csvs_into_database(map_state):
     # Walk the directory and find all the CSV files
@@ -346,7 +346,7 @@ $$;\n""")
 
 @task(
     name="Remove trailing carriage returns from imported data", 
-    # state_handlers=[handler],
+    state_handlers=[handler],
     )
 def remove_trailing_carriage_returns(map_state):
 
@@ -377,7 +377,7 @@ def remove_trailing_carriage_returns(map_state):
 
 @task(
     name="Align DB Types", 
-    # state_handlers=[handler],
+    state_handlers=[handler],
     )
 def align_db_typing(map_state):
 
@@ -458,7 +458,7 @@ def align_db_typing(map_state):
 
 @task(
     name="Insert / Update records in target schema", 
-    # state_handlers=[handler],
+    state_handlers=[handler],
     )
 def align_records(map_state):
 
@@ -741,14 +741,14 @@ with Flow(
     uploaded_archives_csvs = upload_csv_files_to_s3(extracted_archives[0])
 
     # remove archives from SFTP endpoint
-    #removal_token = remove_archives_from_sftp_endpoint(extracted_archives[0], align_records_token)
+    removal_token = remove_archives_from_sftp_endpoint(extracted_archives[0], align_records_token)
 
     cleanup = cleanup_temporary_directories(
         zip_location,
         extracted_archives,
         pgloader_command_files,
-        upstream_tasks=[align_records_token],
-        #upstream_tasks=[align_records_token, removal_token],
+        # upstream_tasks=[align_records_token],
+        upstream_tasks=[align_records_token, removal_token],
     )
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
