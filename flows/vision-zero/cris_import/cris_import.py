@@ -260,7 +260,7 @@ def upload_csv_files_to_s3(extract_directory):
     name="Remove archive from SFTP Endpoint", 
     # state_handlers=[handler],
     )
-def remove_archives_from_sftp_endpoint(zip_location):
+def remove_archives_from_sftp_endpoint(zip_location, done_using_these_token):
     """
     Delete the archives which have been processed from the SFTP endpoint
 
@@ -738,18 +738,18 @@ with Flow(
     align_records_token = align_records.map(map_state=typed_token)
 
     # push up the archives to s3 for archival
-    # uploaded_archives_csvs = upload_csv_files_to_s3.map(extracted_archives)
+    uploaded_archives_csvs = upload_csv_files_to_s3(extracted_archives[0])
 
     # remove archives from SFTP endpoint
-    # removal_token = remove_archives_from_sftp_endpoint(zip_location)
+    #removal_token = remove_archives_from_sftp_endpoint(extracted_archives[0], align_records_token)
 
-    # cleanup = cleanup_temporary_directories(
-        # zip_location,
-        # extracted_archives,
-        # pgloader_command_files,
-        # upstream_tasks=[align_records_token],
-        # #upstream_tasks=[align_records_token, removal_token],
-    # )
+    cleanup = cleanup_temporary_directories(
+        zip_location,
+        extracted_archives,
+        pgloader_command_files,
+        upstream_tasks=[align_records_token],
+        #upstream_tasks=[align_records_token, removal_token],
+    )
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
