@@ -772,7 +772,7 @@ with Flow(
 
     align_records_token = align_records.map(map_state=typed_token)
 
-    # push up the archives to s3 for archival
+    clean_up_import_schema = clean_up_import_schema.map(align_records_token)
     uploaded_archives_csvs = upload_csv_files_to_s3(extracted_archives[0])
 
     # remove archives from SFTP endpoint
