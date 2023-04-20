@@ -726,7 +726,10 @@ def clean_up_import_schema(map_state):
         )
 
     cursor = pg.cursor()
-    cursor.execute(f"DROP SCHEMA IF EXISTS {map_state['import_schema']} CASCADE")
+    sql = f"DROP SCHEMA IF EXISTS {map_state['import_schema']} CASCADE "
+    cursor.execute(sql)
+
+    pg.commit()
     cursor.close()
     pg.close()
 
