@@ -770,17 +770,19 @@ with Flow(
     align_records_token = align_records.map(map_state=typed_token)
 
     clean_up_import_schema = clean_up_import_schema.map(align_records_token)
+
+    # push up the CSVs to s3 for archival
     uploaded_archives_csvs = upload_csv_files_to_s3(extracted_archives[0])
 
     # remove archives from SFTP endpoint
-    removal_token = remove_archives_from_sftp_endpoint(extracted_archives[0], align_records_token)
+    #removal_token = remove_archives_from_sftp_endpoint(, clean_up_import_schema)
 
     cleanup = cleanup_temporary_directories(
         zip_location,
-        extracted_archives,
+        extracted_archives[0],
         pgloader_command_files,
-        # upstream_tasks=[align_records_token],
-        upstream_tasks=[align_records_token, removal_token],
+        upstream_tasks=[align_records_token],
+        #upstream_tasks=[align_records_token, removal_token],
     )
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
