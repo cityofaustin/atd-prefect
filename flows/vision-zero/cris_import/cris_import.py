@@ -776,8 +776,12 @@ with Flow(
     uploaded_archives_csvs = upload_csv_files_to_s3(extracted_archives[0])
 
     # i'm punting on this.
+
     # the whole thing won't have state from ETL run to ETL run once we migrate from prefect 1,
     # so this tidy-up won't matter and will be handled by the docker service as it cleans up stale containers.
+
+    # it also accumulates maybe .5 megs a day, no big deal for time on the scale of months
+
     #cleanup = cleanup_temporary_directories(
         #zip_location,
         #extracted_archives[0],
