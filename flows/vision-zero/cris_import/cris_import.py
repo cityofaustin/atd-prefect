@@ -706,6 +706,38 @@ def create_target_import_schema(map_state):
 
     return map_state
 
+@task(
+    name="Clean up import schema",
+)
+def clean_up_import_schema(map_state):
+    ssh_tunnel = SSHTunnelForwarder(
+        (DB_BASTION_HOST),
+        ssh_username=DB_BASTION_HOST_SSH_USERNAME,
+        ssh_private_key= '/root/.ssh/id_rsa', # will switch to ed25519 when we rebuild this for prefect 2
+        remote_bind_address=(DB_RDS_HOST, 5432)
+        )
+    ssh_tunnel.start()   
+
+    pg = psycopg2.connect(
+        host='localhost', 
+        port=ssh_tunnel.local_bind_port,
+        user=DB_USER, 
+        password=DB_PASS, 
+        dbname=DB_NAME, 
+        sslmode=DB_SSL_REQUIREMENT, 
+        sslrootcert="/root/rds-combined-ca-bundle.pem"
+        )
+
+    cursor = pg.cursor()
+    
+    cursor.execute(f"DROP SCHEMA IF EXISTS {map_state['import_schema']}")
+    schema_exists = cursor.execute()
+    pg.commit()
+    cursor.close()
+    pg.close()
+
+    return map_state
+
 with Flow(
     "CRIS Crash Import",
 ) as flow:
