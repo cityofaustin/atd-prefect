@@ -739,15 +739,15 @@ with Flow(
     dry_run = Parameter("dry_run", default=True, required=True)
 
     # get a location on disk which contains the zips from the sftp endpoint
-    # zip_location = download_extract_archives()
+    zip_location = download_extract_archives()
 
     # OR
 
-    zip_location = specify_extract_location(
-    "/root/cris_import/data/apr-19-dual-schema-export.zip",
+    #zip_location = specify_extract_location(
+    #"/root/cris_import/data/apr-19-dual-schema-export.zip",
     # "/root/cris_import/data/july-2022.zip",
     # "/root/cris_import/data/nov21-sep22.zip",
-    )
+    #)
 
     # iterate over the zips in that location and unarchive them into
     # a list of temporary directories containing the files of each
@@ -792,5 +792,5 @@ with Flow(
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
-# flow.register(project_name="vision-zero")
-flow.run(dry_run=False)
+flow.register(project_name="vision-zero")
+#flow.run(dry_run=False)
