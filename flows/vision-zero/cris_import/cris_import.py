@@ -476,6 +476,9 @@ def align_records(map_state):
 
     Returns: Boolean representing the completion of the import / update
     """
+    
+    dry_run = map_state["dry_run"]
+
     logger = prefect.context.get("logger")
 
     # fmt: off
