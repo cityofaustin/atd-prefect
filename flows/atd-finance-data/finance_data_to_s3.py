@@ -10,7 +10,7 @@ $ prefect deployment build flows/atd-finance-data/finance_data_to_s3.py:main \
 --name "Finance Data Publishing" \
 --cron "13 7 * * *" \
 --pool atd-data-03 -q default \
--sb github/finance-data-wip \
+-sb github/atd-prefect-main-branch \
 -o "deployments/finance_data_to_s3.yaml" \
 --description "Repo: https://github.com/cityofaustin/atd-finance-data, Gets Finance data from a database, places it in an S3 bucket, then moves it along to Knack and socrata."
 
