@@ -260,7 +260,7 @@ def upload_csv_files_to_s3(extract_directory):
     name="Remove archive from SFTP Endpoint", 
     state_handlers=[handler],
     )
-def remove_archives_from_sftp_endpoint(zip_location, done_using_these_token):
+def remove_archives_from_sftp_endpoint(zip_location, map_state):
     """
     Delete the archives which have been processed from the SFTP endpoint
 
@@ -269,6 +269,14 @@ def remove_archives_from_sftp_endpoint(zip_location, done_using_these_token):
 
     Returns: None
     """
+
+    print("🔥")
+    print(zip_location)
+
+    time.sleep(1000)
+
+    return True
+
     logger = prefect.context.get("logger")
     logger.info(zip_location)
     for archive in os.listdir(zip_location):
@@ -617,7 +625,7 @@ def align_records(map_state):
                 util.try_statement(pg, output_map, table, record_key_sql, insert_statement, dry_run)
 
     # fmt: on
-    return True
+    return map_state
 
 
 @task(
@@ -771,19 +779,22 @@ with Flow(
 
     clean_up_import_schema = clean_up_import_schema.map(align_records_token)
 
+    # remove archives from SFTP endpoint; note this isn't a map'd function, this is reduced
+    removal_token = remove_archives_from_sftp_endpoint(zip_location, clean_up_import_schema)
+
     # push up the CSVs to s3 for archival
     uploaded_archives_csvs = upload_csv_files_to_s3(extracted_archives[0])
 
-    # remove archives from SFTP endpoint
-    #removal_token = remove_archives_from_sftp_endpoint(, clean_up_import_schema)
-
-    cleanup = cleanup_temporary_directories(
-        zip_location,
-        extracted_archives[0],
-        pgloader_command_files,
-        upstream_tasks=[align_records_token],
+    # i'm punting on this.
+    # the whole thing won't have state from ETL run to ETL run once we migrate from prefect 1,
+    # so this tidy-up won't matter and will be handled by the docker service as it cleans up stale containers.
+    #cleanup = cleanup_temporary_directories(
+        #zip_location,
+        #extracted_archives[0],
+        #pgloader_command_files,
+        #upstream_tasks=[align_records_token],
         #upstream_tasks=[align_records_token, removal_token],
-    )
+    #)
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
