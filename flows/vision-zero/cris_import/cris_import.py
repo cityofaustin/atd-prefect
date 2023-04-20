@@ -370,7 +370,7 @@ def remove_trailing_carriage_returns(map_state):
 
     columns = util.get_input_tables_and_columns(pg, map_state["import_schema"])
     for column in columns:
-        util.trim_trailing_carriage_returns(pg,  map_state["import_schema"], column)
+        util.trim_trailing_carriage_returns(pg, map_state["import_schema"], column)
 
     return map_state
 
