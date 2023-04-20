@@ -50,7 +50,6 @@ DB_HOST = None
 DB_USER = None
 DB_PASS = None
 DB_NAME = None
-DB_IMPORT_SCHEMA = None # FIXME this needs to go, and can be removed when the flow is map safe, because the import schema is dynamic
 DB_SSL_REQUIREMENT = None
 
 DB_BASTION_HOST_SSH_USERNAME = None
@@ -75,7 +74,6 @@ if False:
     DB_USER = kv_dictionary["DB_USER"]
     DB_PASS = kv_dictionary["DB_PASS"]
     DB_NAME = kv_dictionary["DB_NAME"]
-    DB_IMPORT_SCHEMA = kv_dictionary["DB_IMPORT_SCHEMA"]
     DB_SSL_REQUIREMENT = kv_dictionary["DB_SSL_REQUIREMENT"]
 
     DB_BASTION_HOST_SSH_USERNAME = kv_dictionary["DB_BASTION_HOST_SSH_USERNAME"]
@@ -97,7 +95,6 @@ else:
     DB_USER = os.getenv("DB_USER")
     DB_PASS = os.getenv("DB_PASS")
     DB_NAME = os.getenv("DB_NAME")
-    DB_IMPORT_SCHEMA = os.getenv("DB_IMPORT_SCHEMA")
     DB_SSL_REQUIREMENT = os.getenv("DB_SSL_REQUIREMENT")
 
     DB_BASTION_HOST_SSH_USERNAME = os.getenv("DB_BASTION_HOST_SSH_USERNAME")
