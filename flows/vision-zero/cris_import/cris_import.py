@@ -35,7 +35,6 @@ from process.helpers_import import (
     insert_crash_change_template as insert_change_template,
 )
 
-
 SFTP_ENDPOINT = None
 ZIP_PASSWORD = None
 VZ_ETL_LOCATION = None
@@ -101,7 +100,6 @@ else:
     DB_BASTION_HOST_SSH_USERNAME = os.getenv("DB_BASTION_HOST_SSH_USERNAME")
     DB_BASTION_HOST = os.getenv("DB_BASTION_HOST")
     DB_RDS_HOST = os.getenv("DB_RDS_HOST")
-
 
 # Set up slack fail handler
 handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
@@ -246,8 +244,10 @@ def upload_csv_files_to_s3(extract_directory):
     for filename in os.listdir(extract_directory):
         logger.info("About to upload to s3: " + filename)
         destination_path = (
-            #AWS_CSV_ARCHIVE_PATH_STAGING + "/" + str(datetime.date.today())
-            AWS_CSV_ARCHIVE_PATH_PRODUCTION + "/" + str(datetime.date.today())
+            AWS_CSV_ARCHIVE_PATH_STAGING
+            + "/"
+            + str(datetime.date.today())
+            # AWS_CSV_ARCHIVE_PATH_PRODUCTION + "/" + str(datetime.date.today())
         )
         s3.Bucket(AWS_CSV_ARCHIVE_BUCKET_NAME).upload_file(
             extract_directory + "/" + filename,
