@@ -102,7 +102,7 @@ else:
     DB_RDS_HOST = os.getenv("DB_RDS_HOST")
 
 # Set up slack fail handler
-#handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
+handler = slack_notifier(only_states=[Failed, TriggerFailed, Retrying])
 
 @task(
     name="Specify where archive can be found",
