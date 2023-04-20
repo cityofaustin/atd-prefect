@@ -15,7 +15,6 @@ import boto3
 import sysrsync
 
 import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import psycopg2.extras
 
 # Import various prefect packages and helper methods
