@@ -774,7 +774,7 @@ with Flow(
     # push up the CSVs to s3 for archival
     uploaded_archives_csvs = upload_csv_files_to_s3(extracted_archives[0])
 
-    # i'm punting on this. 👇
+    # i'm punting on this. 👇 This is oddly difficult after the map() refactor.
 
     # the whole thing won't have state from ETL run to ETL run once we migrate from prefect 1,
     # so this tidy-up won't matter and will be handled by the docker service as it cleans up stale containers.
