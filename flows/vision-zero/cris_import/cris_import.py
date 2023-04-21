@@ -689,7 +689,7 @@ def create_target_import_schema(map_state):
     # if the schema doesn't exist, create it using a try-except block to handle the case where it already exists
     if not schema_exists:
         try:
-            cursor.execute(f"CREATE SCHEMA {map_state['schema_name']}")
+            cursor.execute(f"CREATE SCHEMA {map_state['import_schema']}")
             print("Schema created successfully")
         except psycopg2.Error as e:
             print(f"Error creating schema: {e}")
