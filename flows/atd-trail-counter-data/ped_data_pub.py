@@ -114,7 +114,7 @@ def update_exec_date(json_block):
 
 
 @flow(name="atd-parking-data: Parking Data Processsing")
-def main(commands, block, s3_env, docker_env):
+def main(block, docker_env):
     # Logger instance
     logger = get_run_logger()
 
@@ -141,4 +141,4 @@ if __name__ == "__main__":
     # Tag of docker image to use
     docker_env = "latest"
 
-    main(commands, block, s3_env, docker_env)
+    main(block, docker_env)
