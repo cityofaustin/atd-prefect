@@ -1,18 +1,18 @@
 ###
-### A complete description of a Prefect Deployment for flow 'atd-parking-data: Parking Data Processsing'
+### A complete description of a Prefect Deployment for flow 'atd-trail-counter-data: Trail Counter Data Publishing'
 ###
 name: 'atd-trail-counter-data: Trail Counter Data Publishing'
 description: 'Repo: https://github.com/cityofaustin/atd-trail-counter-data wrapper
   for ETL that     scrapes trail counter data from the public eco-counter website
   and publishes it in Socrata.'
-version: 84e9cd582f1140d660d7547de65ec68c
+version: 7eb3255978acc6d919f835f4295485da
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
 tags: []
 parameters: 
   block: ped-data-pub
-  docker_env: latest 
+  docker_env: latest
 schedule:
   cron: 00 8 * * *
   timezone: null
@@ -33,7 +33,7 @@ infrastructure:
 ###
 ### DO NOT EDIT BELOW THIS LINE
 ###
-flow_name: 'atd-parking-data: Parking Data Processsing'
+flow_name: 'atd-trail-counter-data: Trail Counter Data Publishing'
 manifest_path: null
 storage:
   repository: github.com/cityofaustin/atd-prefect/
@@ -61,4 +61,4 @@ parameter_openapi_schema:
   - block
   - docker_env
   definitions: null
-timestamp: '2023-04-28T15:52:12.709910+00:00'
+timestamp: '2023-04-28T15:55:25.611348+00:00'

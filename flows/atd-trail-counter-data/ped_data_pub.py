@@ -113,7 +113,7 @@ def update_exec_date(json_block):
     block.save(name=json_block, overwrite=True)
 
 
-@flow(name="atd-parking-data: Parking Data Processsing")
+@flow(name="atd-trail-counter-data: Trail Counter Data Publishing")
 def main(block, docker_env):
     # Logger instance
     logger = get_run_logger()
