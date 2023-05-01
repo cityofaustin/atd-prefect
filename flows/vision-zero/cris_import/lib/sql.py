@@ -439,8 +439,9 @@ def show_changed_values(
         print(column)
         linkage_sql = " and ".join(linkage_clauses)
         sql = f"""
-            select import.{table}.{column}::text as import_{column},
-                cris.{output_map[table]}.{column}::text as public_{column}
+            select 
+                {DB_IMPORT_SCHEMA}.{table}.{column}::text as import_{column},
+                cris.{output_map[table]}.{column}::text as cris_{column}
             from cris.{output_map[table]}
             left join {DB_IMPORT_SCHEMA}.{table} on {linkage_sql}
             where {record_key_sql}
@@ -457,4 +458,4 @@ def show_changed_values(
         print(f"Column update for {column} in {table}:")
         print(f"  entity: {record_key_sql}")
         print(f"  import: '{values[f'import_{column}']}'")
-        print(f"  cris: '{values[f'public_{column}']}'")
+        print(f"  cris: '{values[f'cris_{column}']}'")
