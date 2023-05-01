@@ -136,27 +136,27 @@ def add_command_arguments(commands, s3_env, start_date, prev_month):
 
 
 @task(
-    name="docker_commands",
+    name="docker_command",
     retries=3,
     retry_delay_seconds=timedelta(minutes=2).seconds,
+    task_run_name="Docker Command: {command}",  # note this is not wrong, you don't use an f-string here.
 )
-def docker_commands(docker_env, environment_variables, commands, logger):
-    for c in commands:
-        response = (
-            docker.from_env()
-            .containers.run(
-                image=f"{docker_image}:{docker_env}",
-                working_dir=None,
-                command=f"python {c}",
-                environment=environment_variables,
-                volumes=None,
-                remove=True,
-                detach=False,
-                stdout=True,
-            )
-            .decode("utf-8")
+def docker_command(docker_env, environment_variables, command, logger):
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=f"{docker_image}:{docker_env}",
+            working_dir=None,
+            command=f"python {command}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
         )
-        logger.info(response)
+        .decode("utf-8")
+    )
+    logger.info(response)
     return response
 
 
@@ -185,12 +185,10 @@ def main(commands, block, s3_env, docker_env):
     prev_month = decide_prev_month(environment_variables["PREV_EXEC"])
     commands = add_command_arguments(commands, s3_env, start_date, prev_month)
 
-    # Run our commands
-    if docker_res:
-        commands_res = docker_commands(
-            docker_env, environment_variables, commands, logger
-        )
-    if commands_res:
+    # Run our commands one by one. Prefect will run these tasks in series.
+    for c in commands:
+        command_res = docker_command(docker_env, environment_variables, c, logger)
+    if command_res:
         update_exec_date(block)
 
 
@@ -221,6 +219,6 @@ if __name__ == "__main__":
     s3_env = "prod"
 
     # Tag of docker image to use
-    docker_env = "production"
+    docker_env = "latest"
 
     main(commands, block, s3_env, docker_env)
