@@ -57,7 +57,7 @@ DB_BASTION_HOST = None
 DB_RDS_HOST = None
 
 if True:
-    kv_store = get_key_value("Vision Zero Development")
+    kv_store = get_key_value("Vision Zero")
     kv_dictionary = json.loads(kv_store)
     SFTP_ENDPOINT = kv_dictionary["SFTP_ENDPOINT"]
     ZIP_PASSWORD = kv_dictionary["ZIP_PASSWORD"]
@@ -752,5 +752,5 @@ with Flow(
 
 # I'm not sure how to make this not self-label by the hostname of the registering computer.
 # here, it only tags it with the docker container ID, so no harm, no foul, but it's noisy.
-# flow.register(project_name="vision-zero")
-flow.run(dry_run=True)
+flow.register(project_name="vision-zero")
+# flow.run(dry_run=True)
