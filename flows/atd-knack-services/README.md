@@ -14,6 +14,10 @@ Primary tasks:
 - records_to_knack: (optional) Send data from one knack app to a destination knack app
 - update_last_exec_time: If all upstream tasks were successful, update the date for last execution value storage in Prefect with the current date
 
+Maintenance Tasks:
+- knack_street_seg_updater updates segment data in a knack dataset with data that is stored in an AGOL layer.
+- knack_location_updater updates location data in knack with information stored in various AGOL layers such as what council district each asset is in. 
+
 ***
 
 Parameters:
@@ -27,10 +31,26 @@ Parameters:
 
 ***
 
-## Configuring a Knack Services flow in the Prefect UI
+Secrets:
 
-1. Head to the [flow's page](https://cloud.prefect.io/dts/flow/d6b44480-d8e8-4367-b3f8-b760fbd4a2c3?overview) in the Prefect UI and authenticate if you need to.
-2. Go to settings -> schedule -> new schedule
-3. Configure your schedule settings or provide a cron string by using the "advanced slider"
-4. Go to the parameters tab, **check the boxes on the left to overwrite the default values**, and provide the necessary parameters to run your flow, then click create.
-5. Go back to the overview tab to observe if your flow is scheduled correctly, this may take a few minutes to refresh.
+The primary storage for all knack services scripts is in the `atd-knack-services` JSON block in Prefect. This block's JSON schema is based on what knack app you are using. A special key is also set aside for storing when each flow was last executed successfully, called `PREV-EXECS`.
+```
+{
+	"data-tracker":
+	{
+		"secret_1":"abc",
+		"secret_2":"xyz"
+	},
+	"signs-markings":
+	{
+		"secret_3":"def",
+		"secret_4":"uvw"
+	},
+	"PREV-EXECS":
+	{
+		"Knack Services 1": "2023-03-23",
+    	"Knack Services 2": "2023-03-28"
+	}
+}
+```
+
