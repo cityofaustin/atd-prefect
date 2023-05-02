@@ -7,7 +7,7 @@ Description: Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ET
 
 Create Deployment:
 $ prefect deployment build flows/atd-knack-services/atd_knack_street_segment_updater.py:main \
-    --name "Knack Services: ROW TCP Submissions to Socrata" \
+    --name "Knack Services: Street Segment Updater" \
     --pool atd-data-03 \
     --cron "45 * * * *" \
     -q default \
@@ -68,7 +68,7 @@ def determine_date_args(environment_variables, commands):
     output = []
     prev_exec = environment_variables["PREV_EXECS"][FLOW_NAME]
     for c in commands:
-        output.append(f"{c} -d {prev_exec}")
+        output.append(f'{c} -d "{prev_exec}"')
     return output
 
 
