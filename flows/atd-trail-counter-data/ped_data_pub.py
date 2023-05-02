@@ -11,7 +11,7 @@ $ prefect deployment build flows/atd-trail-counter-data/ped_data_pub.py:main \
     --pool atd-data-03 \
     --cron "00 8 * * *" \
     -q default \
-    -sb github/ch-ped-counters \
+    -sb github/atd-prefect-main-branch \
     -o "deployments/ped_data_pub.yaml"\
     --skip-upload \
     --description "Repo: https://github.com/cityofaustin/atd-trail-counter-data wrapper for ETL that \

@@ -5,20 +5,26 @@ name: 'atd-trail-counter-data: Trail Counter Data Publishing'
 description: 'Repo: https://github.com/cityofaustin/atd-trail-counter-data wrapper
   for ETL that     scrapes trail counter data from the public eco-counter website
   and publishes it in Socrata.'
-version: 7eb3255978acc6d919f835f4295485da
+version: 8b5282ee64ac47cd818af4023320009a
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
 tags: []
-parameters: 
+parameters:
   block: ped-data-pub
   docker_env: latest
 schedule:
   cron: 00 8 * * *
   timezone: null
   day_or: true
-is_schedule_active: null
+is_schedule_active: true
 infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: 'atd-trail-counter-data: Trail Counter Data Publishing'
+manifest_path: null
 infrastructure:
   type: process
   env: {}
@@ -27,21 +33,18 @@ infrastructure:
   command: null
   stream_output: true
   working_dir: null
+  _block_document_id: 7302357b-47c8-4d2c-9d20-75ecdd43858b
+  _block_document_name: anonymous-e68da45d-b781-470f-95c9-0e58319dbd2a
+  _is_anonymous: true
   block_type_slug: process
   _block_type_slug: process
-
-###
-### DO NOT EDIT BELOW THIS LINE
-###
-flow_name: 'atd-trail-counter-data: Trail Counter Data Publishing'
-manifest_path: null
 storage:
-  repository: github.com/cityofaustin/atd-prefect/
-  reference: ch-ped-counters
+  repository: https://github.com/cityofaustin/atd-prefect/
+  reference: main
   access_token: null
-  include_git_objects: true
-  _block_document_id: a6aa4517-bb5b-4a07-a4df-6e2b034081bc
-  _block_document_name: ch-ped-counters
+  include_git_objects: false
+  _block_document_id: d0cc8e56-412b-49b3-bb9c-33b522c64736
+  _block_document_name: atd-prefect-main-branch
   _is_anonymous: false
   block_type_slug: github
   _block_type_slug: github
@@ -61,4 +64,4 @@ parameter_openapi_schema:
   - block
   - docker_env
   definitions: null
-timestamp: '2023-04-28T15:55:25.611348+00:00'
+timestamp: '2023-05-02T15:05:08.120979+00:00'
