@@ -16,6 +16,7 @@ parameters:
   commands:
   - atd-knack-services/services/sr_asset_assign.py -a data-tracker -c view_2362 -s
     signals
+  app_name: data-tracker
 schedule:
   cron: '* * * * *'
   timezone: null

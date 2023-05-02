@@ -18,6 +18,7 @@ parameters:
   - atd-knack-services/services/records_to_agol.py -a signs-markings -c view_3628
   - atd-knack-services/services/records_to_socrata.py -a signs-markings -c view_3628
   - atd-knack-services/services/agol_build_markings_segment_geometries.py -l markings_contractor_work_orders
+  app_name: signs-markings
 schedule:
   cron: 5 7 * * *
   timezone: null

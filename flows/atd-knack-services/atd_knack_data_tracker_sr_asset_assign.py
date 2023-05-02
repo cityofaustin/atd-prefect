@@ -30,6 +30,7 @@ from datetime import datetime, timedelta
 from prefect import flow, task, get_run_logger
 from prefect.blocks.system import JSON
 
+FLOW_NAME = "Knack Services: Data Tracker SR Assign Signals"
 
 # Docker settings
 docker_env = "production"
@@ -83,8 +84,8 @@ def docker_commands(environment_variables, commands, logger):
     return response
 
 
-@flow(name=f"Knack Services: Data Tracker SR Assign Signals")
-def main(commands, block):
+@flow(name=FLOW_NAME)
+def main(commands, block, app_name):
     # Logger instance
     logger = get_run_logger()
 
@@ -94,7 +95,9 @@ def main(commands, block):
 
     # Run our commands
     if docker_res:
-        commands_res = docker_commands(environment_variables, commands, logger)
+        commands_res = docker_commands(
+            environment_variables[app_name], commands, logger
+        )
 
 
 if __name__ == "__main__":
@@ -108,6 +111,6 @@ if __name__ == "__main__":
     ]
 
     # Environment Variable Storage Block Name
-    block = "atd-knack-services-data-tracker-location-updater-prod"
+    block = "atd-knack-services"
 
-    main(commands, block)
+    main(commands, block, app_name)

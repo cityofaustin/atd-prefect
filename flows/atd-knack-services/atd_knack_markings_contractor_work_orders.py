@@ -30,6 +30,7 @@ from datetime import datetime, timedelta
 from prefect import flow, task, get_run_logger
 from prefect.blocks.system import JSON
 
+FLOW_NAME = "Knack Services: Signs Markings Contractor Work Orders"
 
 # Docker settings
 docker_env = "production"
@@ -72,7 +73,7 @@ def determine_date_args(environment_variables, commands):
             output.append(f"{c} -d 1970-01-01")
         return output
 
-    prev_exec = environment_variables["PREV_EXEC"]
+    prev_exec = environment_variables["PREV_EXECS"][FLOW_NAME]
     for c in commands:
         output.append(f"{c} -d {prev_exec}")
     return output
@@ -116,8 +117,8 @@ def update_exec_date(json_block):
     block.save(name=json_block, overwrite=True)
 
 
-@flow(name=f"Knack Services: Signs Markings Contractor Work Orders")
-def main(commands, block):
+@flow(name=FLOW_NAME)
+def main(commands, block, app_name):
     # Logger instance
     logger = get_run_logger()
 
@@ -130,7 +131,9 @@ def main(commands, block):
 
     # Run our commands
     if docker_res:
-        commands_res = docker_commands(environment_variables, commands, logger)
+        commands_res = docker_commands(
+            environment_variables[app_name], commands, logger
+        )
     if commands_res:
         update_exec_date(block)
 
@@ -150,6 +153,6 @@ if __name__ == "__main__":
     ]
 
     # Environment Variable Storage Block Name
-    block = "atd-knack-services-sm-contractor-work-orders"
+    block = "atd-knack-services"
 
-    main(commands, block)
+    main(commands, block, app_name)

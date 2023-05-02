@@ -1,24 +1,23 @@
 #!/usr/bin/env python
 
 """
-Name: ATD Knack Services: Data Tracker Location Updater
-Description: Wrapper ETL for the atd-knack-services docker image 
-             with defined commands for updating location fields in data tracker. 
+Name: Knack Services: Street Segment Updater
+Description: Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image 
+        with config for updating street segments in knack with data from an arcGIS online layer.
 
 Create Deployment:
-$ prefect deployment build flows/atd-knack-services/atd_knack_services_data_tracker_location_updater.py:main \
-    --name "Knack Services: ATD Knack Services: Data Tracker Location Updater" \
+$ prefect deployment build flows/atd-knack-services/atd_knack_street_segment_updater.py:main \
+    --name "Knack Services: ROW TCP Submissions to Socrata" \
     --pool atd-data-03 \
+    --cron "45 * * * *" \
     -q default \
     -sb github/knack-services-wip \
-    -o "deployments/atd_knack_services_data_tracker_location_updater.yaml" \
+    -o "deployments/atd_knack_street_segment_updater.yaml" \
+    --description "Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image with config for updating street segments in knack with data from an arcGIS online layer." \
     --skip-upload \
-    --tag atd-knack-services \
-    --description "Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image with defined commands for updating location fields in data tracker." 
-
-
-Apply Deployment:
-$ prefect deployment apply deployments/atd_knack_services_data_tracker_location_updater.yaml
+    --tag atd-knack-services
+ 
+$ prefect deployment apply deployments/atd_knack_street_segment_updater.yaml
 """
 
 import os
@@ -31,7 +30,7 @@ from datetime import datetime, timedelta
 from prefect import flow, task, get_run_logger
 from prefect.blocks.system import JSON
 
-FLOW_NAME = "ATD Knack Services: Data Tracker Location Updater"
+FLOW_NAME = "Knack Services: Street Segment Updater"
 
 # Docker settings
 docker_env = "production"
@@ -59,21 +58,14 @@ def pull_docker_image():
     return True
 
 
-# Determine what date to run the knack scripts
+# Determine what date/time to run the knack scripts
 @task(
     name="determine_date_args",
     retries=1,
     retry_delay_seconds=timedelta(minutes=5).seconds,
 )
 def determine_date_args(environment_variables, commands):
-    # Completely replace data on 15th day of every month,
-    # to catch records potentially missed by incremental refreshes
     output = []
-    if datetime.today().day == 15:
-        for c in commands:
-            output.append(f"{c} -d 1970-01-01")
-        return output
-
     prev_exec = environment_variables["PREV_EXECS"][FLOW_NAME]
     for c in commands:
         output.append(f"{c} -d {prev_exec}")
@@ -114,7 +106,7 @@ def docker_commands(environment_variables, commands, logger):
 def update_exec_date(json_block):
     # Update our JSON block with the updated date of last flow execution
     block = JSON.load(json_block)
-    block.value["PREV_EXEC"] = datetime.today().strftime("%Y-%m-%d")
+    block.value["PREV_EXECS"][FLOW_NAME] = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
     block.save(name=json_block, overwrite=True)
 
 
@@ -135,20 +127,18 @@ def main(commands, block, app_name):
         commands_res = docker_commands(
             environment_variables[app_name], commands, logger
         )
-
     if commands_res:
         update_exec_date(block)
 
 
 if __name__ == "__main__":
     app_name = "data-tracker"  # Name of knack app
-    container = "view_1201"  # Container of locations
+    container = "view_1198"  # Container of contractor work orders
 
     # List of commands to be sent to the docker image,
     # Note that the date filter arg is added last in determine_date_args task
     commands = [
-        f"atd-knack-services/services/records_to_postgrest.py -a {app_name} -c {container}",
-        f"atd-knack-services/services/knack_location_updater.py -a {app_name} -c {container}",
+        f"atd-knack-services/services/knack_street_seg_updater.py -a {app_name} -c {container}",
     ]
 
     # Environment Variable Storage Block Name
