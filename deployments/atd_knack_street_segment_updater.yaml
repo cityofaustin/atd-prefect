@@ -1,7 +1,7 @@
 ###
 ### A complete description of a Prefect Deployment for flow 'Knack Services: Street Segment Updater'
 ###
-name: 'Knack Services: ROW TCP Submissions to Socrata'
+name: 'Knack Services: Street Segment Updater'
 description: 'Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL
   for the atd-knack-services docker image with config for updating street segments
   in knack with data from an arcGIS online layer.'
@@ -11,7 +11,7 @@ work_queue_name: default
 work_pool_name: atd-data-03
 tags:
 - atd-knack-services
-parameters:   
+parameters: 
   commands:
     - atd-knack-services/services/knack_street_seg_updater.py -a data-tracker -c view_1198
   block: atd-knack-services
@@ -68,4 +68,4 @@ parameter_openapi_schema:
   - block
   - app_name
   definitions: null
-timestamp: '2023-05-02T21:16:14.968920+00:00'
+timestamp: '2023-05-02T21:27:48.028790+00:00'

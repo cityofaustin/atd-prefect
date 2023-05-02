@@ -12,7 +12,7 @@ work_pool_name: atd-data-03
 tags:
 - atd-knack-services
 parameters:
-  block: atd-knack-services-data-tracker-location-updater-prod
+  block: atd-knack-services
   commands:
   - atd-knack-services/services/sr_asset_assign.py -a data-tracker -c view_2362 -s
     signals
