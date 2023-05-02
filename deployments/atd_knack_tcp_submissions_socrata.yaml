@@ -11,18 +11,24 @@ work_queue_name: default
 work_pool_name: atd-data-03
 tags:
 - atd-knack-services
-parameters: 
+parameters:
   commands:
     - atd-knack-services/services/records_to_postgrest.py -a row -c view_483
     - atd-knack-services/services/records_to_socrata.py -a row -c view_483
-    block: atd-knack-services
-    app_name: row
+  block: atd-knack-services
+  app_name: row
 schedule:
   cron: 15 7 * * *
   timezone: null
   day_or: true
-is_schedule_active: null
+is_schedule_active: true
 infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: 'Knack Services: ROW TCP Submissions to Socrata'
+manifest_path: null
 infrastructure:
   type: process
   env: {}
@@ -31,14 +37,11 @@ infrastructure:
   command: null
   stream_output: true
   working_dir: null
+  _block_document_id: 68e44c4f-e7d7-41b5-bd76-0b80aaaece95
+  _block_document_name: anonymous-44f9d095-be2b-49a9-b3e1-031f2370feae
+  _is_anonymous: true
   block_type_slug: process
   _block_type_slug: process
-
-###
-### DO NOT EDIT BELOW THIS LINE
-###
-flow_name: 'Knack Services: ROW TCP Submissions to Socrata'
-manifest_path: null
 storage:
   repository: https://github.com/cityofaustin/atd-prefect
   reference: ch-prefect2-atd-knack-services
@@ -69,4 +72,4 @@ parameter_openapi_schema:
   - block
   - app_name
   definitions: null
-timestamp: '2023-03-29T19:34:46.807737+00:00'
+timestamp: '2023-05-02T21:33:00.740921+00:00'
