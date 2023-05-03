@@ -5,7 +5,7 @@ name: 'Knack Services: ATD Knack Services: Data Tracker Location Updater'
 description: 'Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL
   for the atd-knack-services docker image with defined commands for updating location
   fields in data tracker.'
-version: 0f46b1a73b92a358669288235d415038
+version: 52a0649b292d00f5e09fc86790c8222b
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
@@ -15,7 +15,7 @@ parameters:
   block: atd-knack-services
   commands:
   - atd-knack-services/services/knack_location_updater.py -a data-tracker -c view_1201
-  app-name: data-tracker
+  app_name: data-tracker
 schedule:
   cron: 19 7 * * *
   timezone: null
@@ -63,8 +63,12 @@ parameter_openapi_schema:
     block:
       title: block
       position: 1
+    app_name:
+      title: app_name
+      position: 2
   required:
   - commands
   - block
+  - app_name
   definitions: null
-timestamp: '2023-03-22T22:22:47.501447+00:00'
+timestamp: '2023-05-03T14:42:42.528615+00:00'
