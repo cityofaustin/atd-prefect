@@ -11,8 +11,6 @@ work_pool_name: atd-data-03
 tags: []
 parameters: 
   commands:
-    - payments_s3.py
-    - payments_s3.py --user pard
     - passport_DB.py
     - smartfolio_s3.py
   block: atd-parking-data

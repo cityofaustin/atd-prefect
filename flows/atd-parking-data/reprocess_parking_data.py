@@ -179,7 +179,7 @@ def main(commands, block, s3_env, docker_env):
 
     # Start: get env vars and pull the latest docker image
     environment_variables = get_env_vars(block)
-    years = [2020, 2021, 2022]
+    years = [2021, 2022]
     months = list(range(1, 13))
     year_months = list(itertools.product(years, months))
 
@@ -194,8 +194,6 @@ if __name__ == "__main__":
     # List of commands to be sent to the docker image,
     # Note that the date filter arg is added last in determine_date_args task
     commands = [
-        "payments_s3.py",
-        "payments_s3.py --user pard",
         "passport_DB.py",
         "smartfolio_s3.py",
     ]
