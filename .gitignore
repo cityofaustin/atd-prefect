@@ -1,6 +1,10 @@
 # Directories
 .idea
 venv
+.DS_Store
+flows/.DS_Store
+
+.DS_Store
 
 # Files
 *.md5sum

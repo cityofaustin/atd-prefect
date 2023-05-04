@@ -25,8 +25,36 @@ kv_store = {
     "OCR_DIAGRAM_TARGET_PATH": os.getenv("OCR_DIAGRAM_TARGET_PATH"),
     "OCR_BATCH_SIZE": os.getenv("OCR_BATCH_SIZE"),
     "OCR_SINGLE_CRASH": os.getenv("OCR_SINGLE_CRASH"),
+
+    "AFD_DB_USERNAME": os.getenv("AFD_DB_USERNAME"),
+    "AFD_DB_PASSWORD": os.getenv("AFD_DB_PASSWORD"),
+    "AFD_DB_HOSTNAME": os.getenv("AFD_DB_HOSTNAME"),
+    "AFD_DB_PORT": os.getenv("AFD_DB_PORT"),
+    "AFD_DB_DATABASE": os.getenv("AFD_DB_DATABASE"),
+    "AWS_ACCESS_KEY_ID": os.getenv("AWS_ACCESS_KEY_ID"),
+    "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY"),
+    "AFD_S3_SOURCE_BUCKET": os.getenv("AFD_S3_SOURCE_BUCKET"),
+    "AFD_S3_ARCHIVE_BUCKET": os.getenv("AFD_S3_ARCHIVE_BUCKET"),
+    "AFD_S3_SOURCE_PREFIX": os.getenv("AFD_S3_SOURCE_PREFIX"),
+    "AFD_S3_ARCHIVE_PREFIX": os.getenv("AFD_S3_ARCHIVE_PREFIX"),
+    "EMS_S3_SOURCE_BUCKET": os.getenv("EMS_S3_SOURCE_BUCKET"),
+    "EMS_S3_ARCHIVE_BUCKET": os.getenv("EMS_S3_ARCHIVE_BUCKET"),
+    "EMS_S3_SOURCE_PREFIX": os.getenv("EMS_S3_SOURCE_PREFIX"),
+    "EMS_S3_ARCHIVE_PREFIX": os.getenv("EMS_S3_ARCHIVE_PREFIX"),
+
+    "DB_HOST": os.getenv("DB_HOST"),
+    "DB_USER": os.getenv("DB_USER"),
+    "DB_PASS": os.getenv("DB_PASS"),
+    "DB_NAME": os.getenv("DB_NAME"),
+    "DB_IMPORT_SCHEMA": os.getenv("DB_IMPORT_SCHEMA"),
+    "GRAPHQL_ENDPOINT": os.getenv("GRAPHQL_ENDPOINT"),
+    "GRAPHQL_ENDPOINT_KEY": os.getenv("GRAPHQL_ENDPOINT_KEY"),
+
+    "DB_PERMISSION_SCHEMAS": os.getenv("DB_PERMISSION_SCHEMAS"),
+    "DB_BASTION_HOST": os.getenv("DB_BASTION_HOST"),
+    "DB_RDS_HOST": os.getenv("DB_RDS_HOST")
 }
 
 json = json.dumps(kv_store)
 
-key_value_uuid = set_key_value(key="Vision Zero", value=json)
+key_value_uuid = set_key_value(key="Vision Zero Development", value=json)
