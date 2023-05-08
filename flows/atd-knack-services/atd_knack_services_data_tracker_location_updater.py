@@ -114,7 +114,7 @@ def docker_commands(environment_variables, commands, logger):
 def update_exec_date(json_block):
     # Update our JSON block with the updated date of last flow execution
     block = JSON.load(json_block)
-    block.value["PREV_EXEC"] = datetime.today().strftime("%Y-%m-%d")
+    block.value["PREV_EXECS"][FLOW_NAME] = datetime.today().strftime("%Y-%m-%d")
     block.save(name=json_block, overwrite=True)
 
 
