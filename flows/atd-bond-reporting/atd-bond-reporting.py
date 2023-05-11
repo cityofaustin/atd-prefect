@@ -59,24 +59,24 @@ def pull_docker_image(docker_env):
     name="docker_commands",
     retries=3,
     retry_delay_seconds=timedelta(minutes=2).seconds,
+    task_run_name="Docker Command: {command}",
 )
-def docker_commands(environment_variables, commands, logger, docker_env):
-    for c in commands:
-        response = (
-            docker.from_env()
-            .containers.run(
-                image=f"{docker_image}:{docker_env}",
-                working_dir=None,
-                command=f"python {c}",
-                environment=environment_variables,
-                volumes=None,
-                remove=True,
-                detach=False,
-                stdout=True,
-            )
-            .decode("utf-8")
+def docker_commands(environment_variables, command, logger, docker_env):
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=f"{docker_image}:{docker_env}",
+            working_dir=None,
+            command=f"python {command}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
         )
-        logger.info(response)
+        .decode("utf-8")
+    )
+    logger.info(response)
     return response
 
 
@@ -102,10 +102,8 @@ def main(commands, block, docker_tag):
     docker_res = pull_docker_image(docker_tag)
 
     # Run our commands
-    if docker_res:
-        commands_res = docker_commands(
-            environment_variables, commands, logger, docker_tag
-        )
+    for c in commands:
+        commands_res = docker_commands(environment_variables, c, logger, docker_tag)
     if commands_res:
         update_exec_date(block)
 
@@ -116,8 +114,14 @@ if __name__ == "__main__":
     commands = [
         'atd-bond-reporting/microstrategy_to_s3.py -r "2020 Bond Expenses Obligated"',
         'atd-bond-reporting/microstrategy_to_s3.py -r "All bonds Expenses Obligated"',
+        'atd-bond-reporting/microstrategy_to_s3.py -r "2020 FDUs with Subproject and Appropriation"',
+        'atd-bond-reporting/microstrategy_to_s3.py -r "Subprojects with total Appropriation"',
+        'atd-bond-reporting/microstrategy_to_s3.py -r "Open Subprojects with Budget Estimate"',
+        'atd-bond-reporting/microstrategy_to_s3.py -r "FDU Expenses by Quarter"',
+        'atd-bond-reporting/microstrategy_to_s3.py -r "2020 Division Group and Unit"',
         "atd-bond-reporting/bond_data.py",
         "atd-bond-reporting/bond_calculations.py",
+        "atd-bond-reporting/quarterly_reporting.py",
     ]
 
     # Environment Variable Storage Block Name
