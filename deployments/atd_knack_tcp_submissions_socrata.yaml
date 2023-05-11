@@ -5,18 +5,18 @@ name: 'Knack Services: ROW TCP Submissions to Socrata'
 description: 'Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL
   for the atd-knack-services docker image with config for publishing ROW TCP data
   to the open data portal'
-version: 6e73cefad99c98d7de4ef0b3444a81c7
+version: b916b22c4cebd75fd84ac9c4da5708c6
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
 tags:
 - atd-knack-services
 parameters:
-  commands:
-    - atd-knack-services/services/records_to_postgrest.py -a row -c view_483
-    - atd-knack-services/services/records_to_socrata.py -a row -c view_483
   block: atd-knack-services
   app_name: row
+  commands:
+  - atd-knack-services/services/records_to_postgrest.py -a row -c view_483
+  - atd-knack-services/services/records_to_socrata.py -a row -c view_483
 schedule:
   cron: 15 7 * * *
   timezone: null
@@ -43,12 +43,12 @@ infrastructure:
   block_type_slug: process
   _block_type_slug: process
 storage:
-  repository: https://github.com/cityofaustin/atd-prefect
-  reference: ch-prefect2-atd-knack-services
-  access_token: '**********'
-  include_git_objects: true
-  _block_document_id: a404f1cd-6b78-49ca-a0ca-ada4d56f3482
-  _block_document_name: knack-services-wip
+  repository: https://github.com/cityofaustin/atd-prefect/
+  reference: main
+  access_token: null
+  include_git_objects: false
+  _block_document_id: d0cc8e56-412b-49b3-bb9c-33b522c64736
+  _block_document_name: atd-prefect-main-branch
   _is_anonymous: false
   block_type_slug: github
   _block_type_slug: github
@@ -72,4 +72,4 @@ parameter_openapi_schema:
   - block
   - app_name
   definitions: null
-timestamp: '2023-05-02T21:33:00.740921+00:00'
+timestamp: '2023-05-11T15:50:34.611283+00:00'

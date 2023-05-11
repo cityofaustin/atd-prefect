@@ -10,7 +10,7 @@ $ prefect deployment build flows/atd-knack-services/atd_knack_services_data_trac
     --name "Knack Services: ATD Knack Services: Data Tracker Location Updater" \
     --pool atd-data-03 \
     -q default \
-    -sb github/knack-services-wip \
+    -sb github/atd-prefect-main-branch \
     -o "deployments/atd_knack_services_data_tracker_location_updater.yaml" \
     --skip-upload \
     --tag atd-knack-services \

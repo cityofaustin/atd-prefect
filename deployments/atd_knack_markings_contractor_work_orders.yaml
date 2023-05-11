@@ -5,7 +5,7 @@ name: 'Knack Services: SM Contractor Work Orders'
 description: 'Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL
   for the atd-knack-services docker image with defined commands for the contractor
   work orders flow'
-version: 64f0552a0ef285eaa16e8fb065d11ac7
+version: 396bb85338dbc97c89935a40dea3b032
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
@@ -13,12 +13,12 @@ tags:
 - atd-knack-services
 parameters:
   block: atd-knack-services
+  app_name: signs-markings
   commands:
   - atd-knack-services/services/records_to_postgrest.py -a signs-markings -c view_3628
   - atd-knack-services/services/records_to_agol.py -a signs-markings -c view_3628
   - atd-knack-services/services/records_to_socrata.py -a signs-markings -c view_3628
   - atd-knack-services/services/agol_build_markings_segment_geometries.py -l markings_contractor_work_orders
-  app_name: signs-markings
 schedule:
   cron: 5 7 * * *
   timezone: null
@@ -45,12 +45,12 @@ infrastructure:
   block_type_slug: process
   _block_type_slug: process
 storage:
-  repository: https://github.com/cityofaustin/atd-prefect
-  reference: ch-prefect2-atd-knack-services
-  access_token: '**********'
-  include_git_objects: true
-  _block_document_id: a404f1cd-6b78-49ca-a0ca-ada4d56f3482
-  _block_document_name: knack-services-wip
+  repository: https://github.com/cityofaustin/atd-prefect/
+  reference: main
+  access_token: null
+  include_git_objects: false
+  _block_document_id: d0cc8e56-412b-49b3-bb9c-33b522c64736
+  _block_document_name: atd-prefect-main-branch
   _is_anonymous: false
   block_type_slug: github
   _block_type_slug: github
@@ -66,8 +66,12 @@ parameter_openapi_schema:
     block:
       title: block
       position: 1
+    app_name:
+      title: app_name
+      position: 2
   required:
   - commands
   - block
+  - app_name
   definitions: null
-timestamp: '2023-03-27T15:41:01.290940+00:00'
+timestamp: '2023-05-11T15:49:06.545931+00:00'

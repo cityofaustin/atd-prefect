@@ -11,7 +11,7 @@ $ prefect deployment build flows/atd-knack-services/atd_knack_street_segment_upd
     --pool atd-data-03 \
     --cron "45 * * * *" \
     -q default \
-    -sb github/knack-services-wip \
+    -sb github/atd-prefect-main-branch \
     -o "deployments/atd_knack_street_segment_updater.yaml" \
     --description "Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image with config for updating street segments in knack with data from an arcGIS online layer." \
     --skip-upload \

@@ -11,7 +11,7 @@ $ prefect deployment build flows/atd-knack-services/atd_knack_artbox_signals.py:
     --pool atd-data-03 \
     --cron "30 0 * * *" \
     -q default \
-    -sb github/knack-services-wip \
+    -sb github/atd-prefect-main-branch \
     -o "deployments/atd_knack_artbox_signals.yaml" \
     --description "Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image with commands for updating signal records in one knack app (smart mobility) with data from another (data tracker)." \
     --skip-upload \

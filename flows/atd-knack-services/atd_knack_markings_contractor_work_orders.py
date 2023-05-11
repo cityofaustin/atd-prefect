@@ -11,7 +11,7 @@ $ prefect deployment build flows/atd-knack-services/atd_knack_markings_contracto
     --pool atd-data-03 \
     --cron "5 7 * * *" \
     -q default \
-    -sb github/knack-services-wip \
+    -sb github/atd-prefect-main-branch \
     -o "deployments/atd_knack_markings_contractor_work_orders.yaml" \
     --description "Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image with defined commands for the contractor work orders flow" \
     --skip-upload \

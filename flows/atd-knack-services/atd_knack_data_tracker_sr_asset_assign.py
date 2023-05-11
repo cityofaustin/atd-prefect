@@ -11,7 +11,7 @@ $ prefect deployment build flows/atd-knack-services/atd_knack_data_tracker_sr_as
     --pool atd-data-03 \
     --cron "* * * * *" \
     -q default \
-    -sb github/knack-services-wip \
+    -sb github/atd-prefect-main-branch \
     -o "deployments/atd_knack_data_tracker_sr_asset_assign.yaml" \
     --description "Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image with commands for a script that assigns signals to CSRs in data tracker." \
     --skip-upload \

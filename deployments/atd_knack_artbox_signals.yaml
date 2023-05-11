@@ -5,7 +5,7 @@ name: 'Knack Services: Artbox Signals'
 description: 'Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL
   for the atd-knack-services docker image with commands for updating signal records
   in one knack app (smart mobility) with data from another (data tracker).'
-version: 8fe165be39036b7417acf0d0cd04a64f
+version: 628015d2382aee69c55b52ba3ce41ac5
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
@@ -46,12 +46,12 @@ infrastructure:
   block_type_slug: process
   _block_type_slug: process
 storage:
-  repository: https://github.com/cityofaustin/atd-prefect
-  reference: ch-prefect2-atd-knack-services
-  access_token: '**********'
-  include_git_objects: true
-  _block_document_id: a404f1cd-6b78-49ca-a0ca-ada4d56f3482
-  _block_document_name: knack-services-wip
+  repository: https://github.com/cityofaustin/atd-prefect/
+  reference: main
+  access_token: null
+  include_git_objects: false
+  _block_document_id: d0cc8e56-412b-49b3-bb9c-33b522c64736
+  _block_document_name: atd-prefect-main-branch
   _is_anonymous: false
   block_type_slug: github
   _block_type_slug: github
@@ -79,4 +79,4 @@ parameter_openapi_schema:
   - app_name_src
   - app_name_dest
   definitions: null
-timestamp: '2023-03-29T19:37:03.619357+00:00'
+timestamp: '2023-05-11T15:48:12.794342+00:00'

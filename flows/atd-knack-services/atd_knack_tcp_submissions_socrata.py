@@ -11,7 +11,7 @@ $ prefect deployment build flows/atd-knack-services/atd_knack_tcp_submissions_so
     --pool atd-data-03 \
     --cron "15 7 * * *" \
     -q default \
-    -sb github/knack-services-wip \
+    -sb github/atd-prefect-main-branch \
     -o "deployments/atd_knack_tcp_submissions_socrata.yaml" \
     --description "Repo: https://github.com/cityofaustin/atd-knack-services Wrapper ETL for the atd-knack-services docker image with config for publishing ROW TCP data to the open data portal" \
     --skip-upload \
