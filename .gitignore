@@ -10,10 +10,4 @@ flows/.DS_Store
 *.md5sum
 *.env
 
-.vscode/settings.json
-
-
-.pytest_cache/
-__pycache__/
-
 .prefectignore
