@@ -15,8 +15,14 @@ parameters:
   commands:
   - atd-bond-reporting/microstrategy_to_s3.py -r "2020 Bond Expenses Obligated"
   - atd-bond-reporting/microstrategy_to_s3.py -r "All bonds Expenses Obligated"
+  - atd-bond-reporting/microstrategy_to_s3.py -r "2020 FDUs with Subproject and Appropriation"
+  - atd-bond-reporting/microstrategy_to_s3.py -r "Subprojects with total Appropriation"
+  - atd-bond-reporting/microstrategy_to_s3.py -r "Open Subprojects with Budget Estimate"
+  - atd-bond-reporting/microstrategy_to_s3.py -r "FDU Expenses by Quarter"
+  - atd-bond-reporting/microstrategy_to_s3.py -r "2020 Division Group and Unit"
   - atd-bond-reporting/bond_data.py
   - atd-bond-reporting/bond_calculations.py
+  - atd-bond-reporting/quarterly_reporting.py
   docker_tag: latest
 schedule:
   cron: 0 15 * * *
