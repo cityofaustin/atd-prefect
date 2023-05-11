@@ -5,7 +5,7 @@ name: Bond Reporting Data Scripts
 description: 'Repo: https://github.com/cityofaustin/atd-bond-reporting Wrapper ETL
   for the atd-bond-reporting docker image with commands for moving the data from S3
   to Socrata.'
-version: 19d786fc4a4a9a5f97dd149e94f05f0d
+version: 25b0d610bfb9d3a2ee0c2a6978125324
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
@@ -17,6 +17,7 @@ parameters:
   - atd-bond-reporting/microstrategy_to_s3.py -r "All bonds Expenses Obligated"
   - atd-bond-reporting/bond_data.py
   - atd-bond-reporting/bond_calculations.py
+  docker_tag: latest
 schedule:
   cron: 0 15 * * *
   timezone: null
@@ -44,11 +45,11 @@ infrastructure:
   _block_type_slug: process
 storage:
   repository: https://github.com/cityofaustin/atd-prefect/
-  reference: main
+  reference: ch-bond-reporting
   access_token: null
-  include_git_objects: false
-  _block_document_id: d0cc8e56-412b-49b3-bb9c-33b522c64736
-  _block_document_name: atd-prefect-main-branch
+  include_git_objects: true
+  _block_document_id: 1a001b10-7b11-4526-8f78-7fc58b1b5354
+  _block_document_name: ch-bond-reporting
   _is_anonymous: false
   block_type_slug: github
   _block_type_slug: github
@@ -64,8 +65,12 @@ parameter_openapi_schema:
     block:
       title: block
       position: 1
+    docker_tag:
+      title: docker_tag
+      position: 2
   required:
   - commands
   - block
+  - docker_tag
   definitions: null
-timestamp: '2023-04-03T16:45:39.288332+00:00'
+timestamp: '2023-05-11T16:25:30.833801+00:00'
