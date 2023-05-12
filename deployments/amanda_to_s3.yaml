@@ -10,6 +10,7 @@ work_pool_name: atd-data-03
 tags: []
 parameters:
   block: amanda-to-s3
+  docker_tag: latest
   commands:
   - AMANDA/amanda_to_s3.py --query applications_received
   - AMANDA/amanda_to_s3.py --query active_permits
