@@ -36,7 +36,7 @@ docker_image = f"atddocker/atd-executive-dashboard"
 @task(
     name="get_env_vars",
     retries=10,
-    retry_delay_seconds=timedelta(seconds=15).seconds,
+    retry_delay_seconds=15,
 )
 def get_env_vars(json_block):
     # Environment Variables stored in JSON block in Prefect
@@ -82,7 +82,7 @@ def docker_commands(environment_variables, command, logger, docker_env):
 @task(
     name="update_exec_date",
     retries=10,
-    retry_delay_seconds=timedelta(seconds=15).seconds,
+    retry_delay_seconds=15,
 )
 def update_exec_date(json_block):
     # Update our JSON block with the updated date of last flow execution
@@ -122,6 +122,6 @@ if __name__ == "__main__":
     # Environment Variable Storage Block Name
     block = "amanda-to-s3"
 
-    docker_tag = "latest"
+    docker_tag = "production"
 
     main(commands, block, docker_tag)

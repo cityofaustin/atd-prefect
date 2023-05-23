@@ -30,15 +30,10 @@ from prefect.blocks.system import JSON
 
 
 # Docker settings
-docker_env = "latest"
 docker_image = f"atddocker/atd-executive-dashboard"
 
 
-@task(
-    name="get_env_vars",
-    retries=10,
-    retry_delay_seconds=timedelta(seconds=15).seconds,
-)
+@task(name="get_env_vars", retries=10, retry_delay_seconds=15)
 def get_env_vars(json_block):
     # Environment Variables stored in JSON block in Prefect
     return JSON.load(json_block).dict()["value"]
@@ -49,7 +44,7 @@ def get_env_vars(json_block):
     retries=1,
     retry_delay_seconds=timedelta(minutes=5).seconds,
 )
-def pull_docker_image():
+def pull_docker_image(docker_env):
     client = docker.from_env()
     client.images.pull(docker_image, tag=docker_env)
     return True
@@ -60,12 +55,12 @@ def pull_docker_image():
     retries=1,
     retry_delay_seconds=timedelta(minutes=5).seconds,
 )
-def docker_commands(environment_variables, commands, logger):
+def docker_commands(environment_variables, commands, logger, docker_tag):
     for c in commands:
         response = (
             docker.from_env()
             .containers.run(
-                image=docker_image,
+                image=f"{docker_image}:{docker_tag}",
                 working_dir=None,
                 command=f"python {c}",
                 environment=environment_variables,
@@ -83,7 +78,7 @@ def docker_commands(environment_variables, commands, logger):
 @task(
     name="update_exec_date",
     retries=10,
-    retry_delay_seconds=timedelta(seconds=15).seconds,
+    retry_delay_seconds=15,
 )
 def update_exec_date(json_block):
     # Update our JSON block with the updated date of last flow execution
@@ -92,18 +87,20 @@ def update_exec_date(json_block):
     block.save(name=json_block, overwrite=True)
 
 
-@flow(name=f"ATD Performance Dashboard")
-def main(commands, block):
+@flow(name=f"ATD Performance Dashboard: ROW Active Permits Logging")
+def main(commands, block, docker_tag):
     # Logger instance
     logger = get_run_logger()
 
     # Start: get env vars and pull the latest docker image
     environment_variables = get_env_vars(block)
-    docker_res = pull_docker_image()
+    docker_res = pull_docker_image(docker_tag)
 
     # Run our commands
     if docker_res:
-        commands_res = docker_commands(environment_variables, commands, logger)
+        commands_res = docker_commands(
+            environment_variables, commands, logger, docker_tag
+        )
     if commands_res:
         update_exec_date(block)
 
@@ -116,4 +113,6 @@ if __name__ == "__main__":
     # Environment Variable Storage Block Name
     block = "amanda-to-s3"
 
-    main(commands, block)
+    docker_tag = "production"
+
+    main(commands, block, docker_tag)

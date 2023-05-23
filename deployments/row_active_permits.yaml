@@ -3,21 +3,28 @@
 ###
 name: 'ATD Performance Dashboard: ROW Active Permits Logging'
 description: null
-version: 531602d7fafe9c10b7ccb021450057d4
+version: b57b70953157f5e013a3f79de532a846
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
 tags: []
-parameters: 
+parameters:
   block: amanda-to-s3
   commands:
-    - active_permits_logging.py
+  - active_permits_logging.py
+  docker_tag: production
 schedule:
   cron: 0 8 * * 1
   timezone: null
   day_or: true
-is_schedule_active: null
+is_schedule_active: true
 infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: 'ATD Performance Dashboard: ROW Active Permits Logging'
+manifest_path: null
 infrastructure:
   type: process
   env: {}
@@ -26,14 +33,11 @@ infrastructure:
   command: null
   stream_output: true
   working_dir: null
+  _block_document_id: 7ff92e07-c7f9-47c8-b149-fb9c3d889897
+  _block_document_name: anonymous-a4def81d-39ea-4782-9cc7-99befea76500
+  _is_anonymous: true
   block_type_slug: process
   _block_type_slug: process
-
-###
-### DO NOT EDIT BELOW THIS LINE
-###
-flow_name: 'ATD Performance Dashboard: ROW Active Permits Logging'
-manifest_path: null
 storage:
   repository: https://github.com/cityofaustin/atd-prefect
   reference: ch-amanda-queries
@@ -56,8 +60,12 @@ parameter_openapi_schema:
     block:
       title: block
       position: 1
+    docker_tag:
+      title: docker_tag
+      position: 2
   required:
   - commands
   - block
+  - docker_tag
   definitions: null
-timestamp: '2023-03-20T18:55:28.589438+00:00'
+timestamp: '2023-05-23T18:01:36.273206+00:00'
