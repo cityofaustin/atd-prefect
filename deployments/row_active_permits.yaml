@@ -1,0 +1,71 @@
+###
+### A complete description of a Prefect Deployment for flow 'ATD Performance Dashboard: ROW Active Permits Logging'
+###
+name: 'ATD Performance Dashboard: ROW Active Permits Logging'
+description: null
+version: b57b70953157f5e013a3f79de532a846
+# The work queue that will handle this deployment's runs
+work_queue_name: default
+work_pool_name: atd-data-03
+tags: []
+parameters:
+  block: amanda-to-s3
+  commands:
+  - active_permits_logging.py
+  docker_tag: production
+schedule:
+  cron: 0 8 * * 1
+  timezone: null
+  day_or: true
+is_schedule_active: true
+infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: 'ATD Performance Dashboard: ROW Active Permits Logging'
+manifest_path: null
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  _block_document_id: 7ff92e07-c7f9-47c8-b149-fb9c3d889897
+  _block_document_name: anonymous-a4def81d-39ea-4782-9cc7-99befea76500
+  _is_anonymous: true
+  block_type_slug: process
+  _block_type_slug: process
+storage:
+  repository: https://github.com/cityofaustin/atd-prefect
+  reference: ch-amanda-queries
+  access_token: null
+  include_git_objects: true
+  _block_document_id: fde8aed3-d9ba-4551-ba2a-611ae0001499
+  _block_document_name: ch-amanda-queries
+  _is_anonymous: false
+  block_type_slug: github
+  _block_type_slug: github
+path: ''
+entrypoint: flows/atd-executive-dashboard/row_active_permits.py:main
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties:
+    commands:
+      title: commands
+      position: 0
+    block:
+      title: block
+      position: 1
+    docker_tag:
+      title: docker_tag
+      position: 2
+  required:
+  - commands
+  - block
+  - docker_tag
+  definitions: null
+timestamp: '2023-05-23T18:01:36.273206+00:00'

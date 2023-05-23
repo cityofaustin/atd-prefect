@@ -1,0 +1,75 @@
+###
+### A complete description of a Prefect Deployment for flow 'ATD Performance Dashboard: ROW Data Publishing'
+###
+name: 'ATD Performance Dashboard: ROW Data Publishing'
+description: null
+version: 65ffde52e9dd40e9a40656ace94634fc
+# The work queue that will handle this deployment's runs
+work_queue_name: default
+work_pool_name: atd-data-03
+tags: []
+parameters:
+  block: amanda-to-s3
+  docker_tag: production
+  commands:
+  - AMANDA/amanda_to_s3.py --query applications_received
+  - AMANDA/amanda_to_s3.py --query active_permits
+  - AMANDA/amanda_to_s3.py --query issued_permits
+  - smartsheet/smartsheet_to_s3.py
+  - row_data_summary.py
+schedule:
+  cron: 5 13 * * *
+  timezone: null
+  day_or: true
+is_schedule_active: true
+infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: 'ATD Performance Dashboard: ROW Data Publishing'
+manifest_path: null
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  _block_document_id: d1b4b8f9-7310-4587-9024-c75b9dd91e7a
+  _block_document_name: anonymous-190c284f-7a56-4fa2-a960-35276391613d
+  _is_anonymous: true
+  block_type_slug: process
+  _block_type_slug: process
+storage:
+  repository: https://github.com/cityofaustin/atd-prefect
+  reference: ch-amanda-queries
+  access_token: null
+  include_git_objects: true
+  _block_document_id: fde8aed3-d9ba-4551-ba2a-611ae0001499
+  _block_document_name: ch-amanda-queries
+  _is_anonymous: false
+  block_type_slug: github
+  _block_type_slug: github
+path: ''
+entrypoint: flows/atd-executive-dashboard/row_data_publishing.py:main
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties:
+    commands:
+      title: commands
+      position: 0
+    block:
+      title: block
+      position: 1
+    docker_tag:
+      title: docker_tag
+      position: 2
+  required:
+  - commands
+  - block
+  - docker_tag
+  definitions: null
+timestamp: '2023-05-12T21:20:34.821632+00:00'
