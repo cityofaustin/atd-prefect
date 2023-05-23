@@ -4,9 +4,11 @@ venv
 .DS_Store
 flows/.DS_Store
 
+.DS_Store
+
 # Files
 *.md5sum
 *.env
 
-.vscode/settings.json
+
 .prefectignore
