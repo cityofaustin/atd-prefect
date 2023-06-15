@@ -11,7 +11,7 @@ $ prefect deployment build flows/atd-bond-reporting/atd-bond-reporting.py:main \
     --pool atd-data-03 \
     --cron "0 15 * * *" \
     -q default \
-    -sb github/ch-bond-reporting \
+    -sb github/atd-prefect-main-branch \
     -o "deployments/atd-bond-reporting.yaml"\
     --skip-upload \
     --description "Repo: https://github.com/cityofaustin/atd-bond-reporting Wrapper ETL for the atd-bond-reporting docker image with commands for moving the data from S3 to Socrata."
@@ -114,9 +114,6 @@ if __name__ == "__main__":
     commands = [
         'atd-bond-reporting/microstrategy_to_s3.py -r "2020 Bond Expenses Obligated"',
         'atd-bond-reporting/microstrategy_to_s3.py -r "All bonds Expenses Obligated"',
-        'atd-bond-reporting/microstrategy_to_s3.py -r "2020 FDUs with Subproject and Appropriation"',
-        'atd-bond-reporting/microstrategy_to_s3.py -r "Subprojects with total Appropriation"',
-        'atd-bond-reporting/microstrategy_to_s3.py -r "Open Subprojects with Budget Estimate"',
         'atd-bond-reporting/microstrategy_to_s3.py -r "FDU Expenses by Quarter"',
         'atd-bond-reporting/microstrategy_to_s3.py -r "2020 Division Group and Unit"',
         "atd-bond-reporting/bond_data.py",
@@ -128,6 +125,6 @@ if __name__ == "__main__":
     block = "atd-bond-reporting"
 
     # Docker tag
-    docker_tag = "latest"
+    docker_tag = "production"
 
     main(commands, block, docker_tag)
