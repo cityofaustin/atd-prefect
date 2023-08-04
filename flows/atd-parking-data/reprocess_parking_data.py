@@ -55,149 +55,19 @@ def pull_docker_image(docker_env):
     return True
 
 
-@task
-def get_start_date(prev_execution_date_success):
-    """Creates a start date 7 days before the date of the last successful run of the flow
-
-    Args:
-        prev_execution_date_success (string): Date of the last successful run of the flow
-
-    Returns:
-        list: The start date (string) which is 7 days before the last run.
-        Defaults to 2021-12-25 if none were previously successful.
-    """
-    if prev_execution_date_success:
-        # parse CLI arg date
-        start_date = datetime.strptime(prev_execution_date_success, "%Y-%m-%d")
-        start_date = start_date - timedelta(days=7)
-
-        return start_date.strftime("%Y-%m-%d")
-    else:
-        return "2021-12-25"
-
-
-@task
-def decide_prev_month(prev_execution_date_success):
-    """
-    Determines if the current month or the current plus previous month S3
-        folders are needed. If it is within a week of the previous month,
-        also upsert that months data.
-    Parameters
-    ----------
-    prev_execution_date_success : String
-        Last date the flow was successful.
-
-    Returns
-    -------
-    Prev_month : Bool
-        Argument if the previous month should be run.
-
-    """
-    if prev_execution_date_success:
-        last_date = datetime.strptime(prev_execution_date_success, "%Y-%m-%d")
-        # If in the first 8 days of the month of last few days of the month re-run
-        # the previous month's data to make sure it is complete.
-        if last_date.day < 8 or last_date.day > 26:
-            return True
-        else:
-            return False
-    return True
-
-
-@task
-def add_command_arguments(commands, s3_env, start_date, prev_month):
-    # Adds additonal command arguments based on provided arguments
-    # and the previous exec date.
-    output_commands = []
-    for c in commands:
-        if "txn_history.py" in c:
-            c = f"{c} --env {s3_env}"
-            c = f"{c} --start {start_date}"
-
-        if "passport_txns.py" in c:
-            c = f"{c} --env {s3_env}"
-            c = f"{c} --start {start_date}"
-
-        if "fiserv_DB.py" in c:
-            c = f"{c} --lastmonth {prev_month}"
-
-        if "payments_s3.py" in c:
-            c = f"{c} --lastmonth {prev_month}"
-
-        if "passport_DB.py" in c:
-            c = f"{c} --lastmonth {prev_month}"
-
-        if "smartfolio_s3.py" in c:
-            c = f"{c} --lastmonth {prev_month}"
-
-        output_commands.append(c)
-
-    return output_commands
-
-
-@task(
-    name="docker_command",
-    retries=3,
-    retry_delay_seconds=timedelta(minutes=2).seconds,
-    task_run_name="Docker Command: {command}",  # note this is not wrong, you don't use an f-string here.
-)
-def docker_command(docker_env, environment_variables, command, logger):
-    response = (
-        docker.from_env()
-        .containers.run(
-            image=f"{docker_image}:{docker_env}",
-            working_dir=None,
-            command=f"python {command}",
-            environment=environment_variables,
-            volumes=None,
-            remove=True,
-            detach=False,
-            stdout=True,
-        )
-        .decode("utf-8")
-    )
-    logger.info(response)
-    return response
-
-
-@task(
-    name="update_exec_date",
-    retries=10,
-    retry_delay_seconds=timedelta(seconds=15).seconds,
-)
-def update_exec_date(json_block):
-    # Update our JSON block with the updated date of last flow execution
-    block = JSON.load(json_block)
-    block.value["PREV_EXEC"] = datetime.today().strftime("%Y-%m-%d")
-    block.save(name=json_block, overwrite=True)
-
-
 @flow(name="atd-parking-data: Reprocessing Parking Data")
-def main(commands, block, s3_env, docker_env):
+def main(start_date, block, s3_env, docker_env):
     # Logger instance
     logger = get_run_logger()
 
     # Start: get env vars and pull the latest docker image
     environment_variables = get_env_vars(block)
-    years = [2021, 2022]
-    months = list(range(1, 13))
-    year_months = list(itertools.product(years, months))
 
-    for ym in year_months:
-        for c in commands:
-            c = f"{c} --year {ym[0]} --month {ym[1]}"
-            logger.info(c)
-            command_res = docker_command(docker_env, environment_variables, c, logger)
+    command = f"txn_history.py --env {s3_env} --report payments --start {start_date}"
+    command_res = docker_command(docker_env, environment_variables, command, logger)
 
 
 if __name__ == "__main__":
-    # List of commands to be sent to the docker image,
-    # Note that the date filter arg is added last in determine_date_args task
-    commands = [
-        "passport_DB.py",
-        "smartfolio_s3.py",
-    ]
-
     # Environment Variable Storage Block Name
     block = "atd-parking-data"
 
@@ -205,6 +75,8 @@ if __name__ == "__main__":
     s3_env = "prod"
 
     # Tag of docker image to use
-    docker_env = "latest"
+    docker_env = "production"
 
-    main(commands, block, s3_env, docker_env)
+    start_date = "2023-01-01"
+
+    main(start_date, block, s3_env, docker_env)

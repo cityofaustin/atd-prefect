@@ -4,21 +4,25 @@
 name: 'atd-parking-data: Reprocessing Parking Data'
 description: 'Repo: https://github.com/cityofaustin/atd-parking-data Scripts that
   download and process parking data for finance reporting.'
-version: a649073bb4802f8dcea9d8d65d14235a
+version: e9318af0b523c054d60934486d9e28c2
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: atd-data-03
 tags: []
-parameters: 
-  commands:
-    - passport_DB.py
-    - smartfolio_s3.py
+parameters:
   block: atd-parking-data
   s3_env: prod
-  docker_env: latest
+  start_date: 2023-01-01
+  docker_env: production
 schedule: null
-is_schedule_active: null
+is_schedule_active: true
 infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: 'atd-parking-data: Reprocessing Parking Data'
+manifest_path: null
 infrastructure:
   type: process
   env: {}
@@ -27,14 +31,11 @@ infrastructure:
   command: null
   stream_output: true
   working_dir: null
+  _block_document_id: 9f8ae2c3-c6c8-4d83-9dfa-66164ce9f13b
+  _block_document_name: anonymous-7a5fcdce-5c64-46a9-a18e-b97b748f5636
+  _is_anonymous: true
   block_type_slug: process
   _block_type_slug: process
-
-###
-### DO NOT EDIT BELOW THIS LINE
-###
-flow_name: 'atd-parking-data: Reprocessing Parking Data'
-manifest_path: null
 storage:
   repository: https://github.com/cityofaustin/atd-prefect/
   reference: ch-parking-data-refresh
@@ -69,4 +70,4 @@ parameter_openapi_schema:
   - s3_env
   - docker_env
   definitions: null
-timestamp: '2023-05-04T19:25:59.596053+00:00'
+timestamp: '2023-05-04T20:40:34.226276+00:00'
