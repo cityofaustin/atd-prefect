@@ -55,6 +55,31 @@ def pull_docker_image(docker_env):
     return True
 
 
+@task(
+    name="docker_command",
+    retries=3,
+    retry_delay_seconds=timedelta(minutes=2).seconds,
+    task_run_name="Docker Command: {command}",  # note this is not wrong, you don't use an f-string here.
+)
+def docker_command(docker_env, environment_variables, command, logger):
+    response = (
+        docker.from_env()
+        .containers.run(
+            image=f"{docker_image}:{docker_env}",
+            working_dir=None,
+            command=f"python {command}",
+            environment=environment_variables,
+            volumes=None,
+            remove=True,
+            detach=False,
+            stdout=True,
+        )
+        .decode("utf-8")
+    )
+    logger.info(response)
+    return response
+
+
 @flow(name="atd-parking-data: Reprocessing Parking Data")
 def main(start_date, block, s3_env, docker_env):
     # Logger instance
